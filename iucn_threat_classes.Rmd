@@ -1,0 +1,111 @@
+---
+title: 'IUCN threat classification scheme'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+dir_git <- here::here()
+
+### provenance tracking
+library(provRmd); prov_setup()
+
+### goal specific folders and info
+dir_setup   <- file.path(dir_git, '_setup')
+dir_o_anx <- file.path(dir_O, 'git-annex/bd_chi')
+
+source(file.path(dir_setup, 'common_fxns.R'))
+
+```
+
+# Summary
+
+Document the threat classification scheme as a lookup table
+
+# Data Sources
+
+https://www.iucnredlist.org/resources/threat-classification-scheme, accessed 1/26/2019
+
+# Methods
+
+## Threat Impact
+
+For each threat, it is recommended that the timing of the threat (i.e. past, ongoing or future), its scope (i.e. the proportion of the total population affected) and severity (i.e the overall declines caused by the threat) should be recorded.
+
+Timing options are:
+
+* Only in the past and unlikely to return
+* In the past but now suspended and likely to return
+* Ongoing
+* Only in the future
+* Unknown
+ 
+
+Scope options are:
+
+* Affects the whole population (>90%)
+* Affects the majority of the population (50-90%)
+* Affects the minority of the population (<50%)
+* Unknown
+ 
+
+Severity options are:
+
+* Causing or likely to cause very rapid declines (>30% over 10 years or three generations; whichever is the longer)
+* Causing or likely to cause rapid declines (20–30% over 10 years or three generations; whichever is the longer)
+* Causing or likely to cause relatively slow but significant declines (<20% over 10 years or three generations; whichever is the longer)
+* Causing or likely to cause fluctuations
+* Causing or likely to cause negligible declines
+* No declines
+* Unknown
+ 
+
+Any analysis of the threats should preferably take into account the timing, scope and severity of the threats to calculate an impact score (see attached sheet for calculating threat impact scores) and should also consider how the threats impact the taxa concerned, as recorded by the stresses. These additional attributes are displayed on the Red List website.
+
+## Classification scheme
+
+The full hierarchical structure of threat types displayed in IUCN Red List assessments is shown below.
+
+Direct threats are the proximate human activities or processes that have impacted, are impacting, or may impact the status of the taxon being assessed (e.g., unsustainable fishing or logging, agriculture, housing developments, etc.) Direct threats are synonymous with sources of stress and proximate pressures.
+
+In using this hierarchical classification of the drivers of species decline, Assessors are asked to indicate the threats that triggered the listing of the taxon concerned at the lowest level possible. These threats may have occured in the past ("historical, unlikely to return" or "historical, likely to return"); or may be "ongoing"; or may be likely to occur in the "future", using a time frame of three generations or ten years (whichever is the longer, up to a maximum of 100 years in the future), as required by the IUCN Red List Criteria. The 'Major Threats' referred to in the 'Required and Recommended Supporting Information for IUCN Red List Assessments', are threats coded as having High or Medium impacts (see threat impact scoring below).
+
+The attached working document provides a list of the threat types with definitions, examples of the threats and guidance notes on using the scheme. Comments on the Threats Classification Scheme are welcome.
+
+```{r}
+threat_class <- read_csv(file.path(dir_git, '_raw/iucn_threat_class_raw.csv')) %>%
+  separate(code, c('l1', 'l2', 'l3'), remove = FALSE) %>%
+  mutate(cat = description, subcat = description) %>%
+  mutate(cat = ifelse(is.na(l2), cat, NA),
+         subcat = ifelse(is.na(l3), subcat, NA)) %>%
+  fill(cat, subcat, .direction = 'down') %>%
+  mutate(desc = case_when(is.na(l2) ~ cat,
+                          is.na(l3) ~ paste0(cat, ': ', subcat),
+                          TRUE      ~ paste0(cat, ': ', subcat, ': ', description))) %>%
+  select(code, desc) %>%
+  distinct()
+  
+write_csv(threat_class, file.path(dir_git, '_raw/iucn_threat_class.csv'))
+
+DT::datatable(threat_class)
+```
+
