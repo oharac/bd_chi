@@ -21,25 +21,16 @@ output:
 knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
-
-source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
-
-dir_git <- '~/github/spp_risk_dists'
+source(here::here('common_fxns.R'))
 
 ### provenance tracking
 library(provRmd); prov_setup()
-
-### goal specific folders and info
-dir_setup   <- file.path(dir_git, '_setup')
-dir_o_anx <- file.path(dir_O, 'git-annex/spp_risk_dists')
-
-source(file.path(dir_setup, 'common_fxns.R'))
 
 ```
 
 # Summary
 
-Get IUCN current risk assessments and historical assessments over time, for all IUCN marine species.  This method is not reliant on any information from AquaMaps.
+Get IUCN current risk assessments and historical assessments over time, for all IUCN marine species.  
 
 # Data Sources
 
@@ -51,9 +42,9 @@ Get IUCN current risk assessments and historical assessments over time, for all 
 
 ``` {r determine_marine_spp_from_api}
 
-spp_threats_file <- file.path(dir_git, '_data/iucn_spp_threats_2018-1.csv')
+spp_threats_file <- file.path(dir_data, 'iucn_spp_threats_2018-1.csv')
 
-spp_info <- read_csv(file.path(dir_git, '_data', 'iucn_risk_current_2018-1.csv'))
+spp_info <- read_csv(file.path(dir_data, 'iucn_risk_current_2018-1.csv'))
 
 if(!file.exists(spp_threats_file)) {
   

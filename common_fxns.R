@@ -4,6 +4,15 @@
 ### * Simple Features and Raster common functions
 ### * Other random helper functions
 
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+### setup common directories
+dir_git     <- here()
+dir_setup   <- file.path(dir_git, '_setup')
+dir_data    <- file.path(dir_git, '_data')
+dir_spatial <- file.path(dir_git, '_spatial')
+dir_output  <- file.path(dir_git, '_output')
+dir_o_anx   <- file.path(dir_O, 'git-annex/bd_chi')
 
 
 ### cat if not knitting; message if knitting
@@ -40,26 +49,29 @@ api_file <- file.path(dir_M, 'git-annex/globalprep/spp_ico',
                       'api_key.csv')
 api_key <- scan(api_file, what = 'character')
 
-# api_version <- fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
-#   .$version
+api_version <- fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
+  .$version
 
-api_version <- '2018-1'
+# api_version <- '2018-1'
 
-
-get_from_api <- function(url, param, api_key, delay) {
+get_from_api <- function(url, param, api_key, delay, verbose = FALSE) {
   
   i <- 1; tries <- 5; success <- FALSE
   
   while(i <= tries & success == FALSE) {
-    message('try #', i)
-    Sys.sleep(delay * i) ### be nice to the API server? later attempts wait longer
+    if(verbose) {
+      message('try #', i)
+    }
+    Sys.sleep(delay * i) ### be kind to the API server? later attempts wait longer
     api_info <- fromJSON(sprintf(url, param, api_key)) 
     if (class(api_info) != 'try-error') {
       success <- TRUE
     } else {
       warning(sprintf('try #%s: class(api_info) = %s\n', i, class(api_info)))
     }
-    message('... successful? ', success)
+    if(verbose) {
+      message('... successful? ', success)
+    }
     i <- i + 1
   }
   
@@ -68,7 +80,9 @@ get_from_api <- function(url, param, api_key, delay) {
                              api_error = 'try-error after multiple attempts')
   } else if (class(api_info$result) != 'data.frame') { ### result isn't data frame for some reason
     api_return <- data.frame(param_id  = param,
-                             api_error = paste('non data.frame output: ', class(api_info$result), ' length = ', length(api_info$result)))
+                             api_error = paste('non data.frame output: ', 
+                                               class(api_info$result), 
+                                               ' length = ', length(api_info$result)))
   } else if (length(api_info$result) == 0) { ### result is empty
     api_return <- data.frame(param_id  = param,
                              api_error = 'zero length data.frame')
@@ -80,7 +94,8 @@ get_from_api <- function(url, param, api_key, delay) {
   return(api_return)
 }
 
-mc_get_from_api <- function(url, param_vec, api_key, cores = NULL, delay = 0.5) {
+mc_get_from_api <- function(url, param_vec, api_key, 
+                            cores = NULL, delay = 0.5, verbose = FALSE) {
   
   if(is.null(cores)) 
     numcores <- ifelse(Sys.info()[['nodename']] == 'mazu', 12, 1)
@@ -88,14 +103,18 @@ mc_get_from_api <- function(url, param_vec, api_key, cores = NULL, delay = 0.5) 
     numcores <- cores
   
   out_list <- parallel::mclapply(param_vec, 
-                                 function(x) get_from_api(url, x, api_key, delay),
+                                 function(x) {
+                                   get_from_api(url, x, api_key, delay, verbose)
+                                 },
                                  mc.cores   = numcores,
                                  mc.cleanup = TRUE) 
   
   if(any(sapply(out_list, class) != 'data.frame')) {
     error_list <- out_list[sapply(out_list, class) != 'data.frame']
-    message('List items are not data frame: ', paste(sapply(error_list, class), collapse = '; '))
-    message('might be causing the bind_rows() error; returning the raw list instead')
+    if(verbose) {
+      message('List items are not data frame: ', paste(sapply(error_list, class), collapse = '; '))
+      message('might be causing the bind_rows() error; returning the raw list instead')
+    }
     return(out_list)
   }
   
