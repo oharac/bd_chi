@@ -1,39 +1,30 @@
 ---
-title: 'IUCN threat classification scheme'
-author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
-output: 
+title: "IUCN threat classification scheme"
+author: '*Compiled on `r date()` by `r Sys.info()["user"]`*'
+output:
+  word_document:
+    toc: no
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
   html_document:
     code_folding: hide
-    toc: true
+    highlight: haddock
+    includes:
+      in_header: ~/github/src/templates/ohara_hdr.html
+    number_sections: yes
+    theme: cerulean
+    toc: yes
     toc_depth: 3
     toc_float: yes
-    number_sections: true
-    theme: cerulean
-    highlight: haddock
-    includes: 
-      in_header: '~/github/src/templates/ohara_hdr.html'
-  pdf_document:
-    toc: true
 ---
 
-``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+``` {r setup, echo = FALSE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
-
-
-source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
-
-dir_git <- here::here()
+source(here::here('common_fxns.R'))
 
 ### provenance tracking
 library(provRmd); prov_setup()
-
-### goal specific folders and info
-dir_setup   <- file.path(dir_git, '_setup')
-dir_o_anx <- file.path(dir_O, 'git-annex/bd_chi')
-
-source(file.path(dir_setup, 'common_fxns.R'))
 
 ```
 
@@ -92,6 +83,7 @@ In using this hierarchical classification of the drivers of species decline, Ass
 The attached working document provides a list of the threat types with definitions, examples of the threats and guidance notes on using the scheme. Comments on the Threats Classification Scheme are welcome.
 
 ```{r}
+
 threat_class <- read_csv(file.path(dir_git, '_raw/iucn_threat_class_raw.csv')) %>%
   separate(code, c('l1', 'l2', 'l3'), remove = FALSE) %>%
   mutate(cat = description, subcat = description) %>%
@@ -106,6 +98,36 @@ threat_class <- read_csv(file.path(dir_git, '_raw/iucn_threat_class_raw.csv')) %
   
 write_csv(threat_class, file.path(dir_git, '_raw/iucn_threat_class.csv'))
 
-DT::datatable(threat_class)
 ```
 
+```{r}
+
+spp_threats <- read_csv(file.path(dir_o_anx, 'iucn/threats',
+                                  sprintf('iucn_spp_threats_%s.csv', api_version))) %>%
+  filter(!is.na(iucn_sid) & !is.na(code)) %>%
+  # filter(timing != 'Past, Unlikely to Return' | is.na(timing)) %>% ### ~ 635
+  # filter(score_num >= 3 | is.na(score)) %>%
+  .$code %>% unique()
+
+threat_class_marine <- read_csv(file.path(dir_git, '_raw/iucn_threat_class.csv')) %>%
+  filter(code %in% spp_threats | !str_detect(code, '\\.')) %>%
+  mutate(code = fct_inorder(code))
+
+library(flextable)
+
+ftable_theme <- function(df) {
+  flextable(df) %>%
+    theme_zebra() %>%
+    align(part = 'all', align = 'center') %>%
+    bg(bg = 'white', part = 'header') %>%
+    border(border.bottom = officer::fp_border(), part = 'header') %>%
+    font(font = 'Arial', part = 'all') %>%
+    fontsize(size = 8, part = 'all')
+  
+}
+
+threat_table <- ftable_theme(threat_class_marine) %>%
+  width(j = 2, 5)
+
+threat_table
+```

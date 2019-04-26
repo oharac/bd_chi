@@ -1,5 +1,8 @@
 ### Support functions for this project
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = FALSE, message = FALSE, warning = FALSE)
+
 ### * IUCN API functions
 ### * Simple Features and Raster common functions
 ### * Other random helper functions

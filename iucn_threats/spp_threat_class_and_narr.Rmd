@@ -18,19 +18,10 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
+source(here::here('common_fxns.R'))
 
-
-source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
-
-dir_git <- here::here()
-
-### goal specific folders and info
-dir_setup   <- file.path(dir_git, '_setup')
-dir_o_anx <- file.path(dir_O, 'git-annex/bd_chi')
-
-source(file.path(dir_setup, 'common_fxns.R'))
+### provenance tracking
+library(provRmd); prov_setup()
 
 ```
 
@@ -46,11 +37,12 @@ Examine threats to marine species as determined by IUCN threat classifications a
 
 ## Get IUCN threat lists for all available IUCN marine spp
 
-``` {r}
+``` {r get_threats_from_api}
 
-spp_threats_file <- file.path(dir_git, '_data/iucn_spp_threats_2018-1.csv')
+spp_threats_file <- file.path(dir_o_anx, 'iucn/threats',
+                              sprintf('iucn_spp_threats_%s.csv', api_version))
 
-spp_info <- read_csv(file.path(dir_git, '_data', 'iucn_risk_current_2018-1.csv'))
+spp_info <- read_csv(file.path(dir_data, sprintf('spp_marine_from_api_%s.csv', api_version)))
 
 if(!file.exists(spp_threats_file)) {
   
@@ -58,18 +50,53 @@ if(!file.exists(spp_threats_file)) {
   
   threat_url <- 'http://apiv3.iucnredlist.org/api/v3/threats/species/id/%s?token=%s'
   
-  ptm <- system.time({
-    spp_threats <- mc_get_from_api(threat_url, spp_ids, api_key, cores = 12)
-  })
-  ptm[3]
+  chunk_size <- 500
+  n_chunks <- ceiling(length(spp_ids)/chunk_size)
   
-  spp_threats <- spp_threats %>%
-    mutate(#id = ifelse(!is.na(api_error), param_id, id),
-           score_num = as.integer(str_extract(score, '[0-9]+'))) %>%
-    select(-param_id, -api_error, iucn_sid = id)
+  for(j in 1:n_chunks) { 
+    ### j <- 1
+    spp_index <- c( ((j - 1) * chunk_size + 1) : min((j * chunk_size), length(spp_ids)) )
+    chunk_file <- file.path(dir_o_anx, 'tmp', 
+                            sprintf('spp_threat_chunk_%s_%s.csv', 
+                            min(spp_index), max(spp_index)))
+
+    if(!file.exists(chunk_file)) {
+      cat_msg('Getting threat info for species ', min(spp_index), ' to ', max(spp_index))
+      
+      spp_ids_chunk <- spp_ids[spp_index]
+      spp_threat_chunk <- mc_get_from_api(threat_url, spp_ids_chunk, api_key, 
+                                          delay = .5, cores = 16, verbose = FALSE)
+      cat_msg('... found ', nrow(spp_threat_chunk), ' threat rows for these species')
+      
+      write_csv(spp_threat_chunk, chunk_file)
+      
+    } else {
+      
+      cat_msg('Chunk file ', basename(chunk_file), ' already exists; skipping these spp')
+      
+    }
+  }
   
-  write_csv(spp_threats, spp_threats_file)
+  spp_threat_chunk_files <- list.files(file.path(dir_o_anx, 'tmp'), 
+                                  pattern = 'spp_threat_chunk', 
+                                  full.names = TRUE)
+  
+  spp_threats_df <- lapply(spp_threat_chunk_files, FUN = function(x) {
+    read_csv(x) %>%
+      mutate(code = as.character(code))}) %>%
+    bind_rows() %>%
+    rename(iucn_sid = id) %>%
+    mutate(iucn_sid = ifelse(is.na(iucn_sid), param_id, iucn_sid)) %>%
+    arrange(iucn_sid)
+  
+  
+  spp_threats_df1 <- spp_threats_df %>%
+    mutate(score_num = as.integer(str_extract(score, '[0-9]+'))) %>%
+    select(-param_id, -api_error)
+  
+  write_csv(spp_threats_df1, spp_threats_file)
 }
+
 ```
 
 ``` {r}
@@ -83,6 +110,7 @@ threat_class <- read_csv(file.path(dir_git, '_raw/iucn_threat_class.csv'))
 spp_threat_cats <- spp_threats %>%
   group_by(code, timing, impact) %>%
   summarize(n_spp = n()) %>%
+  ungroup() %>%
   left_join(threat_class, by = 'code') %>%
   mutate(cat = str_extract(desc, '.+?(?=:)'),
          cat_code = str_extract(code, '^[0-9]+') %>% as.integer()) %>%
@@ -115,26 +143,22 @@ From the full IUCN species list, send each IUCN species ID into the API to get t
 
 ``` {r determine_spp_narrs}
 
-spp_info <- read_csv(file.path(dir_git, '_data', 'iucn_risk_current_2018-1.csv'))
+spp_info <- read_csv(file.path(dir_data, sprintf('iucn_risk_current_%s.csv', api_version)))
 
-spp_narr_from_api_file <- file.path(dir_o_anx, 
-  sprintf('iucn/spp_narr_from_api_%s.csv', api_version))
+spp_narr_file <- file.path(dir_o_anx, 
+                           sprintf('iucn/spp_narr_from_api_%s.csv', api_version))
 reload <- FALSE
 
-if(!file.exists(spp_narr_from_api_file) | reload) {
+if(!file.exists(spp_narr_file) | reload) {
   
-  cat_msg('Using API to determine species narrative from full species info list')
+  cat_msg('Using API to determine species narrative from marine species info list')
   
   spp_ids_all <- spp_info %>%
     .$iucn_sid
   
   spp_narr_url <- 'http://apiv3.iucnredlist.org/api/v3/species/narrative/id/%s?token=%s'
   
-  ### Breaking this into chunks...
-  ### 500 spp takes 184 seconds; at that rate, 87851 species should take 
-  ###   about 9 hrs.  Each chunk will save to tmp for later combining.
-
-  chunk_size <- 2000
+  chunk_size <- 500
   n_chunks <- ceiling(length(spp_ids_all)/chunk_size)
   
   if(!dir.exists(file.path(dir_o_anx, 'tmp'))) {
@@ -176,47 +200,20 @@ if(!file.exists(spp_narr_from_api_file) | reload) {
     bind_rows() %>%
     rename(iucn_sid = species_id) %>%
     mutate(iucn_sid = ifelse(is.na(iucn_sid), param_id, iucn_sid)) %>%
-    arrange(iucn_sid)
+    arrange(iucn_sid) %>%
+    distinct()
   
   spp_errors <- spp_narr_df %>%
     filter(!is.na(api_error) & api_error != 'no data.frame') %>%
     .$iucn_sid
   ### all these errors are due to returning a zero-length list instead of a data.frame
 
-  write_csv(spp_narr_df, spp_narr_from_api_file)
+  write_csv(spp_narr_df, spp_narr_file)
   
 } else {
   
-  cat_msg('File of species narratives from API exists: \n  ', spp_narr_from_api_file)
+  cat_msg('File of species narratives from API exists: \n  ', spp_narr_file)
 
 }
 
-
 ```
-
-## Check for bycatch and gear instances
-
-```{r}
-
-spp_narr_df <- read_csv(spp_narr_from_api_file) %>%
-  select(-name, -param_id, -api_error)
-
-gear_str <- c('gill.?net', 'long.?line', 'trawl', 'seine', 'by.?catch')
-
-gear_narr_df <- spp_narr_df %>%
-  gather(dimension, text, -iucn_sid) %>%
-  # mutate(text_short = str_split(text, '\\. ')) %>%
-  # unnest(text_short) %>%
-  filter(str_detect(text, paste0(gear_str, collapse = '|')))
-
-gear_narr_class <- gear_narr_df %>%
-  group_by(iucn_sid, text, dimension) %>%
-  mutate(bycatch_count  = str_count(text, 'by.?catch'),
-         longline_count = str_count(text, 'long.?line'),
-         trawl_count    = str_count(text, 'trawl'),
-         seine_count    = str_count(text, 'seine'),
-         gillnet_count  = str_count(text, 'gill.?net'))
-
-write_csv(gear_narr_class, 'int/gear_narr_classified.csv')
-```
-

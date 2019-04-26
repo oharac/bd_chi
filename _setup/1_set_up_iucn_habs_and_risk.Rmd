@@ -18,9 +18,6 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
-
 source(here::here('common_fxns.R'))
 
 ### provenance tracking
@@ -440,19 +437,51 @@ if(!file.exists(spp_timeseries_file) | reload) {
     unique() %>%
     sort()
     
-  ptm <- proc.time()
-  spp_past_df <- mc_get_from_api(spp_hist_url, sid_list, api_key, 
-                                 delay = 1, cores = 16, verbose = FALSE)
-  cat_msg('elapsed time: ', (proc.time() - ptm)[3])
+  chunk_size <- 500
+  n_chunks <- ceiling(length(sid_list)/chunk_size)
   
+  for(j in 1:n_chunks) { 
+    ### j <- 1
+    spp_index <- c( ((j - 1) * chunk_size + 1) : min((j * chunk_size), length(sid_list)) )
+    chunk_file <- file.path(dir_o_anx, 'tmp', 
+                            sprintf('spp_past_assess_chunk_%s_%s.csv', 
+                            min(spp_index), max(spp_index)))
+
+    if(!file.exists(chunk_file)) {
+      cat_msg('Getting past assessment info for species ', min(spp_index), ' to ', max(spp_index))
+      
+      spp_ids_chunk <- sid_list[spp_index]
+      spp_past_chunk <- mc_get_from_api(spp_hist_url, spp_ids_chunk, api_key, 
+                                        delay = .5, cores = 16, verbose = FALSE)
+      cat_msg('... found ', nrow(spp_past_chunk), ' past assessment rows for these species')
+      
+      write_csv(spp_past_chunk, chunk_file)
+      
+    } else {
+      
+      cat_msg('Chunk file ', chunk_file, ' already exists; skipping these spp')
+      
+    }
+  }
+  
+  spp_past_chunk_files <- list.files(file.path(dir_o_anx, 'tmp'), 
+                                  pattern = 'spp_past_assess_chunk', 
+                                  full.names = TRUE)
+  
+  spp_past_df <- lapply(spp_past_chunk_files, FUN = function(x) {
+    read_csv(x) %>%
+      mutate(code = as.character(code))}) %>%
+    bind_rows() %>%
+    rename(iucn_sid = name) %>%
+    mutate(iucn_sid = ifelse(is.na(iucn_sid), param_id, iucn_sid)) %>%
+    arrange(iucn_sid)
   
   ### Clean up the time series: reclassify old codes to current
   cat_lookup <- read_csv(file.path(dir_setup, 'raw', 'risk_code_lookup.csv'))
   
   spp_past_df1 <- spp_past_df %>%
     left_join(cat_lookup, by = c('code', 'category')) %>%
-    rename(iucn_sid = name,
-           old_cat  = code,
+    rename(old_cat  = code,
            cat_txt  = category,
            cat_ts   = code_current)
   
@@ -502,7 +531,7 @@ if(!file.exists(spp_current_file) | reload) {
     
   ptm <- proc.time()
   spp_current_df <- mc_get_from_api(spp_curr_url, sid_list, api_key, 
-                                    delay = 1, cores = 16, verbose = FALSE)
+                                    delay = .5, cores = 16, verbose = FALSE)
   cat_msg('elapsed time: ', (proc.time() - ptm)[3])
     #   user   system  elapsed 
     # 74.756   23.032 1251.880
