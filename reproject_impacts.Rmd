@@ -1,0 +1,126 @@
+---
+title: 'Reproject cumulative impacts'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+
+dir_chi_mol <- '/home/shares/ohi/git-annex/impact_acceleration/impact'
+### this is an absolute path to git-annex on Mazu
+dir_bd_anx <- '~/git-annex/bd_chi' ### this is on git-annex in home/ohara
+dir_chi_gp  <- here('layers/impacts_gp') ### relative path in github
+
+```
+
+# Summary
+
+Collect cumulative impact layers from CHI 2019 and reproject/aggregate them to the native resolution of the species range maps.  This will be done by mapping range map IDs to the cells in the Mollweide 934m resolution of the stressor layers, then converting to a data.frame to aggregate.
+
+# Data Sources
+
+Halpern et al. 2019.
+
+# Methods
+
+## Create cell ID lookup for spp CRS to chi CRS
+
+Get an impact raster to identify the projection and resolution; reproject the cell_id raster to match, using nearest neighbor.
+
+```{r}
+
+cell_id_mol_file <- file.path(dir_bd_anx, 'spatial/cell_id_mol.tif')
+ocean_mol_file <- file.path(dir_bd_anx, 'spatial/ocean_mol.tif')
+if(!file.exists(ocean_mol_file)) {
+  file.copy(from = '/home/shares/ohi/model/GL-NCEAS-Halpern2008/tmp/ocean.tif',
+            to = ocean_mol_file)
+}
+
+if(!file.exists(cell_id_mol_file)) {
+  
+  ocean_base_mol <- raster(ocean_mol_file)
+
+  cell_id_gp <- raster('_spatial/cell_id_rast.tif')
+  cell_id_mol <- cell_id_gp %>% 
+    projectRaster(ocean_base_mol, method = 'ngb')
+  
+  # cell_id_mol_mask <- cell_id_mol %>%
+  #   mask(ocean_base_mol)
+  
+  writeRaster(cell_id_mol, cell_id_mol_file, overwrite = TRUE)
+}
+
+```
+
+## Loop over all impact layers, convert to spp CRS
+
+Read in each cumulative impact raster, aggregate to a raster at the species projection and resolution.
+
+```{r}
+### List directories in the impacts directory
+chi_dirs_all <- list.files(dir_chi_mol, recursive = TRUE, full.names = TRUE) %>%
+  dirname() %>%
+  unique()
+# [1] "/home/shares/ohi/git-annex/impact_acceleration/impact/cumulative_impact"    
+# [2] "/home/shares/ohi/git-annex/impact_acceleration/impact/cumulative_impact/tmp"
+# [3] "/home/shares/ohi/git-annex/impact_acceleration/impact/stressor_impact"      
+# [4] "/home/shares/ohi/git-annex/impact_acceleration/impact/trend"                
+# [5] "/home/shares/ohi/git-annex/impact_acceleration/impact/trend/impacts" 
+
+cell_id_mol <- raster(cell_id_mol_file)
+cell_id_gp  <- raster('_spatial/cell_id_rast.tif')
+
+chi_files <- file.path(dir_chi_mol, 
+                       c('cumulative_impact/chi_2013.tif',
+                         'trend/chi_slope.tif',
+                         'trend/trend_pattern.tif'))
+
+for(chi_file in chi_files) {
+  # chi_file <- chi_files[1]
+  chi_gp_file <- file.path(dir_chi_gp, 
+                         str_replace(basename(chi_file), '.tif', '_gp.tif'))
+  
+  if(!file.exists(chi_gp_file)) {
+    message('Processing ', basename(chi_file))
+    chi_rast <- raster(chi_file)
+    chi_df <- aggregate_to_cellid(chi_rast, cell_id_mol)
+    
+    chi_rast_gp <- raster::subs(cell_id_gp, chi_df, 
+                                by = 'cell_id', which = 'mean_val')
+    
+    message('... writing ', basename(chi_gp_file))
+    writeRaster(chi_rast_gp, chi_gp_file)
+    
+  } else {
+    message('File exists: ', chi_gp_file, '... skipping!')
+  }
+}
+```
+
+```{r}
+gp_rasts <- list.files(dir_chi_gp, pattern = '.tif$', full.names = TRUE)
+
+for(rast in gp_rasts) {
+  tmp <- raster(rast)
+  plot(tmp, main = basename(rast))
+}
+```
+
+

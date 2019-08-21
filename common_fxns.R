@@ -1,6 +1,6 @@
 ### Support functions for this project
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, # fig.path = 'figs/',
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
                       echo = FALSE, message = FALSE, warning = FALSE)
 
 ### * IUCN API functions
@@ -126,4 +126,20 @@ mc_get_from_api <- function(url, param_vec, api_key,
     setNames(names(.) %>%
                str_replace('result.', ''))
   return(out_df)
+}
+
+### Raster functions
+
+aggregate_to_cellid <- function(rast, cell_id_mol) {
+  ### aggregates a CHI raster (Mollweide 1 km) to SPP CRS (GP 10 km)
+  ### returns as a dataframe, which can then be used to do raster::subs()
+  df <- data.frame(val      = values(rast),
+                   cell_id  = values(cell_id_mol)) %>%
+    filter(!is.na(cell_id)) %>%
+    group_by(cell_id) %>%
+    summarize(n_cells = sum(!is.na(val)),
+              mean_val = mean(val, na.rm = TRUE)) %>%
+    ungroup()
+  
+  return(df)
 }

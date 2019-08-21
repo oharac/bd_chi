@@ -4,7 +4,7 @@ To do:
     * dataframe style: map cell IDs from G-P to Moll projection, then data.frame(cell_id, value)
     * crosstab style: map cell IDs into a raster, then crosstab? not great for continuous variables though?
     * how to aggregate stressor intensity values?  Mean? max/min/median?
-* [ ] Apply this to all CHI stressor layers (latest) 
+* [X] Apply this to all CHI stressor layers (latest) 
 * [ ] Calculate stressor trend layers (is this already calculated?)
     * calculate at CHI native res, or at SPP native res? check the math...
     * Figure out which stressors match IUCN threats (see below) to narrow down which layers to process
