@@ -4,12 +4,12 @@ To do:
     * dataframe style: map cell IDs from G-P to Moll projection, then data.frame(cell_id, value)
     * crosstab style: map cell IDs into a raster, then crosstab? not great for continuous variables though?
     * how to aggregate stressor intensity values?  Mean? max/min/median?
-* [] Apply this to all CHI stressor layers (latest) and stressor trend layers (is this already calculated?)
-* [] "Quick" analysis a la Selig 2014:
+* [ ] Apply this to all CHI stressor layers (latest) and stressor trend layers (is this already calculated?)
+* [ ] "Quick" analysis a la Selig 2014:
   * Determine top X% of stressor intensity (or of cumulative impacts)
   * Determine top X% of biodiversity from spp risk layers (n_spp, n_spp_rr, risk, risk_rr, thr, thr_rr)
-* [] Map stressors to IUCN spp threats by class and by narrative.
-* [] For each spp:
+* [ ] Map stressors to IUCN spp threats by class and by narrative.
+* [ ] For each spp:
     * compare range to proportion of range impacted by various stressors
     * is this weighted? e.g. weighted by threat score
     * becomes a map of relative stress from all sources (additive)
