@@ -1,0 +1,145 @@
+---
+title: 'Reproject stressors'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+
+dir_stressor <- '/home/shares/ohi/git-annex/impact_acceleration/stressors'
+### this is an absolute path to git-annex on Mazu
+dir_bd_anx <- '~/git-annex/bd_chi' ### this is on git-annex in home/ohara
+
+
+```
+
+# Summary
+
+Collect stressor layers from CHI 2019 and reproject/aggregate them to the native resolution of the species range maps.  This will be done by mapping range map IDs to the cells in the Mollweide 934m resolution of the stressor layers, then converting to a data.frame to aggregate.
+
+# Data Sources
+
+Halpern et al. 2019.
+
+# Methods
+
+## Create cell ID lookup for spp CRS to chi CRS
+
+Get a stressor raster to identify the projection and resolution; reproject the cell_id raster to match, using nearest neighbor.
+
+```{r}
+
+cell_id_mol_file <- file.path(dir_bd_anx, 'spatial/cell_id_mol.tif')
+
+if(!file.exists(cell_id_mol_file)) {
+  
+  ocean_base_mol <- raster('/home/shares/ohi/model/GL-NCEAS-Halpern2008/tmp/ocean.tif')
+
+  cell_id_gp <- raster('_spatial/cell_id_rast.tif')
+  cell_id_mol <- cell_id_gp %>% 
+    projectRaster(ocean_base_mol, method = 'ngb')
+  
+  # cell_id_mol_mask <- cell_id_mol %>%
+  #   mask(ocean_base_mol)
+  
+  writeRaster(cell_id_mol, cell_id_mol_file, overwrite = TRUE)
+}
+
+```
+
+## Loop over all stressor layers, convert to spp CRS
+
+Read in each raster (selecting only the latest year for each), aggregate to a raster at the species projection and resolution.
+
+Questions for Mel: what are the "archive" folders?
+
+```{r}
+aggregate_to_cellid <- function(str_rast, cell_id_mol) {
+  str_df <- data.frame(stressor = values(str_rast),
+                       cell_id  = values(cell_id_mol)) %>%
+    filter(!is.na(cell_id)) %>%
+    group_by(cell_id) %>%
+    summarize(n_cells = sum(!is.na(stressor)),
+              mean_stressor = mean(stressor, na.rm = TRUE)) %>%
+    ungroup()
+  
+  return(str_df)
+}
+```
+
+```{r}
+### List directories that end in "final"
+str_dirs <- list.files(dir_stressor, recursive = TRUE, full.names = TRUE) %>%
+  dirname() %>%
+  unique() %>%
+  .[str_detect(., 'final') & !str_detect(., 'archive')]
+#  [1] "archive/art_fish/final"                 "archive/comm_fish/final/dem_dest"      
+#  [3] "archive/comm_fish/final/dem_nondest_hb" "archive/comm_fish/final/dem_nondest_lb"
+#  [5] "archive/comm_fish/final/pel_hb"         "archive/comm_fish/final/pel_lb"        
+#  [7] "archive/sst_old/final"                  "art_fish/final"                        
+#  [9] "benthic_structures/final"               "comm_fish/final/dem_dest"              
+# [11] "comm_fish/final/dem_nondest_hb"         "comm_fish/final/dem_nondest_lb"        
+# [13] "comm_fish/final/pel_hb"                 "comm_fish/final/pel_lb"                
+# [15] "direct_human/final"                     "land_based/final/nutrient"             
+# [17] "land_based/final/organic"               "light_pollution/final"                 
+# [19] "oa/final"                               "shipping/final"                        
+# [21] "slr/final"                              "sst/final"                             
+# [23] "uv/final" 
+
+cell_id_mol <- raster(cell_id_mol_file)
+cell_id_gp  <- raster('_spatial/cell_id_rast.tif')
+
+for(dir in str_dirs) {
+  ### dir <- str_dirs[2]
+  files <- list.files(dir, pattern = '.tif$', full.names = TRUE)
+  
+  yrs_vec <- str_extract(files, '[0-9]{4}') %>% as.numeric()
+  latest <- files[yrs_vec == max(yrs_vec)]
+  
+  str_gp_file <- file.path('_stressor_layers', 
+                           str_replace(basename(latest), 'mol', 'gp'))
+  
+  if(!file.exists(str_gp_file)) {
+    message('Processing ', basename(latest))
+    str_rast <- raster(latest)
+    str_df <- aggregate_to_cellid(str_rast, cell_id_mol)
+    
+    str_rast_gp <- raster::subs(cell_id_gp, str_df, 
+                                by = 'cell_id', which = 'mean_stressor')
+    
+    message('... writing ', basename(str_gp_file))
+    writeRaster(str_rast_gp, str_gp_file)
+    
+  } else {
+    message('File exists: ', str_gp_file, '... skipping!')
+  }
+}
+```
+
+```{r}
+gp_rasts <- list.files('_stressor_layers', pattern = '.tif$', full.names = TRUE)
+
+for(rast in gp_rasts) {
+  tmp <- raster(rast)
+  plot(tmp, main = basename(rast))
+}
+```
+
+
