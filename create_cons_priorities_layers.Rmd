@@ -120,7 +120,7 @@ plot(rast_cuts, main = 'Cumulative impact by quantile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'chi_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'chi_thresholds_10km.tif'), 
             overwrite = TRUE)
 ```
 
@@ -141,7 +141,7 @@ plot(rast_cuts, main = 'Trend in cumulative impact by quantile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'chi_trend_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'chi_trend_thresholds_10km.tif'), 
             overwrite = TRUE)
 
 ```
@@ -164,7 +164,7 @@ plot(rast_cuts, main = 'Species richness by quantile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'nspp_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'nspp_thresholds_10km.tif'), 
             overwrite = TRUE)
 ```
 
@@ -184,7 +184,7 @@ plot(rast_cuts, main = 'RR-weighted SR by qtile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'sr_rr_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'sr_rr_thresholds_10km.tif'), 
             overwrite = TRUE)
 ```
 
@@ -204,7 +204,7 @@ plot(rast_cuts, main = 'Mean risk by qtile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'risk_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'risk_thresholds_10km.tif'), 
             overwrite = TRUE)
 ```
 
@@ -224,7 +224,7 @@ plot(rast_cuts, main = 'Mean RR-weight risk by qtile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'risk_rr_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'risk_rr_thresholds_10km.tif'), 
             overwrite = TRUE)
 ```
 
@@ -244,7 +244,7 @@ plot(rast_cuts, main = '% threatened by qtile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'threat_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'threat_thresholds_10km.tif'), 
             overwrite = TRUE)
 ```
 
@@ -264,7 +264,7 @@ plot(rast_cuts, main = 'RR-wt % threatened by qtile thresholds')
 knitr::kable(t(qtile_vals_eez))
 knitr::kable(t(qtile_vals_abnj))
 
-writeRaster(rast_cuts, file.path(dir_cons, 'threat_rr_thresholds.tif'), 
+writeRaster(rast_cuts, file.path(dir_cons, 'threat_rr_thresholds_10km.tif'), 
             overwrite = TRUE)
 ```
 
