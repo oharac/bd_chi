@@ -1,0 +1,201 @@
+---
+title: 'Map species stressor intersections'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+dir_bd_anx <- '~/git-annex/bd_chi' ### this is on git-annex in home/ohara
+dir_str_10km <- file.path(dir_bd_anx, 'layers/stressors_10km')
+dir_str_95cv <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
+dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
+```
+
+
+# Summary
+
+Here we will calculate, for each species, a map of impacted area for each of the stressors to which the species is sensitive; stressor ranges may change over time as well.  These maps will be saved as a .csv of `cell_id`, stressor value `str_val`, and `str_year`.  The stressor values can easily be normalized later if desired.
+
+Maps (.csvs) will be saved for each species in a folder for each stressor.  For non-impacted species, a place-holder will be saved, perhaps with `cell_id = NA`.
+
+The matrix method would work well for calculating cumulative impact, but we will skip that for now to enable more resolution at the species and stressor level.
+
+## Methods summary
+
+Briefly, the method will loop over each stressor and species; if the species has a non-zero sensitivity to the stressor, the overlap of species range and stressor range will be mapped.  If the species is not sensitive, it will still be logged with a placeholder, for process checking...
+
+# Methods
+
+## Get the species sensitivities
+
+The species sensitivity dataframe is created in script 1: `1_calc_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors.
+
+```{r}
+spp_str_df <- read_csv(here('_output', 
+                            sprintf('spp_sensitivity_%s.csv', api_version)))
+
+spp_ids <- spp_str_df$iucn_sid %>% unique() %>% sort()
+
+str_names <- spp_str_df$stressor %>% unique() %>% sort()
+```
+
+## Loop over stressors
+
+Let's create a function to take a stressor name and use that to pull all the stressor layers (all years) into a raster stack.  Let's also create a function to turn the raster stack into a dataframe of cell IDs and filter to non-NA cells.
+
+```{r}
+build_str_stack <- function(str_name, dir_str = dir_str_95cv) {
+  ### str_name <- str_names[1]
+  str_rast_files <- list.files(dir_str, pattern = str_name, full.names = TRUE) %>%
+    sort()
+  years <- str_extract(basename(str_rast_files), '[0-9]{4}')
+  str_stack <- raster::stack(str_rast_files)
+  names(str_stack) <- sprintf('%s_%s', str_name, years)
+  
+  return(str_stack)
+}
+
+stack_to_df <- function(str_stack) {
+  rast_df_list <- parallel::mclapply(names(str_stack), mc.cores = 20,
+    FUN = function(x) {
+      ### x <- names(str_stack)[1]
+      rast <- str_stack[[x]]
+      df <- data.frame(cell_id = 1:ncell(rast),
+                       str_val = values(rast)) %>%
+        filter(!is.na(str_val))
+      })
+  names(rast_df_list) <- names(str_stack)
+  rast_df <- bind_rows(rast_df_list, .id = 'str_year')
+  return(rast_df)
+}
+
+get_spp_map <- function(spp_id) {
+  spp_map_file <- file.path(dir_spp_maps, 
+                            sprintf('iucn_sid_%s_mol.csv', spp_id))
+  if(!file.exists(spp_map_file)) {
+    warning('Map does not exist: ', basename(spp_map_file))
+    return(NULL)
+  }
+  spp_map <- read_csv(spp_map_file, col_types = cols(.default = 'i'))
+  if(nrow(spp_map) == 0) {
+    warning('Species map for ', spp_id, ' is zero length')
+  }
+  return(spp_map)
+}
+
+
+calc_intsx <- function(spp_id, str_df) {
+  spp_map <- get_spp_map(spp_id) %>%
+    filter(presence > 0 & !is.na(presence) & presence != 5) %>%
+    select(-presence)
+  spp_str_intsx <- spp_map %>%
+    inner_join(str_df, by = 'cell_id')
+  if(nrow(spp_str_intsx) == 0) {
+    ### no intersection; warn and create empty df
+    warning('No intersection found for species ', spp_id, ' and stressor ', str_name)
+    spp_str_intsx <- data.frame(
+      cell_id = NA,
+      str_val  = NA,
+      str_year = str_df$str_year %>% unique()
+    )
+  }
+  return(spp_str_intsx)
+}
+```
+
+Using this function, loop through each of the included stressors, build the stack, convert to df for easier handling, and then loop over all species to create a map of cell ID, stressor value, and year for all stressor occurrences on the species range.
+
+```{r}
+
+reload <- FALSE
+
+for(str_name in str_names) {
+  ### str_name <- str_names[1]
+  cat_msg('Processing ', str_name)
+  
+  dir_spp_str_rast <- file.path(dir_bd_anx, 'spp_str_rasts', str_name)
+  if(!dir.exists(dir_spp_str_rast)) {
+    dir.create(dir_spp_str_rast)
+  }
+  
+  str_stack <- build_str_stack(str_name)
+  str_df <- stack_to_df(str_stack)
+  
+  spp_str_sens <- spp_str_df %>%
+    filter(stressor == str_name) %>%
+    filter(sens > 0 & !is.na(sens))
+  
+  # for(spp_id in spp_ids) {
+  tmp <- parallel::mclapply(spp_ids, mc.cores = 20,
+    FUN = function(spp_id) { ### spp_id <- spp_ids[2]
+      cat_msg('species: ', spp_id, '; stressor: ', str_name,
+              '; calculating spp/str intersection')
+      
+      spp_str_file <- file.path(dir_spp_str_rast, 
+                                sprintf('spp_str_intsx_%s_mol10km.csv', spp_id))
+      
+      if(!file.exists(spp_str_file) | reload) {
+        if(spp_id %in% spp_str_sens$iucn_sid) {
+          ### species is sensitive; create intersection
+          spp_str_intsx <- calc_intsx(spp_id, str_df)
+        } else {
+          ### species is not sensitive; create dummy intersection
+          spp_str_intsx <- data.frame(
+            cell_id = NA,
+            str_val  = NA,
+            str_year = str_df$str_year %>% unique()
+          )
+        }
+        write_csv(spp_str_intsx, spp_str_file)
+      } else {
+        cat_msg(basename(spp_str_file), ' exists: skipping!')
+      }
+    }) ### end of mclapply
+}
+```
+
+# Check results
+
+Pull all results and make sure they are valid
+
+```{r}
+spp_mapped <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
+                         pattern = '.csv',
+                         recursive = TRUE, full.names = TRUE)
+
+chk <- parallel::mclapply(spp_mapped, mc.cores = 20, 
+                          ### spp_file <- spp_mapped[1]
+                          FUN = function(spp_file) {
+                            spp_id <- spp_file %>%
+                              basename() %>%
+                              str_replace_all('spp_str_intsx_|_mol10km.csv', '')
+                            tmp_df <- read_csv(spp_file) %>%
+                              group_by(str_year) %>%
+                              summarize(n_cells = sum(!is.na(cell_id))) %>%
+                              mutate(str = str_replace(str_year, '_[0-9]{4}', ''),
+                                     year = as.integer(str_extract(str_year, '[0-9]{4}')),
+                                     iucn_sid = as.integer(spp_id)) %>%
+                              select(-str_year)
+                            return(tmp_df)
+                          })
+
+```
+

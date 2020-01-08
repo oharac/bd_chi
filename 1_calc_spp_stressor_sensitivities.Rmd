@@ -1,0 +1,145 @@
+---
+title: 'Calculate stressor sensitivities from IUCN impact scores'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+```
+
+
+# Summary
+
+Stressor sensitivity is a very simplified version of stressor weights (see draft1 folder for complicated version).  Here, we will simply note whether a given species is sensitive to a given stressor, using the IUCN impact weights (i.e. non-negligible impact score), ranked as 0-3 (no, low, medium, high impact) for later differentiation if necessary.  For species with NA impact scores, we can imply sensitivity based on other fields, e.g. severity.  This version of sensitivity is not related to the range of exposure, as the weight calculation was doing.
+
+Sensitivity will denote whether a species range overlapping a stressor range constitutes an impact.
+
+## Methods summary
+
+Let $\mathbf X$ be an $n \times k$ matrix that maps species to cells, where $n$ is the number of species and $k$ is the number of cells.  Let $\mathbf Y$ be an $j \times k$ matrix that maps stressors to cells, where $j$ is the number of stressors.  Let $\mathbf W$ be an $n \times j$ matrix that provides stressor weights for each species.  Lower case (vectors $\mathbf x, \mathbf w$) indicate single-species map and weights.
+
+# Methods
+
+## Set up matrices
+
+### Create species-stressor impact matrix
+
+Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in `spp_rasts_mol_2019`), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.
+
+In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different activities that map to "direct human" impact) we summarize to the _maximum_ score out of all listed.  For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.
+
+In this step we will include all species including LC and DD.  We will however limit to comprehensively assessed taxa.
+
+```{r set up spp with maps and threats}
+spp_maps <- read_csv(here('_data', 
+                          sprintf('spp_marine_maps_%s.csv', api_version)))
+
+spp_risk <- read_csv(here('_data', 
+                          sprintf('iucn_risk_current_%s.csv', api_version))) %>%
+  select(iucn_sid, cat_score)
+
+chi_lookup <- read_csv(here('_raw/iucn_threat_to_chi_lookup.csv')) %>%
+  mutate(stressor = str_split(stressor, ';')) %>%
+  unnest(stressor) %>%
+  filter(str_detect(stressor, '[a-z]'))
+
+spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
+                               sprintf('iucn_spp_threats_%s.csv', api_version))) %>%
+  left_join(chi_lookup, by = 'code') %>%
+  filter(!is.na(code))
+
+spp_to_include <- spp_maps %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  # filter(!is.na(cat_score)) %>%
+    ### risk category is NA/DD
+  # filter(!cat_score %in% c(0, 1)) %>%
+    ### risk category is neither LC nor EX
+  filter(presence != 5) %>%
+    ### exclude "extinct" polygons
+  filter(comp_assessed)
+
+### Join the maps to the threats.
+### * recategorize sensitivities based on impact score
+### * if no impact score, categorize sensitivities based on severity
+### * rather than filtering, set NA and past scores to 0
+###   * this allows non-threatened species to remain in the mix
+threats_to_maps <- spp_to_include %>%
+  left_join(spp_threats, by = 'iucn_sid') %>%
+  ### code low-med-high sensitivity based on impact:
+  mutate(sens = case_when(score_num %in% 0:2 ~ 0,      ### no/negligible impact
+                          score_num %in% 3:5 ~ 1,      ### low impact
+                          score_num %in% 6:7 ~ 2,      ### med impact
+                          score_num > 7      ~ 3,      ### high impact
+                          TRUE               ~ NA_real_)) %>% ### set all else to NA
+  ### for NA impact, code sensitivity based on severity:
+  mutate(sev = tolower(severity),
+         sens = case_when(is.na(sens) & str_detect(sev, 'negligible|no decl') ~ 0,
+                          is.na(sens) & str_detect(sev, 'very rapid decl')    ~ 3,
+                          is.na(sens) & str_detect(sev, 'rapid decl')         ~ 2,
+                          is.na(sens) & str_detect(sev, 'causing|slow, significant') ~ 1,
+                          TRUE ~ sens),
+         sens = as.integer(sens)) %>%
+  ### set past impacts and unresolved sensitivies to 0:
+  mutate(sens = ifelse(timing == 'Past, Unlikely to Return', 0, sens),
+         sens = ifelse(is.na(sens), 0, sens)) %>%
+  filter(!is.na(code)) %>% ### drop code mismatches
+  filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
+  select(iucn_sid, cat_score, sens, 
+         code, 
+         # desc, 
+         stressor) %>%
+  distinct()
+
+### sensitivity categories:
+# [1] "Unknown"                          "Negligible declines"             
+# [3] NA                                 "No decline"                      
+# [5] "Rapid Declines"                   "Slow, Significant Declines"      
+# [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
+
+write_csv(threats_to_maps, 
+          here('_output', sprintf('spp_sensitivity_%s.csv', api_version)))
+
+n_comp <- spp_maps %>% 
+  filter(comp_assessed) %>% 
+  .$iucn_sid %>% unique() %>% length()
+n_threatened <- spp_to_include %>% 
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  .$iucn_sid %>% unique() %>% length()
+
+n_stressed <- threats_to_maps %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  filter(sens > 0) %>%
+  .$iucn_sid %>% unique() %>% length()
+
+n_stressed_no_cc <- threats_to_maps %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  filter(sens > 0) %>%
+  filter(!str_detect(code, '^11')) %>%
+  .$iucn_sid %>% unique() %>% length()
+  
+```
+
+Out of the list of `r n_comp` marine species with maps, `r n_threatened` are neither Least Concern nor Data Deficient.  
+
+The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one stressor is: `r n_stressed`.
+
+The number of threatened spp with sensitivity to at least one stressor, excluding climate stressors, is: `r n_stressed_no_cc`.
+
+NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
+<!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors -->
+
