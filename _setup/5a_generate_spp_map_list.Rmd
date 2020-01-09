@@ -18,18 +18,10 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
-
 library(raster)
-library(rgeos)
-source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
-  ### includes library(tidyverse); library(stringr); dir_M points to ohi directory
-library(sf)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
-dir_git <- here()
-
-source(file.path(dir_git, '_setup/common_fxns.R'))
+source(here('common_fxns.R'))
 
 dir_bli <- file.path(dir_M, 'git-annex/globalprep/_raw_data/birdlife_intl/d2019')
 dir_shp <- file.path(dir_M, 'git-annex/globalprep/_raw_data/iucn_spp/d2019')
@@ -68,7 +60,7 @@ if(!file.exists(bli_marine_shp)) {
   
   bli_sf <- st_read(file.path(dir_bli, 'BOTW.gdb'))
   
-  marine_spp <- read_csv(file.path(dir_data, sprintf('spp_marine_from_api_%s.csv', api_version)),
+  marine_spp <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv', api_version)),
                          col_types = 'dcc')
   
   bli_marine_sf <- bli_sf %>%
@@ -106,13 +98,12 @@ bli_dbfs  <- list.files(dir_bli, pattern = '\\.dbf$', full.names = TRUE)
 shps_dbfs <- c(iucn_dbfs, bli_dbfs)
 
 ### This is all "marine" species by habitat and system:
-marine_spp <- read_csv(file.path(dir_data, 
-                                 sprintf('spp_marine_from_api_%s.csv', 
-                                         api_version)),
+marine_spp <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv', 
+                                             api_version)),
                        col_types = 'dcc')
 
 ### This is *all* spp from the API, filtered down to those in marine_spp: 
-api_spp <- read_csv(file.path(dir_o_anx, 'iucn', 
+api_spp <- read_csv(file.path(dir_bd_anx, 'iucn', 
                               sprintf('spp_info_from_api_%s.csv', api_version)),
                     col_types = 'dccccccccc') %>%
   filter(iucn_sid %in% marine_spp$iucn_sid)
@@ -217,10 +208,10 @@ subpops_match <- subpops_match_raw %>%
 ### * Not in API subpops; Data deficient; ok to drop it
 ### Orcaella brevirostris Chilika Lake, Mekong River, Songkhla Lake
 ### * In shapefile, but not showing up in assessments
-write_csv(subpops_match, 
-          file.path(dir_setup, 
-                    sprintf('int/subpops_match_api_to_shp_%s.csv', 
-                            api_version)))
+subpops_file <- here('_setup', 'int',
+                    sprintf('subpops_match_api_to_shp_%s.csv', 
+                            api_version))
+write_csv(subpops_match, subpops_file)
 
 ```
 
@@ -229,8 +220,7 @@ write_csv(subpops_match,
 Not all maps are for species that are included in comprehensively assessed taxonomic groups.  Get info on comprehensive assessment status for species from the API.
 
 ``` {r get comp assess status}
-comp_file <- file.path(dir_data, 
-                       sprintf('iucn_comp_assessed_%s.csv', api_version))
+comp_file <- here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version))
 if(!file.exists(comp_file)) {
   comp_gps_url <- 'http://apiv3.iucnredlist.org/api/v3/comp-group/list?token=%s'
   comp_gps <- fromJSON(sprintf(comp_gps_url, api_key)) %>%
@@ -296,9 +286,9 @@ map_info_sans_dupes <- map_info_raw %>%
   distinct()
 ### NOTE: still has terrestrial mammals and reptiles in it...
 
-subpops_match <- read_csv(file.path(dir_setup, 'int',
-                                    sprintf('subpops_match_api_to_shp_%s.csv', 
-                                            api_version)),
+subpops_match <- read_csv(here('_setup', 'int',
+                               sprintf('subpops_match_api_to_shp_%s.csv', 
+                                       api_version)),
                           col_types = 'dccdc')
 
 map_info_add_subpops <- map_info_sans_dupes %>%
@@ -308,9 +298,8 @@ map_info_add_subpops <- map_info_sans_dupes %>%
   distinct()
 
 ### filter to marine habitat species (to drop terrestrial reptiles e.g.)
-marine_spp_ids <- read_csv(file.path(dir_data,
-                                     sprintf('spp_marine_from_api_%s.csv', 
-                                             api_version)),
+marine_spp_ids <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv',
+                                                 api_version)),
                            col_types = 'dcc') %>%
   select(iucn_sid, max_depth)
 
@@ -347,24 +336,23 @@ marine_map_info <- marine_map_info %>%
                                 TRUE, comp_assessed))
 
 write_csv(marine_map_info, 
-          file.path(dir_data,
-                    sprintf('spp_marine_maps_%s.csv', api_version)))
+          here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
 
 ```
 
 ``` {r generate table of species}
 
-marine_map_info <- read_csv(file.path(dir_data,
+marine_map_info <- read_csv(here('_data',
     sprintf('spp_marine_maps_%s.csv', api_version))) %>%
   select(-presence) %>%
   distinct()
 
-taxa_info <- read_csv(file.path(dir_o_anx, 'iucn', 
-                                'spp_info_from_api_2018-1.csv')) %>%
+taxa_info <- read_csv(file.path(dir_bd_anx, 'iucn', 
+                                sprintf('spp_info_from_api_%s.csv', api_version))) %>%
   select(iucn_sid, kingdom:family)
 
-cat_info <- read_csv(file.path(dir_data, 
-                               'iucn_risk_current_2018-1.csv')) %>%
+cat_info <- read_csv(here('_data', 
+                          sprintf('iucn_risk_current_%s.csv', api_version))) %>%
   select(iucn_sid, cat_score) %>%
   filter(!is.na(cat_score))
 
@@ -413,8 +401,6 @@ all_sum <- bind_rows(fish_sum, nonfish_sum, basic_sum) %>%
   mutate(family = ifelse(family == 'NA', NA, family),
          subpops = ifelse(subpops == 0, NA, subpops))
 
-write_csv(all_sum, file.path(dir_git, '_output', 
-                             'spp_included_summary.csv'))
-write_csv(all_in_the_fam, file.path(dir_git, '_output', 
-                                    'spp_included_by_family.csv'))
+write_csv(all_sum, here('_output', 'spp_included_summary.csv'))
+write_csv(all_in_the_fam, here('_output', 'spp_included_by_family.csv'))
 ```

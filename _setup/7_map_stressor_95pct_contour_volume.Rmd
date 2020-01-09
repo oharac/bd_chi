@@ -1,0 +1,81 @@
+---
+title: 'Map stressor extent to 95% contour volume'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+# library(rgeos)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
+  ### includes library(tidyverse); library(stringr); dir_M points to ohi directory
+
+source(here('common_fxns.R'))
+source(here('_setup/rasterize_fxns.R'))
+
+```
+
+# Summary
+
+Using the stressor maps, aggregated to 10 km Mollweide, determine the threshold for 95% contour volume, then clip the map to values at or above that threshold.  Save the resulting maps as .csvs for each stressor over all years, containing `cell_id`, `stressor`, `year`, `value`.  The `value` field can be normalized later if desired.
+
+# Data sources
+
+Halpern et al. 2019
+
+# Methods
+
+## Make list of all stressor layers
+
+Get all the stressor layers that have been aggregated to 10 km Mollweide.
+
+```{r}
+str_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km'),
+                        pattern = '.tif', full.names = TRUE)
+
+str_df <- data.frame(file = str_files) %>%
+  mutate(stressor = str_replace(basename(file), '_[0-9]{4}.+', ''),
+         year = as.integer(str_extract(basename(file), '[0-9]{4}')))
+```
+
+## Loop over all stressors, process 95% contour volume
+
+For each stressor, for each year, process the 95% contour volume and save as a raster.  Use `mclapply` for parallel calculations.
+
+```{r}
+reload <- FALSE
+
+tmp <- parallel::mclapply(str_files, mc.cores = 8,
+  FUN = function(f) { ### f <- str_files[1]
+    message('Processing ', basename(f))
+    new_file <- str_replace(basename(f), '.tif', '_95cv.tif') %>%
+      str_replace('_rescaled', '')
+    outfile <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv',
+                         new_file)
+    if(!file.exists(outfile) | reload) {
+      rast <- raster(f)
+      rast_95cv <- map_contour_volume(rast, pct = 0.95)
+      writeRaster(rast_95cv, outfile, overwrite = TRUE)
+    } else {
+      message('File exists: ', basename(outfile), '... skipping!')
+    }
+  })
+```
+
+

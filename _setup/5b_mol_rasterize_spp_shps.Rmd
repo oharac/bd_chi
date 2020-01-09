@@ -22,14 +22,12 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 library(raster)
-library(rgeos)
+# library(rgeos)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
   ### includes library(tidyverse); library(stringr); dir_M points to ohi directory
 library(sf)
 
-dir_git <- here()
-
-source(file.path(dir_git, '_setup/common_fxns.R'))
+source(here('common_fxns.R'))
 
 dir_bli <- file.path(dir_M, 'git-annex/globalprep/_raw_data/birdlife_intl/d2019')
 dir_shp <- file.path(dir_M, 'git-annex/globalprep/_raw_data/iucn_spp/d2019')
@@ -81,7 +79,7 @@ rast_base <- raster(file.path(dir_spatial, 'cell_id_mol.tif'))
 
 ### If some species already processed, remove from the list to process.
 if(reload == FALSE) {
-  maps_already_rasterized <- list.files(file.path(dir_o_anx, 'spp_rasts_mol_2019'),
+  maps_already_rasterized <- list.files(file.path(dir_bd_anx, 'spp_rasts_mol_2019'),
                                         pattern = '.csv') %>%
     str_extract('[0-9]+') %>%
     as.integer()
@@ -95,7 +93,7 @@ if(reload == FALSE) {
 #   filter(str_detect(dbf_file, 'REPTILES'))
 # 
 # asdf <- paste0('iucn_sid_', maps_to_rasterize$iucn_sid, '.csv')
-# zxcv <- list.files(file.path(dir_o_anx, 'spp_rasts_mol_2019'), 
+# zxcv <- list.files(file.path(dir_bd_anx, 'spp_rasts_mol_2019'), 
 #                    full.names = TRUE, 
 #                    pattern = paste0(asdf, collapse = '|'))
 # zzz <- file.mtime(zxcv)
@@ -186,11 +184,11 @@ if(nrow(maps_to_rasterize) == 0) { ### all maps accounted for as .csvs
     #   # polys_match_non_buff <- polys_match %>%
     #   #   filter(!shp_iucn_sid %in% c(3897, 6494, 8005, 4615))
     #   # polys_match <- rbind(polys_match_non_buff, polys_match_buff)
-    #   # st_write(polys_match, file.path(dir_o_anx, 'reptiles_shp_buffered.shp'))
-    #   # dbf <- foreign::read.dbf(file.path(dir_o_anx, 'reptiles_shp_buffered.dbf'))
-    #   # foreign::write.dbf(dbf, file.path(dir_o_anx, 'reptiles_shp_buffered.dbf'))
+    #   # st_write(polys_match, file.path(dir_bd_anx, 'reptiles_shp_buffered.shp'))
+    #   # dbf <- foreign::read.dbf(file.path(dir_bd_anx, 'reptiles_shp_buffered.dbf'))
+    #   # foreign::write.dbf(dbf, file.path(dir_bd_anx, 'reptiles_shp_buffered.dbf'))
     #   
-    #   polys_match <- st_read(file.path(dir_o_anx, 'reptiles_shp_buffered.shp')) %>%
+    #   polys_match <- st_read(file.path(dir_bd_anx, 'reptiles_shp_buffered.shp')) %>%
     #     setNames(c("shp_iucn_sid", "sciname", "subpop", "presence",
     #                "iucn_sid", "max_depth", "geometry"))
     # }
@@ -245,7 +243,7 @@ if(nrow(maps_to_rasterize) == 0) { ### all maps accounted for as .csvs
           spp_rast <- mask(spp_rast, rast_bathy)
         }
         ### write out as a raster:
-        # rast_file <- file.path(dir_o_anx, 'spp_rasts_mol_2019',
+        # rast_file <- file.path(dir_bd_anx, 'spp_rasts_mol_2019',
         #                        sprintf('iucn_sid_%s_mol.tif', spp))
         # raster::writeRaster(spp_rast, rast_file, overwrite = TRUE)
         ### See note below about file size; rasters are larger than csvs in general
@@ -259,7 +257,7 @@ if(nrow(maps_to_rasterize) == 0) { ### all maps accounted for as .csvs
           cat_msg('Species ID ', spp, ' resulted in a zero-length dataframe.')
         }
         
-        write_csv(spp_present, file.path(dir_o_anx, 'spp_rasts_mol_2019',
+        write_csv(spp_present, file.path(dir_bd_anx, 'spp_rasts_mol_2019',
                                          sprintf('iucn_sid_%s_mol.csv', spp)))
         
         return(NA)
@@ -279,10 +277,10 @@ maps <- read_csv(file.path(dir_data,
   mutate(spp_group = str_replace(spp_group, '.dbf', '')) %>%
   distinct()
 
-csvs <- list.files(file.path(dir_o_anx, 'spp_rasts_mol_2019')) %>%
+csvs <- list.files(file.path(dir_bd_anx, 'spp_rasts_mol_2019')) %>%
   str_extract('[0-9]+')
 
-x <- list.files(file.path(dir_o_anx, 'spp_rasts_mol_2019'),
+x <- list.files(file.path(dir_bd_anx, 'spp_rasts_mol_2019'),
                 full.names = TRUE)
 x <- x[str_detect(x, paste0(csvs, collapse = '|'))]
 

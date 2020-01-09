@@ -23,7 +23,6 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
-dir_bd_anx <- '~/git-annex/bd_chi' ### this is on git-annex in home/ohara
 dir_str_10km <- file.path(dir_bd_anx, 'layers/stressors_10km')
 dir_str_95cv <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
 dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')

@@ -26,13 +26,14 @@ clip_to_globe <- function(x) {
     ### The st_crop solution works great most of the time; but for
     ### spp 21132910 (at least) the crop turned things into linestrings
     ### that couldn't be converted with st_cast('MULTIPOLYGON').
+    message('Smoothing to half degree max')
+    z <- smoothr::densify(z, max_distance = 0.5)
   } else {
     message('All bounds OK, no clipping necessary')
     z <- x
   }
   return(z)
 }
-
 
 valid_check <- function(spp_shp) {
   valid <- st_is_valid(spp_shp)
@@ -76,7 +77,32 @@ valid_check <- function(spp_shp) {
   return(spp_shp)
 }
 
-
 drop_geom <- function(sf) {
   sf %>% as.data.frame() %>% select(-geometry)
+}
+
+calc_cv_thresh <- function(rast, pct = 0.95) {
+  ### calculate threshold for value at or just above a given pct contour volume
+  x <- values(rast)[!is.na(values(rast))] %>% sort(decreasing = TRUE)
+  df <- data.frame(x) %>%
+    mutate(cum_x = cumsum(x),
+           cum_pct = cum_x / last(cum_x)) %>%
+    filter(cum_pct >= pct)
+  thresh <- df$x[1]
+  x_thresh <- x[x == thresh]
+  p_x <- length(x_thresh) / length(x)
+  p_x_val <- sum(x_thresh) / sum(x)
+  if(length(x_thresh) > 1) {
+    warning('Threshold value ', thresh, ' appears ', length(x_thresh), ' times;',
+            '\nthis is ', round(p_x * 100, 3), '% of the cells and ',
+            round(p_x_val * 100, 3), '% of the cumulative values!')
+  }
+  return(thresh)
+}
+
+map_contour_volume <- function(rast, pct = 0.95) {
+  thresh <- calc_cv_thresh(rast, pct)
+  rast_cv <- rast
+  values(rast_cv)[values(rast_cv) > thresh] <- NA
+  return(rast_cv)
 }
