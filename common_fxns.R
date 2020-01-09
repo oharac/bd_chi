@@ -14,7 +14,7 @@ dir_setup   <- file.path(dir_git, '_setup')
 dir_data    <- file.path(dir_git, '_data')
 dir_spatial <- file.path(dir_git, '_spatial')
 dir_output  <- file.path(dir_git, '_output')
-dir_o_anx   <- file.path(dir_O, 'git-annex/bd_chi')
+dir_bd_anx   <- file.path(dir_O, 'git-annex/bd_chi')
 
 
 ### cat if not knitting; message if knitting
@@ -51,10 +51,13 @@ api_file <- file.path(dir_M, 'git-annex/globalprep/spp_ico',
                       'api_key.csv')
 api_key <- scan(api_file, what = 'character')
 
-api_version <- fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
+api_version_current <- fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
   .$version
 
-# api_version <- '2018-1'
+api_version <- '2019-2'
+if(api_version_current != api_version) {
+  warning('IUCN API at ', api_version_current, ' but using ', api_version)
+}
 
 get_from_api <- function(url, param, api_key, delay, verbose = FALSE) {
   
