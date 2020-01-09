@@ -18,22 +18,9 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
-
-
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
-dir_git <- '~/github/spp_risk_dists'
-
-### goal specific folders and info
-dir_setup   <- file.path(dir_git, 'setup')
-dir_o_anx <- file.path(dir_O, 'git-annex/spp_risk_dists')
-
-# ### provenance tracking
-library(provRmd); prov_setup()
-
-source(file.path(dir_setup, 'common_fxns.R'))
+source(here('common_fxns.R'))
 
 ```
 

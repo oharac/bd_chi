@@ -17,11 +17,9 @@ output:
 ---
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
-
-### provenance tracking
-library(provRmd); prov_setup()
 
 ```
 
@@ -44,7 +42,7 @@ Using the `mc_get_from_api()` function, get the entire species list of IUCN Red 
 ``` {r get_spp_info_from_api}
 ### Get all pages and bind into total species list.  This is pretty fast.
 
-spp_info_from_api_file <- file.path(dir_o_anx, sprintf('iucn/spp_info_from_api_%s.csv',
+spp_info_from_api_file <- file.path(dir_bd_anx, sprintf('iucn/spp_info_from_api_%s.csv',
                                                        api_version))
 reload <- FALSE
 
@@ -74,8 +72,7 @@ if(!file.exists(spp_info_from_api_file) | reload) {
 } else {
   
   cat_msg('File of API species list exists: \n  ', spp_info_from_api_file)
-  git_prov(spp_info_from_api_file, filetype = 'output')
-  
+
 }
 
 ```
@@ -90,7 +87,7 @@ From the full IUCN species list, send each IUCN species ID into the API to get t
 ### For each species ID on the total list, get a dataframe of habitats.
 ### This is slow.  Skip if possible.
 
-spp_habs_from_api_file <- file.path(dir_o_anx, 
+spp_habs_from_api_file <- file.path(dir_bd_anx, 
   sprintf('iucn/spp_habs_from_api_%s.csv', api_version))
 reload <- FALSE
 
@@ -111,14 +108,14 @@ if(!file.exists(spp_habs_from_api_file) | reload) {
   chunk_size <- 10
   n_chunks <- ceiling(length(spp_ids_all)/chunk_size)
   
-  if(!dir.exists(file.path(dir_o_anx, 'tmp'))) {
-    dir.create(file.path(dir_o_anx, 'tmp'))
+  if(!dir.exists(file.path(dir_bd_anx, 'tmp'))) {
+    dir.create(file.path(dir_bd_anx, 'tmp'))
   }
   
   for(j in 1:n_chunks) { 
     ### j <- 2
     spp_index <- c( ((j - 1) * chunk_size + 1) : min((j * chunk_size), length(spp_ids_all)) )
-    chunk_file <- file.path(dir_o_anx, 'tmp', 
+    chunk_file <- file.path(dir_bd_anx, 'tmp', 
                             sprintf('spp_habs_chunk_%s_%s.csv', 
                             min(spp_index), max(spp_index)))
 
@@ -142,7 +139,7 @@ if(!file.exists(spp_habs_from_api_file) | reload) {
   ### fields: 
   ### id | code | habitat | suitability | season | majorimportance
 
-  spp_hab_chunk_files <- list.files(file.path(dir_o_anx, 'tmp'), 
+  spp_hab_chunk_files <- list.files(file.path(dir_bd_anx, 'tmp'), 
                                     pattern = 'spp_habs_chunk', 
                                     full.names = TRUE)
   
@@ -164,8 +161,7 @@ if(!file.exists(spp_habs_from_api_file) | reload) {
 } else {
   
   cat_msg('File of species habitats from API exists: \n  ', spp_habs_from_api_file)
-  git_prov(spp_habs_from_api_file, filetype = 'output')
-  
+
 }
 
 
@@ -175,7 +171,7 @@ if(!file.exists(spp_habs_from_api_file) | reload) {
 ### For each species ID on the total list, get species information, which
 ### includes "system" of marine, terrestrial, or both.
 
-spp_sys_from_api_file <- file.path(dir_o_anx, 
+spp_sys_from_api_file <- file.path(dir_bd_anx, 
   sprintf('iucn/spp_systems_from_api_%s.csv', api_version))
 reload <- FALSE
 
@@ -191,14 +187,14 @@ if(!file.exists(spp_sys_from_api_file) | reload) {
   chunk_size <- 2000
   n_chunks <- ceiling(length(spp_ids_all)/chunk_size)
   
-  if(!dir.exists(file.path(dir_o_anx, 'tmp'))) {
-    dir.create(file.path(dir_o_anx, 'tmp'))
+  if(!dir.exists(file.path(dir_bd_anx, 'tmp'))) {
+    dir.create(file.path(dir_bd_anx, 'tmp'))
   }
   
   for(j in 1:n_chunks) { 
     ### j <- 1
     spp_index <- c( ((j - 1) * chunk_size + 1) : min((j * chunk_size), length(spp_ids_all)) )
-    chunk_file <- file.path(dir_o_anx, 'tmp', 
+    chunk_file <- file.path(dir_bd_anx, 'tmp', 
                     sprintf('spp_sys_chunk_%s_%s.csv', 
                             min(spp_index), max(spp_index)))
 
@@ -227,7 +223,7 @@ if(!file.exists(spp_sys_from_api_file) | reload) {
   ### fields: 
   ### id | code | habitat | suitability | season | majorimportance
 
-  spp_sys_chunk_files <- list.files(file.path(dir_o_anx, 'tmp'), 
+  spp_sys_chunk_files <- list.files(file.path(dir_bd_anx, 'tmp'), 
                                     pattern = 'spp_sys_chunk', 
                                     full.names = TRUE)
   
@@ -242,8 +238,7 @@ if(!file.exists(spp_sys_from_api_file) | reload) {
 } else {
   
   cat_msg('File of species habitats from API exists: \n  ', spp_sys_from_api_file)
-  git_prov(spp_sys_from_api_file, filetype = 'output')
-  
+
 }
 
 
@@ -303,7 +298,7 @@ It appears that coastal species suffer from the extended buffers so clipping the
 ``` {r determine_marine_spp_from_api}
 
 spp_habs_from_api <- read_csv(spp_habs_from_api_file,
-                              col_types = 'iccccc__')
+                              col_types = cols(.default = 'c', iucn_sid = 'i'))
 ### 'code' is character since it is in the form x.xx.xxx
 
 spp_systems_from_api <- read_csv(spp_sys_from_api_file) %>%
@@ -413,12 +408,12 @@ write_csv(spp_habs_clean,
   
 -----
 
-``` {r get_iucn_past_assessments}
+``` {r get_iucn_past_assessments, eval = FALSE}
 
 spp_timeseries_file <- file.path(dir_data,
                                  sprintf('iucn_risk_timeseries_%s.csv', api_version))
 
-iucn_spp_info <- read_csv(file.path(dir_o_anx, 
+iucn_spp_info <- read_csv(file.path(dir_bd_anx, 
                                     sprintf('iucn/spp_info_from_api_%s.csv', api_version)))
 
 iucn_marine_spp <- read_csv(file.path(dir_data,
@@ -443,7 +438,7 @@ if(!file.exists(spp_timeseries_file) | reload) {
   for(j in 1:n_chunks) { 
     ### j <- 1
     spp_index <- c( ((j - 1) * chunk_size + 1) : min((j * chunk_size), length(sid_list)) )
-    chunk_file <- file.path(dir_o_anx, 'tmp', 
+    chunk_file <- file.path(dir_bd_anx, 'tmp', 
                             sprintf('spp_past_assess_chunk_%s_%s.csv', 
                             min(spp_index), max(spp_index)))
 
@@ -464,7 +459,7 @@ if(!file.exists(spp_timeseries_file) | reload) {
     }
   }
   
-  spp_past_chunk_files <- list.files(file.path(dir_o_anx, 'tmp'), 
+  spp_past_chunk_files <- list.files(file.path(dir_bd_anx, 'tmp'), 
                                   pattern = 'spp_past_assess_chunk', 
                                   full.names = TRUE)
   
@@ -499,8 +494,6 @@ if(!file.exists(spp_timeseries_file) | reload) {
   
 } else {
   
-  git_prov(spp_timeseries_file, filetype = 'output')
-  
 }
 
 ```
@@ -509,7 +502,7 @@ if(!file.exists(spp_timeseries_file) | reload) {
 
 spp_current_file <- file.path(dir_data, 
                               sprintf('iucn_risk_current_%s.csv', api_version))
-iucn_spp_info <- read_csv(file.path(dir_o_anx, 
+iucn_spp_info <- read_csv(file.path(dir_bd_anx, 
                                     sprintf('iucn/spp_info_from_api_%s.csv', api_version)))
 
 iucn_marine_spp <- read_csv(file.path(dir_data,
@@ -561,20 +554,6 @@ if(!file.exists(spp_current_file) | reload) {
   
   write_csv(spp_current_df2, spp_current_file)
   
-} else {
-  
-  git_prov(spp_current_file, filetype = 'output')
-  
 }
 
 ```
-
-
------
-
-``` {r prov_footer, results = 'asis'}
-
-prov_wrapup(commit_outputs = FALSE)
-
-```
-

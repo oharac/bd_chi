@@ -18,20 +18,13 @@ output:
 
 ``` {r setup, echo = FALSE, message = FALSE, warning = FALSE}
 
-knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
-                      echo = TRUE, message = FALSE, warning = FALSE)
-
 library(raster)
 library(sf)
 library(fasterize)
 
-source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
-  ### includes library(tidyverse); library(stringr); dir_M points to ohi directory
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
-dir_git <- '~/github/spp_risk_dists'
-
-### project specific folders and info
-source(file.path(dir_git, '_setup/common_fxns.R'))
+source(here('common_fxns.R'))
 
 ```
 
@@ -50,7 +43,7 @@ First, get a local copy of the CHI raster.  Then aggregate by a factor of 11, di
 
 ```{r}
 
-ocean_mol_1km_file <- file.path(dir_o_anx, 'spatial/ocean_mol.tif')
+ocean_mol_1km_file <- file.path(dir_bd_anx, 'spatial/ocean_1km_mol.tif')
 if(!file.exists(ocean_mol_1km_file)) {
   file.copy(from = '/home/shares/ohi/model/GL-NCEAS-Halpern2008/tmp/ocean.tif',
             to = ocean_mol_1km_file)

@@ -1,0 +1,270 @@
+---
+title: 'Create conservation priorities layers'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+
+dir_bd_anx <- '~/git-annex/bd_chi' ### this is on git-annex in home/ohara
+dir_cons <- 'layers/cons_priorities'
+```
+
+# Summary
+
+Following Selig et al. 2014, estimate conservation priorities based on biodiversity metrics and threats.
+
+* Identify top 10% and bottom 10% of cells based on cumulative impacts.
+* Identify top 5% of cells based on species richness and range-rarity species richness, separately within EEZ and ABNJ.
+* New: Identify top 5% and bottom 5% of cells based on mean biodiversity risk.
+    * when intersecting with species richness, maybe up thresholds on both to 10%?
+* New: Identify top 10% and bottom 10% of cells based on trends in CHI.
+    * when intersecting with CHI, maybe up thresholds on both to 20%?
+
+Intersect these various layers and see what magic occurs.
+
+# Data Sources
+
+Halpern et al. 2019, O'Hara et al. 2019
+
+# Methods
+
+## Identify EEZ and ABNJ regions
+
+```{r}
+eez_rast_raw <- raster('_spatial/eez_rast.tif')
+
+eez_rast <- eez_rast_raw
+values(eez_rast)[values(eez_rast_raw) > 255 | values(eez_rast_raw) == 213] <- NA
+
+abnj_rast <- eez_rast_raw
+values(abnj_rast)[values(eez_rast_raw) <= 255 & values(eez_rast_raw) != 213] <- NA
+
+plot(eez_rast, main = 'EEZ regions')
+plot(abnj_rast, main = 'ABNJ regions')
+```
+
+## Identify top/bottom 10% and 20% of CHI and dCHI/dt
+
+The function `classify_qtiles()` identifies thresholds separately for EEZ and ABNJ regions, calculates the quantiles for each region separately, then combines into a single raster.  EEZ quantiles are positive, ABNJ are negative, just to help keep them separate.
+
+```{r}
+classify_qtiles <- function(rast, qtiles) {
+  ### qtiles is a vector of four threshold cutoffs: the lowest two are
+  ### bottom quantiles (i.e. classify that and lower as in the quantile)
+  ### while the highest two are top quantiles (i.e. classify that and
+  ### higher).
+  if(length(qtiles) != 4) {
+    stop('Provide a vector of two bottom and two top quantiles')
+  }
+  qtiles <- sort(qtiles) ### they need to be in order from low to high
+  
+  r_eez  <- mask(rast, eez_rast)
+  r_abnj <- mask(rast, abnj_rast)
+  
+  qtile_vals_eez  <- quantile(values(r_eez),  qtiles, na.rm = TRUE) %>%
+    setNames(qtiles)
+  qtile_vals_abnj <- quantile(values(r_abnj), qtiles, na.rm = TRUE) %>%
+    setNames(qtiles)
+
+  rast_cuts_eez  <- process_qtiles(r_eez,  qtile_vals_eez)
+  rast_cuts_abnj <- process_qtiles(r_abnj, qtile_vals_abnj) * -1
+  
+  rast_cuts <- rast_cuts_eez
+  rast_na_vec <- is.na(values(rast_cuts))
+  values(rast_cuts)[rast_na_vec] <- values(rast_cuts_abnj)[rast_na_vec]
+  return(list('map' = rast_cuts, 'cut_vals_eez' = qtile_vals_eez, 'cut_vals_abnj' = qtile_vals_abnj))
+}
+
+process_qtiles <- function(rast, qtile_vals) {
+  ### qtile_vals is a named list
+  tmp <- rast
+  qtiles <- as.numeric(names(qtile_vals))
+  values(tmp) <- case_when(values(rast) < qtile_vals[1] ~ qtiles[1],
+                           values(rast) < qtile_vals[2] ~ qtiles[2],
+                           values(rast) > qtile_vals[4] ~ qtiles[4],
+                           values(rast) > qtile_vals[3] ~ qtiles[3],
+                           TRUE                         ~ NA_real_)
+  return(tmp)
+}
+```
+
+```{r}
+chi_rast <- raster('layers/impacts_gp/chi_2013_gp.tif')
+
+qtiles <- c(.1, .2, .8, .9)
+
+rast_reclass <- classify_qtiles(chi_rast, qtiles)
+rast_cuts    <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = 'Cumulative impact by quantile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'chi_thresholds_10km.tif'), 
+            overwrite = TRUE)
+```
+
+-----
+
+``` {r}
+### Repeat the same process for the trend:
+dchi_rast <- raster('layers/impacts_gp/chi_slope_gp.tif')
+
+qtiles <- c(.1, .2, .8, .9)
+
+rast_reclass <- classify_qtiles(dchi_rast, qtiles)
+rast_cuts <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = 'Trend in cumulative impact by quantile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'chi_trend_thresholds_10km.tif'), 
+            overwrite = TRUE)
+
+```
+
+
+
+## Identify top/bottom 5% and 10% of species richness, range-rarity SR
+
+```{r}
+sr_rast <- raster('layers/bd_risk/n_spp_risk_raster_comp.tif')
+
+qtiles <- c(.05, .1, .9, .95)
+
+rast_reclass <- classify_qtiles(sr_rast, qtiles)
+rast_cuts <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = 'Species richness by quantile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'nspp_thresholds_10km.tif'), 
+            overwrite = TRUE)
+```
+
+-----
+
+```{r}
+sr_rr_rast <- raster('layers/bd_risk/sr_rr_risk_raster_comp.tif')
+
+qtiles <- c(.05, .1, .9, .95)
+
+rast_reclass <- classify_qtiles(sr_rr_rast, qtiles)
+rast_cuts <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = 'RR-weighted SR by qtile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'sr_rr_thresholds_10km.tif'), 
+            overwrite = TRUE)
+```
+
+## Identify top/bottom 5% and 10% of biodiversity risk (unweighted and RR-weighted)
+
+```{r}
+risk_rast <- raster('layers/bd_risk/mean_risk_raster_comp.tif')
+
+qtiles <- c(.05, .1, .9, .95)
+
+rast_reclass <- classify_qtiles(risk_rast, qtiles)
+rast_cuts <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = 'Mean risk by qtile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'risk_thresholds_10km.tif'), 
+            overwrite = TRUE)
+```
+
+-----
+
+```{r}
+risk_rr_rast <- raster('layers/bd_risk/mean_rr_risk_raster_comp.tif')
+
+qtiles <- c(.05, .1, .9, .95)
+
+rast_reclass <- classify_qtiles(risk_rr_rast, qtiles)
+rast_cuts <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = 'Mean RR-weight risk by qtile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'risk_rr_thresholds_10km.tif'), 
+            overwrite = TRUE)
+```
+
+## Identify top/bottom 5% and 10% of % threatened (unweighted and RR-weighted)
+
+```{r}
+threat_rast <- raster('layers/bd_risk/pct_threat_raster_comp.tif')
+
+qtiles <- c(.05, .1, .9, .95)
+
+rast_reclass <- classify_qtiles(threat_rast, qtiles)
+rast_cuts <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = '% threatened by qtile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'threat_thresholds_10km.tif'), 
+            overwrite = TRUE)
+```
+
+-----
+
+```{r}
+threat_rr_rast <- raster('layers/bd_risk/sr_rr_threat_raster_comp.tif')
+
+qtiles <- c(.05, .1, .9, .95)
+
+rast_reclass <- classify_qtiles(threat_rr_rast, qtiles)
+rast_cuts <- rast_reclass[[1]]
+qtile_vals_eez  <- rast_reclass[[2]]
+qtile_vals_abnj <- rast_reclass[[3]]
+
+plot(rast_cuts, main = 'RR-wt % threatened by qtile thresholds')
+knitr::kable(t(qtile_vals_eez))
+knitr::kable(t(qtile_vals_abnj))
+
+writeRaster(rast_cuts, file.path(dir_cons, 'threat_rr_thresholds_10km.tif'), 
+            overwrite = TRUE)
+```
+
