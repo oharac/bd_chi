@@ -106,7 +106,7 @@ threats_to_maps <- spp_to_include %>%
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
 write_csv(threats_to_maps, 
-          here('int', sprintf('spp_sensitivity_%s.csv', api_version)))
+          here('_output', sprintf('spp_sensitivity_%s.csv', api_version)))
 
 n_comp <- spp_maps %>% 
   filter(comp_assessed) %>% 

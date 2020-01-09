@@ -103,6 +103,6 @@ calc_cv_thresh <- function(rast, pct = 0.95) {
 map_contour_volume <- function(rast, pct = 0.95) {
   thresh <- calc_cv_thresh(rast, pct)
   rast_cv <- rast
-  values(rast_cv)[values(rast_cv) > thresh] <- NA
+  values(rast_cv)[values(rast_cv) < thresh] <- NA
   return(rast_cv)
 }

@@ -127,7 +127,7 @@ Using this function, loop through each of the included stressors, build the stac
 reload <- FALSE
 
 for(str_name in str_names) {
-  ### str_name <- str_names[1]
+  ### str_name <- str_names[2]
   cat_msg('Processing ', str_name)
   
   dir_spp_str_rast <- file.path(dir_bd_anx, 'spp_str_rasts', str_name)
@@ -173,9 +173,9 @@ for(str_name in str_names) {
 
 # Check results
 
-Pull all results and make sure they are valid
+Pull all results and make sure they seem valid... this chunk is not evaluated when knitting.
 
-```{r}
+```{r, eval = FALSE}
 spp_mapped <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
                          pattern = '.csv',
                          recursive = TRUE, full.names = TRUE)
@@ -194,7 +194,16 @@ chk <- parallel::mclapply(spp_mapped, mc.cores = 20,
                                      iucn_sid = as.integer(spp_id)) %>%
                               select(-str_year)
                             return(tmp_df)
-                          })
+                          }) %>%
+  bind_rows()
+
+zeros <- chk %>% 
+  group_by(iucn_sid, str) %>%
+  filter(all(n_cells == 0)) %>%
+  ungroup() %>%
+  select(iucn_sid, str) %>%
+  distinct()
+  
 
 ```
 
