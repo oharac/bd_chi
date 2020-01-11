@@ -23,7 +23,6 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
-dir_str_10km <- file.path(dir_bd_anx, 'layers/stressors_10km')
 dir_str_95cv <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
 dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
 ```
@@ -82,7 +81,10 @@ stack_to_df <- function(str_stack) {
         filter(!is.na(str_val))
       })
   names(rast_df_list) <- names(str_stack)
-  rast_df <- bind_rows(rast_df_list, .id = 'str_year')
+  rast_df <- bind_rows(rast_df_list, .id = 'str_year') %>%
+    mutate(stressor = str_replace(str_year, '_[0-9]{4}', ''),
+           year = as.integer(str_extract(str_year, '[0-9]{4}'))) %>%
+    select(-str_year)
   return(rast_df)
 }
 

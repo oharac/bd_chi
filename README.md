@@ -1,22 +1,25 @@
 To do:
 
-* [X] Create a function to take a CHI layer (Mollweide, ~ 1 km) and reproject/aggregate into spp CRS (Gall-Peters, ~ 10 km).
-    * dataframe style: map cell IDs from G-P to Moll projection, then data.frame(cell_id, value)
-    * crosstab style: map cell IDs into a raster, then crosstab? not great for continuous variables though?
-    * how to aggregate stressor intensity values?  Mean? max/min/median?
-* [X] Apply this to all CHI stressor layers (latest) 
-* [ ] Calculate stressor trend layers (is this already calculated?)
-    * calculate at CHI native res, or at SPP native res? check the math...
-    * Figure out which stressors match IUCN threats (see below) to narrow down which layers to process
-* [ ] "Quick" analysis a la Selig 2014:
-  * Determine top X% of stressor intensity (or of cumulative impacts)
-  * Determine top X% of biodiversity from spp risk layers (n_spp, n_spp_rr, risk, risk_rr, thr, thr_rr)
-* [ ] Map stressors to IUCN spp threats by class and by narrative.
-* [ ] For each spp:
-    * compare range to proportion of range impacted by various stressors
-    * is this weighted? e.g. weighted by threat score
-    * becomes a map of relative stress from all sources (additive)
-    * this is easily turned into a simple threat/refuge calculation but allows more flexibility for further comparisons
+[ ] Update species list and maps for IUCN API version 2019-3 or maybe 2020-1
+[ ] Update threat listings based on narrative text and habitat info
+    [ ] Critical for fisheries! differentiate pel_hb, pel_lb, dem_dest, dem_nondest_hb, dem_nondest_lb
+    [ ] also for climate stressors - OA, SST, UV, SLR
+[ ] Update species-stressor intersections based on updated species and threats
+* From intersections, calculate impacts for all spp
+    [ ] Impacted range, and pct range, per threat
+    [ ] Impacted range, and pct range, cumulative over all threats
+    [ ] Refugia range as (whole range - impacted range)
+    [ ] Account for ocean cell area in calculations!
+* From intersections, map cumulative impacts on threatened and near-threatened spp
+    [ ] per cell: number of species impacted; proportion of species impacted
+    [ ] per cell: number of species in refugia; proportion of species in refugia
+* Plot ideas:
+    [ ] Allan et al 2019, Fig. 3 (# of impacted spp)
+    [ ] Allan et al 2019, Fig. 4 (# of unimpacted spp) 
+    [ ] Allan et al 2019, Fig. 5 (% of impacted spp)
+    [ ] compare range size vs. % area impacted (compare to protection targets differentiated by range size)
+    [ ] compare threat status vs. % area impacted a la Allan et al. Fig. 2
+    [ ] compare important threats by taxonomic group?
     
 Scripts for CHI 2019: https://github.com/OHI-Science/impact_acceleration
 

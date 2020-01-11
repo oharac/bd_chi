@@ -50,9 +50,9 @@ code,desc,stressor
 5.3.5,Biological resource use: Logging & wood harvesting: Motivation Unknown/Unrecorded,NA
 5.4,Biological resource use: Fishing & harvesting aquatic resources,NA
 5.4.1,Biological resource use: Fishing & harvesting aquatic resources: Intentional use: subsistence/small scale (species being assessed is the target)[harvest],art_fish
-5.4.2,Biological resource use: Fishing & harvesting aquatic resources: Intentional use: large scale (species being assessed is the target)[harvest],dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb
+5.4.2,Biological resource use: Fishing & harvesting aquatic resources: Intentional use: large scale (species being assessed is the target)[harvest],dem_dest;dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb
 5.4.3,Biological resource use: Fishing & harvesting aquatic resources: Unintentional effects: subsistence/small scale (species being assessed is not the target)[harvest],art_fish
-5.4.4,Biological resource use: Fishing & harvesting aquatic resources: Unintentional effects: large scale (species being assessed is not the target)[harvest],dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb
+5.4.4,Biological resource use: Fishing & harvesting aquatic resources: Unintentional effects: large scale (species being assessed is not the target)[harvest],dem_dest;dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb
 5.4.5,Biological resource use: Fishing & harvesting aquatic resources: Persecution/control,NA
 5.4.6,Biological resource use: Fishing & harvesting aquatic resources: Motivation Unknown/Unrecorded,NA
 6,Human intrusions & disturbance,NA

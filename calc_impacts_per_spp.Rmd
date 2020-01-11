@@ -1,0 +1,132 @@
+---
+title: 'Calculate species stressor impacts'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+dir_str_95cv <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
+dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
+```
+
+
+# Summary
+
+For each species, pull in all associated stressor intersections, as well as species range.  For each year, summarize impacted range and % impacted range for each stressor, and for cumulative.
+
+# Methods
+
+## create list of spp
+## loop over spp
+### calculate individual stressor impacts range and pct
+### calculate cumulative impact
+### bind 'em together and save it
+
+```{r}
+spp_sensitivity <- read_csv(here('_output', 
+                                 sprintf('spp_sensitivity_%s.csv', api_version)))
+
+spp_ids <- spp_sensitivity$iucn_sid %>%
+  unique() %>% sort()
+
+spp_str_intsx_files <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
+                                  recursive = TRUE,
+                                  full.names = TRUE)
+spp_str_intsx_ids <- spp_str_intsx_files %>%
+  basename() %>%
+  str_replace_all('mol10km', '') %>%
+  str_extract('[0-9]+') %>%
+  as.integer()
+  
+spp_str_intsx_df <- data.frame(intsx_file = spp_str_intsx_files,
+                               iucn_sid = spp_str_intsx_ids)
+
+### make sure all spp IDs represented in intersection dataframe
+# any(!spp_ids %in% spp_str_intsx_df$iucn_sid)
+ocean_area_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+ocean_area_df <- data.frame(ocean_prop = values(ocean_area_rast),
+                            cell_id = 1:ncell(ocean_area_rast))
+
+reload <- FALSE
+# for(spp_id in spp_ids) {
+tmp <- parallel::mclapply(spp_ids, mc.cores = 8, 
+  FUN = function(spp_id) {
+    ### spp_id <- spp_ids[1]
+    spp_impact_file <- file.path(dir_bd_anx, 'spp_impacts',
+                                 sprintf('spp_impacts_%s.csv', spp_id))
+    
+    if(!file.exists(spp_impact_file) | reload) {
+    
+      ### Calculate total species range, accounting for partial ocean cells
+      spp_range_df <- read_csv(file.path(dir_bd_anx, 'spp_rasts_mol_2019',
+                                      sprintf('iucn_sid_%s_mol.csv', spp_id))) %>%
+        left_join(ocean_area_df, by = 'cell_id')
+      
+      spp_range_km2 <- spp_range_df %>%
+        filter(presence > 0 & !is.na(presence)) %>%
+        summarize(range_km2 = sum(ocean_prop) * 100) %>%
+        .$range_km2
+      
+      spp_intsx_files <- spp_str_intsx_df %>%
+        filter(iucn_sid == spp_id) %>%
+        .$intsx_file
+      spp_intsx_df <- mclapply(spp_intsx_files, mc.cores = 12, FUN = read_csv) %>%
+        bind_rows() %>%
+        mutate(stressor = str_replace(str_year, '_[0-9]{4}', ''),
+               year = as.integer(str_extract(str_year, '[0-9]{4}'))) %>%
+        filter(!is.na(cell_id) & !is.na(str_val) & str_val > 0) %>%
+        select(-str_year) %>%
+        left_join(ocean_area_df, by = 'cell_id')
+      
+      spp_impact_by_stressor <- spp_intsx_df %>%
+        group_by(stressor, year) %>%
+        summarize(impact_km2 = sum(ocean_prop) * 100) %>%
+        ungroup()
+      
+      spp_cum_impact <- spp_intsx_df %>%
+        select(cell_id, year, ocean_prop) %>%
+        distinct() %>%
+        group_by(year) %>%
+        summarize(impact_km2 = sum(ocean_prop) * 100,
+                  stressor = 'cumulative')
+      if(nrow(spp_cum_impact) == 0) {
+        spp_cum_impact <- data.frame(
+          stressor = 'cumulative',
+          year = NA,
+          impact_km2 = 0,
+          range_km2 = spp_range_km2)
+      }
+      
+      impact_df <- bind_rows(spp_impact_by_stressor, spp_cum_impact) %>%
+        mutate(range_km2 = spp_range_km2,
+               pct_impact = impact_km2 / range_km2,
+               iucn_sid = spp_id)
+      
+      write_csv(impact_df, spp_impact_file)
+    } else {
+      message('File exists: ', basename(spp_impact_file), '... skipping!')
+    }
+  })
+
+```
+
+
+

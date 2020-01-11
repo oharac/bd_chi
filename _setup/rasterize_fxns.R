@@ -83,7 +83,12 @@ drop_geom <- function(sf) {
 
 calc_cv_thresh <- function(rast, pct = 0.95) {
   ### calculate threshold for value at or just above a given pct contour volume
-  x <- values(rast)[!is.na(values(rast))] %>% sort(decreasing = TRUE)
+  ### rast can be a single raster or a raster stack.
+  
+  y <- values(rast) ### if rast is actually a stack, this returns a matrix
+  ### but if y is a matrix, this coerces it to a vector so all is good
+  x <- y[!is.na(y)] %>% sort(decreasing = TRUE)
+  
   df <- data.frame(x) %>%
     mutate(cum_x = cumsum(x),
            cum_pct = cum_x / last(cum_x)) %>%
@@ -100,8 +105,13 @@ calc_cv_thresh <- function(rast, pct = 0.95) {
   return(thresh)
 }
 
-map_contour_volume <- function(rast, pct = 0.95) {
-  thresh <- calc_cv_thresh(rast, pct)
+map_contour_volume <- function(rast, pct = 0.95, thresh = NULL) {
+  ### if thresh is not provided, calculate in function.  If
+  ### it is provided, clip the raster (or stack) to the
+  ### provided threshold value or greater.
+  if(is.null(thresh)) {
+    thresh <- calc_cv_thresh(rast, pct)
+  }
   rast_cv <- rast
   values(rast_cv)[values(rast_cv) < thresh] <- NA
   return(rast_cv)
