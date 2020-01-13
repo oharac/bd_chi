@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Compiled on Thu Jan 9 12:25:38 2020 by ohara" />
+<meta name="author" content="Compiled on Sun Jan 12 07:53:23 2020 by ohara" />
 
 
 <title>Map species stressor intersections</title>
@@ -1695,7 +1695,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Map species stressor intersections</h1>
-<h4 class="author"><em>Compiled on Thu Jan 9 12:25:38 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Sun Jan 12 07:53:23 2020 by ohara</em></h4>
 
 </div>
 
@@ -1705,9 +1705,8 @@ div.tocify {
 <a class="sourceLine" id="cb1-3" title="3"></a>
 <a class="sourceLine" id="cb1-4" title="4"><span class="kw">source</span>(<span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</a>
 <a class="sourceLine" id="cb1-5" title="5"></a>
-<a class="sourceLine" id="cb1-6" title="6">dir_str_10km &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressors_10km&#39;</span>)</a>
-<a class="sourceLine" id="cb1-7" title="7">dir_str_95cv &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressors_10km_95cv&#39;</span>)</a>
-<a class="sourceLine" id="cb1-8" title="8">dir_spp_maps &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_rasts_mol_2019&#39;</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb1-6" title="6">dir_str_95cv &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressors_10km_95cv&#39;</span>)</a>
+<a class="sourceLine" id="cb1-7" title="7">dir_spp_maps &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_rasts_mol_2019&#39;</span>)</a></code></pre></div>
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
 <p>Here we will calculate, for each species, a map of impacted area for each of the stressors to which the species is sensitive; stressor ranges may change over time as well. These maps will be saved as a .csv of <code>cell_id</code>, stressor value <code>str_val</code>, and <code>str_year</code>. The stressor values can easily be normalized later if desired.</p>

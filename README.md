@@ -3,7 +3,7 @@ To do:
 [ ] Update species list and maps for IUCN API version 2019-3 or maybe 2020-1
 [ ] Update threat listings based on narrative text and habitat info
     [ ] Critical for fisheries! differentiate pel_hb, pel_lb, dem_dest, dem_nondest_hb, dem_nondest_lb
-    [ ] also for climate stressors - OA, SST, UV, SLR
+    [ ] Critical for climate stressors - OA, SST, UV, SLR
 [ ] Update species-stressor intersections based on updated species and threats
 * From intersections, calculate impacts for all spp
     [ ] Impacted range, and pct range, per threat

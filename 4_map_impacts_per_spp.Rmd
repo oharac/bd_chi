@@ -1,5 +1,5 @@
 ---
-title: 'Calculate species stressor impacts'
+title: 'Map impacts per species'
 author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
   html_document:
@@ -23,14 +23,12 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
-dir_str_95cv <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
-dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
 ```
 
 
 # Summary
 
-For each species, pull in all associated stressor intersections, as well as species range.  For each year, summarize impacted range and % impacted range for each stressor, and for cumulative.
+For each species, generate a cumulative impact map
 
 # Methods
 
@@ -41,8 +39,9 @@ For each species, pull in all associated stressor intersections, as well as spec
 ### bind 'em together and save it
 
 ```{r}
-spp_sensitivity <- read_csv(here('_output', 
-                                 sprintf('spp_sensitivity_%s.csv', api_version)))
+spp_sens_file <- here('_output', sprintf('spp_sensitivity_%s.csv', api_version))
+spp_sensitivity <- read_csv(spp_sens_file,
+                            col_types = cols('iucn_sid' = 'i'))
 
 spp_ids <- spp_sensitivity$iucn_sid %>%
   unique() %>% sort()
@@ -66,18 +65,26 @@ ocean_area_df <- data.frame(ocean_prop = values(ocean_area_rast),
                             cell_id = 1:ncell(ocean_area_rast))
 
 reload <- FALSE
+### to clear old versions:
+### x <- list.files(file.path(dir_bd_anx, 'spp_impacts'), full.names = TRUE)
+### unlink(x)
+
 # for(spp_id in spp_ids) {
 tmp <- parallel::mclapply(spp_ids, mc.cores = 8, 
   FUN = function(spp_id) {
     ### spp_id <- spp_ids[1]
+    ### spp_id <- y[1]
+    message('Processing spp ', spp_id)
     spp_impact_file <- file.path(dir_bd_anx, 'spp_impacts',
                                  sprintf('spp_impacts_%s.csv', spp_id))
     
     if(!file.exists(spp_impact_file) | reload) {
     
       ### Calculate total species range, accounting for partial ocean cells
-      spp_range_df <- read_csv(file.path(dir_bd_anx, 'spp_rasts_mol_2019',
-                                      sprintf('iucn_sid_%s_mol.csv', spp_id))) %>%
+      spp_range_file <- file.path(dir_bd_anx, 'spp_rasts_mol_2019',
+                                      sprintf('iucn_sid_%s_mol.csv', spp_id))
+      spp_range_df <- read_csv(spp_range_file, 
+                               col_types = cols('cell_id' = 'i', 'presence' = 'i')) %>%
         left_join(ocean_area_df, by = 'cell_id')
       
       spp_range_km2 <- spp_range_df %>%
@@ -88,12 +95,15 @@ tmp <- parallel::mclapply(spp_ids, mc.cores = 8,
       spp_intsx_files <- spp_str_intsx_df %>%
         filter(iucn_sid == spp_id) %>%
         .$intsx_file
-      spp_intsx_df <- mclapply(spp_intsx_files, mc.cores = 12, FUN = read_csv) %>%
+      spp_intsx_df <- lapply(spp_intsx_files,
+          FUN = function(x) {
+            read_csv(x, col_types = cols('cell_id' = 'i',
+                                         'str_val' = 'd',
+                                         'stressor' = 'c',
+                                         'year' = 'i'))
+          }) %>%
         bind_rows() %>%
-        mutate(stressor = str_replace(str_year, '_[0-9]{4}', ''),
-               year = as.integer(str_extract(str_year, '[0-9]{4}'))) %>%
         filter(!is.na(cell_id) & !is.na(str_val) & str_val > 0) %>%
-        select(-str_year) %>%
         left_join(ocean_area_df, by = 'cell_id')
       
       spp_impact_by_stressor <- spp_intsx_df %>%
@@ -128,5 +138,12 @@ tmp <- parallel::mclapply(spp_ids, mc.cores = 8,
 
 ```
 
+```{r}
+x <- list.files(file.path(dir_bd_anx, 'spp_impacts'))
+iucn_sid_done <- str_extract(x, '[0-9]+') %>% as.integer() %>% sort()
+y <- spp_ids[!spp_ids %in% iucn_sid_done]
+
+
+```
 
 

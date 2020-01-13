@@ -40,6 +40,8 @@ The matrix method would work well for calculating cumulative impact, but we will
 
 Briefly, the method will loop over each stressor and species; if the species has a non-zero sensitivity to the stressor, the overlap of species range and stressor range will be mapped.  If the species is not sensitive, it will still be logged with a placeholder, for process checking...
 
+Note that the intersection cells include only those cells where the species AND stressor are both present in a given year for a given stressor.  Range cells outside the stressor area are dropped and are assumed to be unimpacted (refugia); stressor cells outside the range area are dropped and assumed to have no impact on this species.
+
 # Methods
 
 ## Get the species sensitivities
@@ -111,12 +113,12 @@ calc_intsx <- function(spp_id, str_df) {
     inner_join(str_df, by = 'cell_id')
   if(nrow(spp_str_intsx) == 0) {
     ### no intersection; warn and create empty df
-    warning('No intersection found for species ', spp_id, ' and stressor ', str_name)
+    cat_msg('No intersection found for species ', spp_id, ' and stressor ', str_name)
     spp_str_intsx <- data.frame(
       cell_id = NA,
       str_val  = NA,
-      str_year = str_df$str_year %>% unique()
-    )
+      stressor = str_df$stressor[1],
+      year = str_df$year %>% unique())
   }
   return(spp_str_intsx)
 }
@@ -127,9 +129,13 @@ Using this function, loop through each of the included stressors, build the stac
 ```{r}
 
 reload <- FALSE
+### to gut the directory for a fresh start:
+# x <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
+#                 full.names = TRUE, recursive = TRUE)
+# unlink(x)
 
 for(str_name in str_names) {
-  ### str_name <- str_names[2]
+  ### str_name <- str_names[1]
   cat_msg('Processing ', str_name)
   
   dir_spp_str_rast <- file.path(dir_bd_anx, 'spp_str_rasts', str_name)
@@ -145,10 +151,12 @@ for(str_name in str_names) {
     filter(sens > 0 & !is.na(sens))
   
   # for(spp_id in spp_ids) {
-  tmp <- parallel::mclapply(spp_ids, mc.cores = 20,
-    FUN = function(spp_id) { ### spp_id <- spp_ids[2]
-      cat_msg('species: ', spp_id, '; stressor: ', str_name,
-              '; calculating spp/str intersection')
+  tmp <- parallel::mclapply(spp_ids, mc.cores = 16,
+    FUN = function(spp_id) { 
+      ### spp_id <- spp_ids[2]
+      ### spp_id <- spp_not_done[1]
+      # cat_msg('species: ', spp_id, '; stressor: ', str_name,
+      #         '; calculating spp/str intersection')
       
       spp_str_file <- file.path(dir_spp_str_rast, 
                                 sprintf('spp_str_intsx_%s_mol10km.csv', spp_id))
@@ -159,15 +167,17 @@ for(str_name in str_names) {
           spp_str_intsx <- calc_intsx(spp_id, str_df)
         } else {
           ### species is not sensitive; create dummy intersection
+          cat_msg('Spp ', spp_id, ' is not sensitive to ', str_name)
           spp_str_intsx <- data.frame(
             cell_id = NA,
             str_val  = NA,
-            str_year = str_df$str_year %>% unique()
+            stressor = str_df$stressor[1],
+            year = str_df$year %>% unique()
           )
         }
         write_csv(spp_str_intsx, spp_str_file)
       } else {
-        cat_msg(basename(spp_str_file), ' exists: skipping!')
+        # cat_msg(basename(spp_str_file), ' exists: skipping!')
       }
     }) ### end of mclapply
 }
@@ -177,35 +187,29 @@ for(str_name in str_names) {
 
 Pull all results and make sure they seem valid... this chunk is not evaluated when knitting.
 
-```{r, eval = FALSE}
+```{r}
 spp_mapped <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
                          pattern = '.csv',
                          recursive = TRUE, full.names = TRUE)
 
-chk <- parallel::mclapply(spp_mapped, mc.cores = 20, 
-                          ### spp_file <- spp_mapped[1]
-                          FUN = function(spp_file) {
-                            spp_id <- spp_file %>%
-                              basename() %>%
-                              str_replace_all('spp_str_intsx_|_mol10km.csv', '')
-                            tmp_df <- read_csv(spp_file) %>%
-                              group_by(str_year) %>%
-                              summarize(n_cells = sum(!is.na(cell_id))) %>%
-                              mutate(str = str_replace(str_year, '_[0-9]{4}', ''),
-                                     year = as.integer(str_extract(str_year, '[0-9]{4}')),
-                                     iucn_sid = as.integer(spp_id)) %>%
-                              select(-str_year)
-                            return(tmp_df)
-                          }) %>%
-  bind_rows()
+chk_df <- data.frame(spp_mapped) %>%
+  mutate(str = dirname(spp_mapped) %>% basename(),
+         spp = basename(spp_mapped) %>% 
+           str_extract('[0-9]{3,}') %>%
+           as.integer()) %>%
+  group_by(str) %>%
+  mutate(n_spp = length(unique(spp)))
 
-zeros <- chk %>% 
-  group_by(iucn_sid, str) %>%
-  filter(all(n_cells == 0)) %>%
-  ungroup() %>%
-  select(iucn_sid, str) %>%
-  distinct()
+spp_done <- chk_df %>%
+  filter(str == 'art_fish') %>%
+  .$spp
+spp_not_done <- spp_ids[!spp_ids %in% spp_done]
   
+chk_sum <- chk_df %>%
+  select(str, n_spp) %>%
+  distinct()
+
+knitr::kable(chk_sum)
 
 ```
 
