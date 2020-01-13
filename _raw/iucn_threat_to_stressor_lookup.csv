@@ -1,129 +1,129 @@
-code,desc,stressor
-1,Residential & commercial development,
-1.1,Residential & commercial development: Housing & urban areas,direct_human
-1.2,Residential & commercial development: Commercial & industrial areas,direct_human
-1.3,Residential & commercial development: Tourism & recreation areas,direct_human
-2,Agriculture & aquaculture,
-2.1,Agriculture & aquaculture: Annual & perennial non-timber crops,NA
-2.1.1,Agriculture & aquaculture: Annual & perennial non-timber crops: Shifting agriculture,NA
-2.1.2,Agriculture & aquaculture: Annual & perennial non-timber crops: Small-holder farming,NA
-2.1.3,Agriculture & aquaculture: Annual & perennial non-timber crops: Agro-industry farming,NA
-2.1.4,Agriculture & aquaculture: Annual & perennial non-timber crops: Scale Unknown/Unrecorded,NA
-2.2,Agriculture & aquaculture: Wood & pulp plantations,NA
-2.2.1,Agriculture & aquaculture: Wood & pulp plantations: Small-holder plantations,NA
-2.2.2,Agriculture & aquaculture: Wood & pulp plantations: Agro-industry plantations,NA
-2.2.3,Agriculture & aquaculture: Wood & pulp plantations: Scale Unknown/Unrecorded,NA
-2.3,Agriculture & aquaculture: Livestock farming & ranching,NA
-2.3.1,Agriculture & aquaculture: Livestock farming & ranching: Nomadic grazing,NA
-2.3.2,"Agriculture & aquaculture: Livestock farming & ranching: Small-holder grazing, ranching or farming",NA
-2.3.3,"Agriculture & aquaculture: Livestock farming & ranching: Agro-industry grazing, ranching or farming",NA
-2.3.4,Agriculture & aquaculture: Livestock farming & ranching: Scale Unknown/Unrecorded,NA
-2.4,Agriculture & aquaculture: Marine & freshwater aquaculture,NA
-2.4.1,Agriculture & aquaculture: Marine & freshwater aquaculture: Subsistence/artisanal aquaculture,nutrient
-2.4.2,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient
-2.4.3,Agriculture & aquaculture: Marine & freshwater aquaculture: Scale Unknown/Unrecorded,nutrient
-3,Energy production & mining,NA
-3.1,Energy production & mining: Oil & gas drilling,NA
-3.2,Energy production & mining: Mining & quarrying,NA
-3.3,Energy production & mining: Renewable energy,NA
-4,Transportation & service corridors,NA
-4.1,Transportation & service corridors: Roads & railroads,NA
-4.2,Transportation & service corridors: Utility & service lines,NA
-4.3,Transportation & service corridors: Shipping lanes,shipping
-4.4,Transportation & service corridors: Flight paths,NA
-5,Biological resource use,NA
-5.1,Biological resource use: Hunting & collecting terrestrial animals,NA
-5.1.1,Biological resource use: Hunting & collecting terrestrial animals: Intentional use (species being assessed is the target),NA
-5.1.2,Biological resource use: Hunting & collecting terrestrial animals: Unintentional effects (species being assessed is not the target),NA
-5.1.3,Biological resource use: Hunting & collecting terrestrial animals: Persecution/control,NA
-5.1.4,Biological resource use: Hunting & collecting terrestrial animals: Motivation Unknown/Unrecorded,NA
-5.2,Biological resource use: Gathering terrestrial plants,NA
-5.2.1,Biological resource use: Gathering terrestrial plants: Intentional use (species being assessed is the target),NA
-5.2.2,Biological resource use: Gathering terrestrial plants: Unintentional effects (species being assessed is not the target),NA
-5.2.3,Biological resource use: Gathering terrestrial plants: Persecution/control,NA
-5.2.4,Biological resource use: Gathering terrestrial plants: Motivation Unknown/Unrecorded,NA
-5.3,Biological resource use: Logging & wood harvesting,NA
-5.3.1,Biological resource use: Logging & wood harvesting: Intentional use: subsistence/small scale (species being assessed is the target [harvest],NA
-5.3.2,Biological resource use: Logging & wood harvesting: Intentional use: large scale (species being assessed is the target)[harvest],NA
-5.3.3,Biological resource use: Logging & wood harvesting: Unintentional effects: subsistence/small scale (species being assessed is not the target)[harvest],NA
-5.3.4,Biological resource use: Logging & wood harvesting: Unintentional effects: large scale (species being assessed is not the target)[harvest],NA
-5.3.5,Biological resource use: Logging & wood harvesting: Motivation Unknown/Unrecorded,NA
-5.4,Biological resource use: Fishing & harvesting aquatic resources,NA
-5.4.1,Biological resource use: Fishing & harvesting aquatic resources: Intentional use: subsistence/small scale (species being assessed is the target)[harvest],art_fish
-5.4.2,Biological resource use: Fishing & harvesting aquatic resources: Intentional use: large scale (species being assessed is the target)[harvest],dem_dest;dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb
-5.4.3,Biological resource use: Fishing & harvesting aquatic resources: Unintentional effects: subsistence/small scale (species being assessed is not the target)[harvest],art_fish
-5.4.4,Biological resource use: Fishing & harvesting aquatic resources: Unintentional effects: large scale (species being assessed is not the target)[harvest],dem_dest;dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb
-5.4.5,Biological resource use: Fishing & harvesting aquatic resources: Persecution/control,NA
-5.4.6,Biological resource use: Fishing & harvesting aquatic resources: Motivation Unknown/Unrecorded,NA
-6,Human intrusions & disturbance,NA
-6.1,Human intrusions & disturbance: Recreational activities,direct_human
-6.2,"Human intrusions & disturbance: War, civil unrest & military exercises",NA
-6.3,Human intrusions & disturbance: Work & other activities,direct_human
-7,Natural system modifications,NA
-7.1,Natural system modifications: Fire & fire suppression,NA
-7.1.1,Natural system modifications: Fire & fire suppression: Increase in fire frequency/intensity,NA
-7.1.2,Natural system modifications: Fire & fire suppression: Suppression in fire frequency/intensity,NA
-7.1.3,Natural system modifications: Fire & fire suppression: Trend Unknown/Unrecorded,NA
-7.2,Natural system modifications: Dams & water management/use,NA
-7.2.1,Natural system modifications: Dams & water management/use: Abstraction of surface water (domestic use),NA
-7.2.2,Natural system modifications: Dams & water management/use: Abstraction of surface water (commercial use),NA
-7.2.3,Natural system modifications: Dams & water management/use: Abstraction of surface water (agricultural use),NA
-7.2.4,Natural system modifications: Dams & water management/use: Abstraction of surface water (unknown use),NA
-7.2.5,Natural system modifications: Dams & water management/use: Abstraction of ground water (domestic use),NA
-7.2.6,Natural system modifications: Dams & water management/use: Abstraction of ground water (commercial use),NA
-7.2.7,Natural system modifications: Dams & water management/use: Abstraction of ground water (agricultural use),NA
-7.2.8,Natural system modifications: Dams & water management/use: Abstraction of ground water (unknown use),NA
-7.2.9,Natural system modifications: Dams & water management/use: Small dams,NA
-7.2.10,Natural system modifications: Dams & water management/use: Large dams,NA
-7.2.11,Natural system modifications: Dams & water management/use: Dams (size unknown),NA
-7.3,Natural system modifications: Other ecosystem modifications,NA
-8,"Invasive & other problematic species, genes & diseases",NA
-8.1,"Invasive & other problematic species, genes & diseases: Invasive non-native/alien species/diseases",NA
-8.1.1,"Invasive & other problematic species, genes & diseases: Invasive non-native/alien species/diseases: Unspecified species",NA
-8.1.2,"Invasive & other problematic species, genes & diseases: Invasive non-native/alien species/diseases: Named species",NA
-8.2,"Invasive & other problematic species, genes & diseases: Problematic native species/diseases",NA
-8.2.1,"Invasive & other problematic species, genes & diseases: Problematic native species/diseases: Unspecified species",NA
-8.2.2,"Invasive & other problematic species, genes & diseases: Problematic native species/diseases: Named species",NA
-8.3,"Invasive & other problematic species, genes & diseases: Introduced genetic material",NA
-8.4,"Invasive & other problematic species, genes & diseases: Problematic species/diseases of unknown origin",NA
-8.4.1,"Invasive & other problematic species, genes & diseases: Problematic species/diseases of unknown origin: Unspecified species",NA
-8.4.2,"Invasive & other problematic species, genes & diseases: Problematic species/diseases of unknown origin: Named species",NA
-8.5,"Invasive & other problematic species, genes & diseases: Viral/prion-induced diseases",NA
-8.5.1,"Invasive & other problematic species, genes & diseases: Viral/prion-induced diseases: Unspecified ""species"" (disease)",NA
-8.5.2,"Invasive & other problematic species, genes & diseases: Viral/prion-induced diseases: Named ""species"" (disease)",NA
-8.6,"Invasive & other problematic species, genes & diseases: Diseases of unknown cause",NA
-9,Pollution,NA
-9.1,Pollution: Domestic & urban waste water,NA
-9.1.1,Pollution: Domestic & urban waste water: Sewage,nutrient
-9.1.2,Pollution: Domestic & urban waste water: Run-off,nutrient;organic
-9.1.3,Pollution: Domestic & urban waste water: Type Unknown/Unrecorded,NA
+code,desc,stressor,category
+1,Residential & commercial development,NA,NA
+1.1,Residential & commercial development: Housing & urban areas,direct_human,general
+1.2,Residential & commercial development: Commercial & industrial areas,direct_human,general
+1.3,Residential & commercial development: Tourism & recreation areas,direct_human,general
+2,Agriculture & aquaculture,NA,NA
+2.1,Agriculture & aquaculture: Annual & perennial non-timber crops,NA,NA
+2.1.1,Agriculture & aquaculture: Annual & perennial non-timber crops: Shifting agriculture,NA,NA
+2.1.2,Agriculture & aquaculture: Annual & perennial non-timber crops: Small-holder farming,NA,NA
+2.1.3,Agriculture & aquaculture: Annual & perennial non-timber crops: Agro-industry farming,NA,NA
+2.1.4,Agriculture & aquaculture: Annual & perennial non-timber crops: Scale Unknown/Unrecorded,NA,NA
+2.2,Agriculture & aquaculture: Wood & pulp plantations,NA,NA
+2.2.1,Agriculture & aquaculture: Wood & pulp plantations: Small-holder plantations,NA,NA
+2.2.2,Agriculture & aquaculture: Wood & pulp plantations: Agro-industry plantations,NA,NA
+2.2.3,Agriculture & aquaculture: Wood & pulp plantations: Scale Unknown/Unrecorded,NA,NA
+2.3,Agriculture & aquaculture: Livestock farming & ranching,NA,NA
+2.3.1,Agriculture & aquaculture: Livestock farming & ranching: Nomadic grazing,NA,NA
+2.3.2,"Agriculture & aquaculture: Livestock farming & ranching: Small-holder grazing, ranching or farming",NA,NA
+2.3.3,"Agriculture & aquaculture: Livestock farming & ranching: Agro-industry grazing, ranching or farming",NA,NA
+2.3.4,Agriculture & aquaculture: Livestock farming & ranching: Scale Unknown/Unrecorded,NA,NA
+2.4,Agriculture & aquaculture: Marine & freshwater aquaculture,NA,NA
+2.4.1,Agriculture & aquaculture: Marine & freshwater aquaculture: Subsistence/artisanal aquaculture,nutrient,general
+2.4.2,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,general
+2.4.3,Agriculture & aquaculture: Marine & freshwater aquaculture: Scale Unknown/Unrecorded,nutrient,general
+3,Energy production & mining,NA,NA
+3.1,Energy production & mining: Oil & gas drilling,NA,NA
+3.2,Energy production & mining: Mining & quarrying,NA,NA
+3.3,Energy production & mining: Renewable energy,NA,NA
+4,Transportation & service corridors,NA,NA
+4.1,Transportation & service corridors: Roads & railroads,NA,NA
+4.2,Transportation & service corridors: Utility & service lines,NA,NA
+4.3,Transportation & service corridors: Shipping lanes,shipping,general
+4.4,Transportation & service corridors: Flight paths,NA,NA
+5,Biological resource use,NA,NA
+5.1,Biological resource use: Hunting & collecting terrestrial animals,NA,NA
+5.1.1,Biological resource use: Hunting & collecting terrestrial animals: Intentional use (species being assessed is the target),NA,NA
+5.1.2,Biological resource use: Hunting & collecting terrestrial animals: Unintentional effects (species being assessed is not the target),NA,NA
+5.1.3,Biological resource use: Hunting & collecting terrestrial animals: Persecution/control,NA,NA
+5.1.4,Biological resource use: Hunting & collecting terrestrial animals: Motivation Unknown/Unrecorded,NA,NA
+5.2,Biological resource use: Gathering terrestrial plants,NA,NA
+5.2.1,Biological resource use: Gathering terrestrial plants: Intentional use (species being assessed is the target),NA,NA
+5.2.2,Biological resource use: Gathering terrestrial plants: Unintentional effects (species being assessed is not the target),NA,NA
+5.2.3,Biological resource use: Gathering terrestrial plants: Persecution/control,NA,NA
+5.2.4,Biological resource use: Gathering terrestrial plants: Motivation Unknown/Unrecorded,NA,NA
+5.3,Biological resource use: Logging & wood harvesting,NA,NA
+5.3.1,Biological resource use: Logging & wood harvesting: Intentional use: subsistence/small scale (species being assessed is the target [harvest],NA,NA
+5.3.2,Biological resource use: Logging & wood harvesting: Intentional use: large scale (species being assessed is the target)[harvest],NA,NA
+5.3.3,Biological resource use: Logging & wood harvesting: Unintentional effects: subsistence/small scale (species being assessed is not the target)[harvest],NA,NA
+5.3.4,Biological resource use: Logging & wood harvesting: Unintentional effects: large scale (species being assessed is not the target)[harvest],NA,NA
+5.3.5,Biological resource use: Logging & wood harvesting: Motivation Unknown/Unrecorded,NA,NA
+5.4,Biological resource use: Fishing & harvesting aquatic resources,NA,NA
+5.4.1,Biological resource use: Fishing & harvesting aquatic resources: Intentional use: subsistence/small scale (species being assessed is the target)[harvest],art_fish,fishing
+5.4.2,Biological resource use: Fishing & harvesting aquatic resources: Intentional use: large scale (species being assessed is the target)[harvest],dem_dest;dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb,fishing
+5.4.3,Biological resource use: Fishing & harvesting aquatic resources: Unintentional effects: subsistence/small scale (species being assessed is not the target)[harvest],art_fish,fishing
+5.4.4,Biological resource use: Fishing & harvesting aquatic resources: Unintentional effects: large scale (species being assessed is not the target)[harvest],dem_dest;dem_nondest_hb;dem_nondest_lb;pel_hb;pel_lb,fishing
+5.4.5,Biological resource use: Fishing & harvesting aquatic resources: Persecution/control,NA,fishing
+5.4.6,Biological resource use: Fishing & harvesting aquatic resources: Motivation Unknown/Unrecorded,NA,fishing
+6,Human intrusions & disturbance,NA,NA
+6.1,Human intrusions & disturbance: Recreational activities,direct_human,general
+6.2,"Human intrusions & disturbance: War, civil unrest & military exercises",NA,NA
+6.3,Human intrusions & disturbance: Work & other activities,direct_human,general
+7,Natural system modifications,NA,NA
+7.1,Natural system modifications: Fire & fire suppression,NA,NA
+7.1.1,Natural system modifications: Fire & fire suppression: Increase in fire frequency/intensity,NA,NA
+7.1.2,Natural system modifications: Fire & fire suppression: Suppression in fire frequency/intensity,NA,NA
+7.1.3,Natural system modifications: Fire & fire suppression: Trend Unknown/Unrecorded,NA,NA
+7.2,Natural system modifications: Dams & water management/use,NA,NA
+7.2.1,Natural system modifications: Dams & water management/use: Abstraction of surface water (domestic use),NA,NA
+7.2.2,Natural system modifications: Dams & water management/use: Abstraction of surface water (commercial use),NA,NA
+7.2.3,Natural system modifications: Dams & water management/use: Abstraction of surface water (agricultural use),NA,NA
+7.2.4,Natural system modifications: Dams & water management/use: Abstraction of surface water (unknown use),NA,NA
+7.2.5,Natural system modifications: Dams & water management/use: Abstraction of ground water (domestic use),NA,NA
+7.2.6,Natural system modifications: Dams & water management/use: Abstraction of ground water (commercial use),NA,NA
+7.2.7,Natural system modifications: Dams & water management/use: Abstraction of ground water (agricultural use),NA,NA
+7.2.8,Natural system modifications: Dams & water management/use: Abstraction of ground water (unknown use),NA,NA
+7.2.9,Natural system modifications: Dams & water management/use: Small dams,NA,NA
+7.2.10,Natural system modifications: Dams & water management/use: Large dams,NA,NA
+7.2.11,Natural system modifications: Dams & water management/use: Dams (size unknown),NA,NA
+7.3,Natural system modifications: Other ecosystem modifications,NA,NA
+8,"Invasive & other problematic species, genes & diseases",NA,NA
+8.1,"Invasive & other problematic species, genes & diseases: Invasive non-native/alien species/diseases",NA,NA
+8.1.1,"Invasive & other problematic species, genes & diseases: Invasive non-native/alien species/diseases: Unspecified species",NA,NA
+8.1.2,"Invasive & other problematic species, genes & diseases: Invasive non-native/alien species/diseases: Named species",NA,NA
+8.2,"Invasive & other problematic species, genes & diseases: Problematic native species/diseases",NA,NA
+8.2.1,"Invasive & other problematic species, genes & diseases: Problematic native species/diseases: Unspecified species",NA,NA
+8.2.2,"Invasive & other problematic species, genes & diseases: Problematic native species/diseases: Named species",NA,NA
+8.3,"Invasive & other problematic species, genes & diseases: Introduced genetic material",NA,NA
+8.4,"Invasive & other problematic species, genes & diseases: Problematic species/diseases of unknown origin",NA,NA
+8.4.1,"Invasive & other problematic species, genes & diseases: Problematic species/diseases of unknown origin: Unspecified species",NA,NA
+8.4.2,"Invasive & other problematic species, genes & diseases: Problematic species/diseases of unknown origin: Named species",NA,NA
+8.5,"Invasive & other problematic species, genes & diseases: Viral/prion-induced diseases",NA,NA
+8.5.1,"Invasive & other problematic species, genes & diseases: Viral/prion-induced diseases: Unspecified ""species"" (disease)",NA,NA
+8.5.2,"Invasive & other problematic species, genes & diseases: Viral/prion-induced diseases: Named ""species"" (disease)",NA,NA
+8.6,"Invasive & other problematic species, genes & diseases: Diseases of unknown cause",NA,NA
+9,Pollution,NA,NA
+9.1,Pollution: Domestic & urban waste water,NA,NA
+9.1.1,Pollution: Domestic & urban waste water: Sewage,nutrient,general
+9.1.2,Pollution: Domestic & urban waste water: Run-off,nutrient;organic,general
+9.1.3,Pollution: Domestic & urban waste water: Type Unknown/Unrecorded,NA,NA
 9.2,Pollution: Industrial & military effluents
-9.2.1,Pollution: Industrial & military effluents: Oil spills,organic
-9.2.2,Pollution: Industrial & military effluents: Seepage from mining,organic
-9.2.3,Pollution: Industrial & military effluents: Type Unknown/Unrecorded,NA
-9.3,Pollution: Agricultural & forestry effluents,NA
-9.3.1,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient
-9.3.2,"Pollution: Agricultural & forestry effluents: Soil erosion, sedimentation",NA
-9.3.3,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic
-9.3.4,Pollution: Agricultural & forestry effluents: Type Unknown/Unrecorded,NA
-9.4,Pollution: Garbage & solid waste,NA
-9.5,Pollution: Air-borne pollutants,NA
-9.5.1,Pollution: Air-borne pollutants: Acid rain,NA
-9.5.3,Pollution: Air-borne pollutants: Ozone,NA
-9.5.4,Pollution: Air-borne pollutants: Type Unknown/Unrecorded,NA
-9.6,Pollution: Excess energy,NA
-9.6.1,Pollution: Excess energy: Light pollution,light
-9.6.2,Pollution: Excess energy: Thermal pollution,NA
-9.6.3,Pollution: Excess energy: Noise pollution,NA
-10,Geological events,NA
-10.1,Geological events: Volcanoes,NA
-10.2,Geological events: Earthquakes/tsunamis,NA
-10.3,Geological events: Avalanches/landslides,NA
-11,Climate change & severe weather,NA
-11.1,Climate change & severe weather: Habitat shifting & alteration,sst;slr;oa;uv
-11.2,Climate change & severe weather: Droughts,NA
-11.3,Climate change & severe weather: Temperature extremes,sst
-11.4,Climate change & severe weather: Storms & flooding,NA
-11.5,Climate change & severe weather: Other impacts,oa;uv
-12,Other options,NA
-12.1,Other options: Other threat,NA
+9.2.1,Pollution: Industrial & military effluents: Oil spills,organic,general
+9.2.2,Pollution: Industrial & military effluents: Seepage from mining,organic,general
+9.2.3,Pollution: Industrial & military effluents: Type Unknown/Unrecorded,NA,NA
+9.3,Pollution: Agricultural & forestry effluents,NA,NA
+9.3.1,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,general
+9.3.2,"Pollution: Agricultural & forestry effluents: Soil erosion, sedimentation",NA,NA
+9.3.3,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,general
+9.3.4,Pollution: Agricultural & forestry effluents: Type Unknown/Unrecorded,NA,NA
+9.4,Pollution: Garbage & solid waste,NA,NA
+9.5,Pollution: Air-borne pollutants,NA,NA
+9.5.1,Pollution: Air-borne pollutants: Acid rain,NA,NA
+9.5.3,Pollution: Air-borne pollutants: Ozone,NA,NA
+9.5.4,Pollution: Air-borne pollutants: Type Unknown/Unrecorded,NA,NA
+9.6,Pollution: Excess energy,NA,NA
+9.6.1,Pollution: Excess energy: Light pollution,light,general
+9.6.2,Pollution: Excess energy: Thermal pollution,NA,NA
+9.6.3,Pollution: Excess energy: Noise pollution,NA,NA
+10,Geological events,NA,NA
+10.1,Geological events: Volcanoes,NA,NA
+10.2,Geological events: Earthquakes/tsunamis,NA,NA
+10.3,Geological events: Avalanches/landslides,NA,NA
+11,Climate change & severe weather,NA,NA
+11.1,Climate change & severe weather: Habitat shifting & alteration,sst;slr;oa;uv,climate
+11.2,Climate change & severe weather: Droughts,NA,NA
+11.3,Climate change & severe weather: Temperature extremes,sst,climate
+11.4,Climate change & severe weather: Storms & flooding,NA,NA
+11.5,Climate change & severe weather: Other impacts,oa;uv,climate
+12,Other options,NA,NA
+12.1,Other options: Other threat,NA,NA

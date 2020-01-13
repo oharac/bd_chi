@@ -1,5 +1,5 @@
 ---
-title: 'Calculate stressor sensitivities from IUCN impact scores'
+title: 'Calculate fishing stressor sensitivities from IUCN impact scores'
 author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
   html_document:
@@ -50,7 +50,8 @@ spp_risk <- read_csv(here('_data',
 chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
   mutate(stressor = str_split(stressor, ';')) %>%
   unnest(stressor) %>%
-  filter(str_detect(stressor, '[a-z]'))
+  filter(str_detect(stressor, '[a-z]')) %>%
+  filter(category == 'fishing')
 
 spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
                                sprintf('iucn_spp_threats_%s.csv', api_version))) %>%
@@ -106,7 +107,7 @@ threats_to_maps <- spp_to_include %>%
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
 write_csv(threats_to_maps, 
-          here('_output', sprintf('spp_sensitivity_%s.csv', api_version)))
+          here('_output', sprintf('spp_sens_fishing_%s.csv', api_version)))
 
 n_comp <- spp_maps %>% 
   filter(comp_assessed) %>% 

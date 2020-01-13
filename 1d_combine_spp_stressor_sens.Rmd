@@ -1,0 +1,49 @@
+---
+title: 'Combine stressor sensitivities'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+```
+
+
+# Summary
+
+Stressor sensitivity is a very simplified version of stressor weights (see draft1 folder for complicated version).  Here, we will simply note whether a given species is sensitive to a given stressor, using the IUCN impact weights (i.e. non-negligible impact score), ranked as 0-3 (no, low, medium, high impact) for later differentiation if necessary.  For species with NA impact scores, we can imply sensitivity based on other fields, e.g. severity.  This version of sensitivity is not related to the range of exposure, as the weight calculation was doing.
+
+Sensitivity will denote whether a species range overlapping a stressor range constitutes an impact.
+
+# Methods
+
+Gather processed sensitivity dataframes and combine into a single one.
+```{r}
+
+sens_gen <- read_csv(here('_output', sprintf('spp_sens_general_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i', 'code' = 'c'))
+sens_fis <- read_csv(here('_output', sprintf('spp_sens_fishing_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i', 'code' = 'c'))
+sens_cc  <- read_csv(here('_output', sprintf('spp_sens_climate_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i', 'code' = 'c'))
+
+sens_all_df <- bind_rows(sens_gen, sens_fis, sens_cc)
+write_csv(sens_all_df, 
+          here('_output', sprintf('spp_sensitivity_%s.csv', api_version)))
+
+```
+
