@@ -1,0 +1,462 @@
+---
+title: 'Parse fishing threats'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: false
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+source(here::here('iucn_threats/iucn_threats_fxns.R'))
+
+```
+
+# Summary
+
+Examine fisheries threats to marine species as determined by IUCN threat classifications and text dismemberment of IUCN species narratives to identify significant sensitivity to different gear classes.  
+
+# Data Sources
+
+### IUCN Red List
+
+# Methods
+
+## Check for fishing threats by threat code
+
+Categories of threats from fishing and harvesting aquatic resource include targeted, bycatch (unintentional effects), persecution/control, and unknown:
+
+```{r}
+
+threat_class <- read_csv(file.path(dir_iucn, '_raw/iucn_threat_class.csv')) %>%
+  filter(str_detect(code, '^5\\.4')) %>%
+  mutate(desc = str_replace(desc, '.+?: ', ''))
+
+threat_class %>% 
+  ftable_theme() %>% 
+  width(j = 2, 6) %>%
+  align(j = 2, align = 'left', part = 'body')
+```
+
+Variables in the threat report include timing, scope, severity, and score.  Filtering rules to determine whether a species is "impacted" by fishing pressure and thus benefits from removal of fishing pressure:
+
+* `timing` is not "Past, Unlikely to Return"
+* `scope` is any scope (i.e. `NA`, "Unknown", "Minority (<50%)", "Majority (50-90%)", "Whole (>90%)")
+* `score` is greater than some threshold?  
+    * high impact is `score_num` of 8 or greater
+    * medium impact is `score_num` of 6 or 7
+    * low is 3-4-5
+    * no/negligible is 0 or 1 (2 does not appear in this subset of data)
+    * NOTE: There is a natural break around 3-5, going from 2700 spp to just over 300; many of those 300 are related to severity rather than a score
+* If no valid `score` then look at `severity`; perhaps choose some threshold e.g. "rapid" or "very rapid" declines:
+    * NA, "Unknown"                         
+    * "No decline", "Negligible declines"
+    * "Slow, Significant Declines"
+    * "Rapid Declines", "Very Rapid Declines"
+    * "Causing/Could cause fluctuations"
+    
+```{r}
+
+spp_threats <- read_csv(file.path(dir_arf, 'iucn/threats',
+                                  sprintf('iucn_spp_threats_%s.csv', api_version)),
+                        col_types = cols(.default = 'c', iucn_sid = 'i', score_num = 'i'))
+
+score_thresh <- 3 ### non-negligible threat, i.e. low-med-high
+severity_include <- c('Slow, Significant Declines',
+                      'Rapid Declines', 
+                      'Very Rapid Declines', 
+                      'Causing/Could cause fluctuations')
+fis_threats <- spp_threats %>%
+  filter(str_detect(code, '^5\\.4')) %>%
+  filter(timing != 'Past, Unlikely to Return' | is.na(timing)) %>%
+  filter(score_num >= score_thresh | severity %in% severity_include)
+    ### severity_include gets 313 species regardless of score_num
+
+write_csv(fis_threats, file.path(dir_iucn, 'int', 'fis_threat_by_code.csv'))
+
+fis_threats$iucn_sid %>% unique() %>% length()
+### threshold = 9: 313
+### threshold = 8: 313
+### threshold = 7: 314
+### threshold = 6: 333
+### threshold = 5: 367
+### threshold = 4: 607
+### threshold = 3: 2701
+### threshold = 2: 2701
+### threshold = 1: 2742
+
+```
+
+What species are represented in this filtered set? what is the distribution of extinction risk categories included?
+
+```{r}
+iucn_spp_info <- read_csv(file.path(dir_arf, 'iucn', 'spp_info_from_api_2019-1.csv'),
+                          col_types = cols(.default = 'c', iucn_sid = 'i'))
+risk_codes <- read_csv(file.path(dir_iucn, '_raw/risk_code_lookup.csv'))
+
+fis_threat_spp <- read_csv(file.path(dir_iucn, 'int', 'fis_threat_by_code.csv')) %>%
+  select(iucn_sid) %>%
+  distinct() %>%
+  left_join(iucn_spp_info, by = 'iucn_sid') %>%
+  left_join(risk_codes, by = c('category' = 'code')) %>%
+  mutate(phl_class = paste(phylum, class, sep = ':')) %>%
+  group_by(phl_class) %>%
+  mutate(n_in_class = n()) %>%
+  ungroup() %>%
+  arrange(n_in_class) %>%
+  mutate(phl_class = fct_inorder(phl_class)) %>%
+  arrange(cat_score) %>%
+  mutate(code = fct_inorder(code_current))
+
+ggplot(fis_threat_spp, aes(x = phl_class)) +
+  ggtheme_plot() +
+  geom_bar() +
+  coord_flip() +
+  theme(axis.title.y = element_blank()) +
+  labs(y = 'Species sensitive to fishing impacts')
+
+ggplot(fis_threat_spp, aes(x = code)) +
+  ggtheme_plot() +
+  geom_bar() +
+  labs(x = 'IUCN Red List extinction risk',
+       y = 'Species sensitive to fishing impacts')
+
+```
+
+
+## Check for bycatch and gear instances in narratives
+
+How far should we go in terms of accounting for impacts from different gear types, recognizing that automated scraping of narratives is likely to pose problems in specificity as we target more and more specifically?
+
+High bycatch gear types should certainly be included (gillnet, longline, trawl) for both targeted and non-targeted instances.  Trawl would ideally be distinguished into bottom and mid-water if possible.
+
+Types of gear in Watson data:
+
+* dredge: 
+* gillnet: 
+* purse_seine_non_tuna, purse_seine_tuna, seine: count all as same category?
+* lines_non_tuna, pole_and_line_tuna: 
+* longline_non_tuna, longline_tuna: 
+* trap: 
+* trawl_midwater, trawl (bottom trawl and danish seine)
+    * if keyword does not specify, then examine the species' habitat info, i.e. pelagic/demersal/benthic to identify sensitivity.
+
+### identify troublesome trawl combos to exclude
+
+Since trawl surveys are often used for research, we can avoid instances of "trawl" near "survey" as a pattern; are there any other troublesome patterns?
+
+```{r, eval = FALSE}
+
+spp_narr_file <- file.path(dir_arf, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+trawl_df <- read_csv(spp_narr_file,
+                     col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(-name, -param_id, -api_error) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  mutate(text_short = str_split(tolower(text), '\\. ')) %>%
+  unnest(text_short) %>%
+  filter(str_detect(text_short, 'trawl')) %>%
+  mutate(post_dyad = str_extract(text_short, 'trawl[a-z]* [^\\. ]+'),
+         pre_dyad = str_extract(text_short, '[^\\. ]+ trawl[a-z]*'))
+
+danish_seine_df <- read_csv(spp_narr_file,
+                     col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(-name, -param_id, -api_error) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  mutate(text_short = str_split(tolower(text), '\\. ')) %>%
+  unnest(text_short) %>%
+  filter(str_detect(text_short, 'seine') & str_detect(text_short, 'danish')) %>%
+  mutate(post_dyad = str_extract(text_short, 'seine[a-z]* [^\\. ]+'),
+         pre_dyad = str_extract(text_short, '[^\\. ]+ seine[a-z]*'))
+```
+
+Potential combinations to exclude:
+
+* trawl survey
+* fishery-independent trawl, exploratory trawl, experimental trawl
+* research trawl, scientific trawl
+* trawl sample, trawl experiment, trawl research
+
+### identify pole, line combos
+
+What kinds of patterns involve line, pole-and-line, etc.  Look at preceding and following words in triads.
+
+```{r, eval = FALSE}
+
+spp_narr_file <- file.path(dir_arf, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+line_df <- read_csv(spp_narr_file,
+                     col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(-name, -param_id, -api_error) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  mutate(text_short = str_split(tolower(text), '\\. ')) %>%
+  unnest(text_short) %>%
+  filter(str_detect(text_short, 'line')) %>%
+  mutate(post_triad = str_extract(text_short, '[^a-z]+line[^a-z]+[a-z]+[^a-z]+[a-z]+'),
+           ### prefix, "line", then non-letter sep, then letters, then non-letter sep, then letters
+         mid_triad = str_extract(text_short, '[a-z]+[^a-z]+line[^a-z]+[a-z]+'),
+           ### prefix, "line", then non-letter sep, then letters, then non-letter sep, then letters
+         pre_triad = str_extract(text_short, '[a-z]+[^a-z]+[a-z]+[^a-z]+line[^a-z]+'))
+           ### letters, non-letter sep, letters, non-letter sep, "line", suffix
+
+# line_df$mid_triad %>% unique() %>% sort()
+
+### some examples (consider also swapping spaces with hyphens)
+### hook line, hand-line, trolling line,            
+### caught by line, caught in line, caught on line, caught with line, 
+### deep water line, hook and line, pole-and-line, drop-line, 
+### line fishery, line fisheries, industrial line fishery, inshore line fishing
+```
+
+### identify mid-water and bottom trawls etc.
+
+What kinds of patterns involve non-research trawls, etc.  Look at preceding and following words in triads.
+
+```{r, eval = FALSE}
+
+except_str <- c('(explora|experim|research|scientific|fisher[a-z]+.indep)[a-z]* trawl',
+  'trawl[a-z]* (surv|sample|experiment|research)') %>%
+  paste0(collapse = '|')
+
+spp_narr_file <- file.path(dir_arf, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+trawl_df <- read_csv(spp_narr_file,
+                     col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(-name, -param_id, -api_error) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  mutate(text_short = str_split(tolower(text), '\\. ')) %>%
+  unnest(text_short) %>%
+  filter(str_detect(text_short, 'trawl')) %>%
+  mutate(post_dyad = str_extract(text_short, '[^a-z]+trawl[a-z]+[^a-z]+[a-z]'),
+           ### prefix, "trawl...", then non-letter sep, then letters, then non-letter sep, then letters
+         pre_dyad = str_extract(text_short, '[a-z]+[^a-z]+trawl[a-z]+[^a-z]+'))
+           ### letters, non-letter sep, letters, non-letter sep, "trawl...", suffix
+
+trawl_df$pre_dyad %>% unique() %>% sort(decreasing = TRUE)
+
+### some examples (consider also swapping spaces with hyphens)
+### bottom types?: 
+### * bottom trawl, deep.?water trawl, demersal trawl, beam trawl, benthic trawl,
+### * crab trawl, crustacean trawl, groundfish trawl, shrimp trawl
+### midwater types?:
+### * mid.?water trawl
+### indeterminate types?:
+### * otter trawl
+```
+
+## Parse threats to count by gear type
+
+Once parsed, examine frequency of various gear types.  Presumably should be a higher proportion of gears associated with high bycatch - i.e. indiscriminate gear types.
+
+To help differentiate between mid-water trawl and bottom trawl, for species where narratives do not clearly differentiate, we will use habitat information to determine sensitivity.
+
+``` {r}
+### check habitats to differentiate otherwise undifferentiated trawl
+habs_pelagic <- read_csv(here('iucn_threats', '_raw',
+                              'iucn_habitat_pelagic.csv'))
+spp_pelagic <- read_csv(file.path(dir_data, sprintf('spp_marine_from_api_%s.csv', api_version)),
+                     col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  mutate(code = str_split(habs, ', ')) %>%
+  unnest(code) %>%
+  left_join(habs_pelagic, by = 'code') %>%
+  filter(!is.na(pelagic)) %>%
+  group_by(iucn_sid) %>%
+  summarize(midwater = any(pelagic),
+            bottom   = any(!pelagic))
+```
+
+```{r set up search vectors}
+
+### create search terms for line fishing (but not longline):
+gears_line <- c('caught [a-z]+ line', # caught in/on/with line, 
+                'deep.?water line', 
+                'hook.and.line', 
+                'pole.and.line', 
+                'drop.?line', 
+                'line fish') # line fishing/fishery/fisheries
+
+### create search terms for midwater trawl:
+gears_midtrawl <- c('mid.?water trawl', 'pelagic trawl')
+### create search terms for bottom trawl:
+gears_btmtrawl <- c('bottom trawl', 
+                    'deep.?water trawl', 
+                    'demersal trawl', 
+                    'beam trawl', 
+                    'benthic trawl',
+                    'crab trawl', 'crustacean trawl', 'groundfish trawl', 
+                    'shrimp trawl', 'prawn trawl', 'scallop trawl',
+                    'danish seine')
+
+### create regex of gear type search terms
+gears_of_interest <- c(# 'by.?catch', 
+                       'dredge',
+                       'long.?line', 
+                       gears_line,
+                       'seine',
+                       'gill.?net',
+                       '[^a-z]trap', ### avoid "entrapment" by forcing a non-alpha before
+                       'trawl') %>%
+  paste0(collapse = '|')
+
+### Trawl exceptions are tricky, so let's do them separately by
+### counting all, then subtracting the exceptions
+trawl_except_str <- c('(explora|experim|research|scientific|fisher[a-z]+.indep)[a-z]* trawl',
+  'trawl[a-z]* (surv|sample|experiment|research)') %>%
+  paste0(collapse = '|')
+  ### The first term looks for "trawl" preceded by an exclusion term;
+  ### the second term looks for "trawl" (and maybe a suffix, e.g. "ing") followed by
+  ### an exclusion term.
+  ### Collapsing them with an OR operator allows for compound exclusions, e.g.
+  ### "fishery-independent trawl survey", without double counting.
+
+```
+
+``` {r search narratives for terms}
+
+spp_narr_file <- file.path(dir_arf, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+spp_narr_df <- read_csv(spp_narr_file,
+                        col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(-name, -param_id, -api_error) %>%
+  distinct()
+
+gear_narr_df <- spp_narr_df %>%
+  gather(dimension, text, -iucn_sid) %>%
+  group_by(iucn_sid, dimension) %>%
+  summarize(text = paste(text, collapse = '\n\n')) %>%
+  ungroup() %>%
+  mutate(text_lc = tolower(text),
+         text_lc = str_replace_all(text_lc, '[^a-z0-9 \\.]+', '')) %>%
+  filter(str_detect(text_lc, gears_of_interest))
+
+trawl_narr_class <- gear_narr_df %>%
+  mutate(trawl_count = str_count(text_lc, 'trawl|danish seine'),
+         trawl_count = trawl_count - str_count(text_lc, trawl_except_str)) %>%
+  select(-text_lc)
+
+gear_narr_class <- gear_narr_df %>%
+  mutate(# bycatch_count  = str_count(text_lc, 'by.?catch'),
+         dredge_count   = str_count(text_lc, 'dredge'),
+         longline_count = str_count(text_lc, 'long.?line'),
+         poleline_count = str_count(text_lc, paste0(gears_line, collapse = '|')),
+         seine_count    = str_count(text_lc, 'seine'), ### note: includes danish seine
+         trap_count     = str_count(text_lc, 'trap'),
+         gillnet_count  = str_count(text_lc, 'gill.?net'),
+         midtrawl_count = str_count(text_lc, paste0(gears_midtrawl, collapse = '|')),
+         btmtrawl_count = str_count(text_lc, paste0(gears_btmtrawl, collapse = '|'))) %>%
+  select(-text_lc) %>%
+  full_join(trawl_narr_class, by = c('iucn_sid', 'text', 'dimension')) %>%
+  mutate(midtrawl_count = ifelse(midtrawl_count > trawl_count, trawl_count, midtrawl_count),
+         btmtrawl_count = ifelse(btmtrawl_count > trawl_count, trawl_count, btmtrawl_count)) %>%
+  left_join(spp_pelagic, by = 'iucn_sid')
+
+write_csv(gear_narr_class, file.path(dir_arf, 'iucn/threats/gear_narr_counts.csv'))
+
+```
+
+```{r}
+gear_narr_class <- read_csv(file.path(dir_arf, 'iucn/threats/gear_narr_counts.csv'))
+
+gear_narr_matrix <- gear_narr_class %>%
+  mutate(trawl_diff = trawl_count - btmtrawl_count - midtrawl_count,
+         midtrawl_count = ifelse(trawl_diff > 0, midtrawl_count + as.integer(midwater), midtrawl_count),
+         btmtrawl_count = ifelse(trawl_diff > 0, btmtrawl_count + as.integer(bottom), btmtrawl_count)) %>%
+  select(iucn_sid, ends_with('count'), -trawl_count) %>%
+  gather(gear, count, ends_with('count')) %>%
+  mutate(gear = str_replace(gear, '_count', '')) %>%
+  group_by(iucn_sid, gear) %>%
+  summarize(sensitive = sum(count) > 0)
+
+write_csv(gear_narr_matrix, here('iucn_threats/int/gear_matrix_from_narr.csv'))
+```
+
+### Examine frequency of spp by gear type
+
+```{r}
+gear_narr_matrix <- read_csv(here('iucn_threats/int/gear_matrix_from_narr.csv'),
+                             col_types = c(iucn_sid = 'i'))
+
+gear_narr_sum <- gear_narr_matrix %>%
+  filter(sensitive == TRUE) %>%
+  ### now arrange by impact and turn into factors for plotting
+  group_by(gear) %>%
+  summarize(spp = n()) %>%
+  arrange(desc(spp)) %>%
+  mutate(gear = fct_inorder(gear))
+
+### gear_narr_matrix  %>% filter(sensitive == TRUE) %>% .$iucn_sid %>% unique() %>% length()
+
+ggplot(gear_narr_sum, aes(x = gear, y = spp)) +
+  geom_col() +
+  theme_classic() +
+  labs(x = 'gear type', y = 'spp sensitive')
+```
+
+## Combine threat assessment with narrative threats
+
+Examine the combination of species with fishing as a major threat, with the gear type breakdown from the narratives.  By `inner_join`ing the narrative info to the threat classifications, only species with fishing listed as a major threat are kept, though some of these may not have narratives with which to classify gear types (particularly for LC species).
+
+This table is not saved but is easy to recreate from the inputs.
+
+```{r}
+fis_threat_sum <- read_csv(file.path(dir_iucn, 'int', 'fis_threat_by_code.csv'),
+                           col_types = cols(.default = 'c', iucn_sid = 'i', score_num = 'i')) %>%
+  filter(code != '5.4') %>%  ### redundant
+  select(iucn_sid, severity, score_num, code, desc = title) %>%
+  distinct()
+
+gear_narr_matrix <- read_csv(here('iucn_threats/int/gear_matrix_from_narr.csv'),
+                             col_types = c(iucn_sid = 'i')) %>%
+  filter(sensitive) %>%
+  select(-sensitive)
+  
+spp_names <- read_csv(file.path(dir_arf, 'iucn', 'spp_info_from_api_2019-1.csv'),
+                      col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(iucn_sid, sciname) %>%
+  distinct()
+
+gear_threats <- fis_threat_sum %>%
+  left_join(spp_names, by = 'iucn_sid') %>%
+  left_join(gear_narr_matrix, by = 'iucn_sid')
+
+### gear_threats %>% .$iucn_sid %>% unique() %>% length()
+### gear_threats %>% filter(score_num > 3) %>% .$iucn_sid %>% unique() %>% length()
+### gear_threats %>% filter(!is.na(gear)) %>% .$iucn_sid %>% unique() %>% length()
+### gear_threats %>% filter(!is.na(gear)) %>% filter(score_num > 3) %>% .$iucn_sid %>% unique() %>% length()
+### 1300 spp with non-NA gear types and threat score 3 or higher; 293 with 4 or higher.
+
+# x <- gear_threats %>% left_join(spp_info, by = 'iucn_sid') %>%
+#   filter(cat_score < 1 & cat_score > 0) %>%
+#   .$iucn_sid %>% unique()
+
+
+gear_threats_tot <- gear_threats %>%
+  select(iucn_sid, gear) %>%
+  filter(!is.na(gear)) %>%
+  distinct() %>%
+  group_by(gear) %>%
+  summarize(spp = n()) %>%
+  arrange(desc(spp)) %>%
+  mutate(gear = fct_inorder(gear))
+
+ggplot(gear_threats_tot, aes(x = gear, y = spp)) +
+  geom_col() +
+  theme_classic() +
+  labs(x = 'gear type', y = 'spp sensitive')
+```
+
+`r DT::datatable(gear_threats)`

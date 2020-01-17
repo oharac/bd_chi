@@ -1,0 +1,15 @@
+gear,gear_full,bycatch,gear_hab,dest,stressor
+dredge,dredge,high,dem,TRUE,dem_dest
+gillnet,gillnet,high,dem,FALSE,dem_nondest_hb
+gillnet,gillnet,high,pel,FALSE,pel_hb
+seine,purse seine nontuna,low,pel,FALSE,pel_lb
+seine,purse seine tuna,low,pel,FALSE,pel_lb
+poleline,lines non tuna,low,dem,FALSE,dem_nondest_lb
+poleline,lines non tuna,low,pel,FALSE,pel_lb
+poleline,pole-line tuna,low,pel,FALSE,pel_lb
+longline,longline nontuna,high,dem,FALSE,dem_nondest_hb
+longline,longline nontuna,high,pel,FALSE,pel_hb
+longline,longline tuna,high,pel,FALSE,pel_hb
+trap,trap,high,dem,FALSE,dem_nondest_hb
+midtrawl,trawl midwater,high,pel,FALSE,pel_hb
+btmtrawl,trawl bottom,high,dem,TRUE,dem_dest

@@ -20,6 +20,9 @@ output:
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
+
+library(tidytext) ### to help parse ngrams in the narratives
+
 ```
 
 
@@ -33,7 +36,7 @@ Sensitivity will denote whether a species range overlapping a stressor range con
 
 ## Set up stressor sensitivity dataframe
 
-Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in `spp_rasts_mol_2019`), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.
+Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in `spp_rasts_mol_2019`), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.  Here we are looking at fishing threats.  To differentiate between pelagic low/high bycatch, demersal destructive, and demersal non-destructive low/high bycatch, we will mine the species narratives for gear types, and use habitat information to locate the species in the water column.
 
 In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different activities that map to "direct human" impact) we summarize to the _maximum_ score out of all listed.  For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.
 
@@ -47,6 +50,12 @@ spp_risk <- read_csv(here('_data',
                           sprintf('iucn_risk_current_%s.csv', api_version))) %>%
   select(iucn_sid, cat_score)
 
+spp_narr_file <- file.path(dir_bd_anx, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+spp_narrs <- read_csv(spp_narr_file,
+                      col_types = cols(.default = 'c', iucn_sid = 'i'))
+
 chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
   mutate(stressor = str_split(stressor, ';')) %>%
   unnest(stressor) %>%
@@ -58,6 +67,7 @@ spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
   left_join(chi_lookup, by = 'code') %>%
   filter(!is.na(code))
 
+
 spp_to_include <- spp_maps %>%
   left_join(spp_risk, by = 'iucn_sid') %>%
   # filter(!is.na(cat_score)) %>%
@@ -66,7 +76,9 @@ spp_to_include <- spp_maps %>%
     ### risk category is neither LC nor EX
   filter(presence != 5) %>%
     ### exclude "extinct" polygons
-  filter(comp_assessed)
+  filter(comp_assessed) %>%
+  left_join(spp_narrs)
+
 
 ### Join the maps to the threats.
 ### * recategorize sensitivities based on impact score
@@ -106,8 +118,7 @@ threats_to_maps <- spp_to_include %>%
 # [5] "Rapid Declines"                   "Slow, Significant Declines"      
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
-write_csv(threats_to_maps, 
-          here('_output', sprintf('spp_sens_fishing_%s.csv', api_version)))
+write_csv(threats_to_maps, here('int/spp_threats_fishing.csv'))
 
 n_comp <- spp_maps %>% 
   filter(comp_assessed) %>% 
@@ -138,3 +149,365 @@ The number of threatened spp with sensitivity to at least one stressor, excludin
 NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
 <!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors -->
 
+## Identify stressors impact by gear type
+
+Differentiate sensitivity to fishing effort based on gear type: demersal destructive gear (bottom trawl) and high bycatch (trawl, longline, gillnet).
+
+* intentional use: can be low or high bycatch
+    * if no high bycatch keywords, assume low bycatch?
+    * if high bycatch keywords, check also for low bycatch keywords - seine? hand line/pole line?
+* unintentional use: assume high bycatch?
+
+Fishing stressor categories by gear type in Watson data, categorized via Halpern et al 2019:
+
+|        gear         | bycatch | habitat  | destructive |
+|:--------------------|:-------:|:--------:|:-----------:|
+| dredge              |   high  | demersal |     yes     |
+| gillnet             |   high  | dem/pel  |     no      |
+| purse seine nontuna |   low   | pelagic  |     no      |
+| purse seine tuna    |   low   | pelagic  |     no      |
+| lines non tuna      |   low   | dem/pel  |     no      |
+| pole-line tuna      |   low   | pelagic  |     no      |
+| longline nontuna    |   high  | dem/pel  |     no      |
+| longline tuna       |   high  | pelagic  |     no      |
+| trap                |   high  | demersal |     no      |
+| trawl midwater      |   high  | pelagic  |     no      |
+| trawl bottom        |   high  | demersal |     yes     |
+
+```{r set up gear to stressor lookup}
+### manually set up the gear types.
+gear_to_stressor_df <- tribble(
+  ~gear,      ~gear_full,           ~bycatch, ~gear_hab, ~dest, ~stressor,
+  'dredge',   'dredge',              'high',   'dem',    T, 'dem_dest',
+  'gillnet',  'gillnet',             'high',   'dem',    F, 'dem_nondest_hb',
+  'gillnet',  'gillnet',             'high',   'pel',    F, 'pel_hb',
+  'seine',    'purse seine nontuna',  'low',   'pel',    F, 'pel_lb',
+  'seine',    'purse seine tuna',     'low',   'pel',    F, 'pel_lb',
+  'poleline', 'lines non tuna',       'low',   'dem',    F, 'dem_nondest_lb',
+  'poleline', 'lines non tuna',       'low',   'pel',    F, 'pel_lb',
+  'poleline', 'pole-line tuna',       'low',   'pel',    F, 'pel_lb',
+  'longline', 'longline nontuna',    'high',   'dem',    F, 'dem_nondest_hb',
+  'longline', 'longline nontuna',    'high',   'pel',    F, 'pel_hb',
+  'longline', 'longline tuna',       'high',   'pel',    F, 'pel_hb',
+  'trap',     'trap',                'high',   'dem',    F, 'dem_nondest_hb',
+  'midtrawl', 'trawl midwater',      'high',   'pel',    F, 'pel_hb',
+  'btmtrawl', 'trawl bottom',        'high',   'dem',    T, 'dem_dest')
+
+write_csv(gear_to_stressor_df, here('_raw/gear_to_stressor_lookup.csv'))
+  
+```
+
+## Identify species habitat location (demersal vs pelagic)
+
+Habitat codes 10.X are marine pelagic; 9.1 is neritic pelagic.  Other 9.X, 11.X, 12.X, 13.X are demersal or benthic.
+
+```{r}
+spp_dem_pel <- read_csv(file.path(dir_bd_anx, 'iucn',
+                                sprintf('spp_habs_from_api_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i',
+                                      'code' = 'c')) %>%
+  select(iucn_sid, code, habitat, suitability) %>%
+  distinct() %>%
+  mutate(code_main = as.integer(str_replace_all(code, '\\..*', ''))) %>%
+  filter(code_main %in% 9:13) %>% ### limit to marine spp
+  mutate(dem = code_main %in% c(9, 11, 12, 13) & code != '9.1',
+         pel = code_main == 10 | code == '9.1') %>%
+  group_by(iucn_sid) %>%
+  summarize(pel = any(pel),
+            dem = any(dem)) %>%
+  gather(spp_hab, val, pel, dem) %>%
+  filter(val != 0) %>%
+  select(-val)
+
+write_csv(spp_dem_pel, here('int/spp_demersal_pelagic.csv'))
+
+```
+
+
+## Check for bycatch and gear instances in narratives
+
+### identify keywords for mid-water and bottom trawls
+
+Since trawl surveys are often used for research, we can avoid instances of "trawl" near "survey" as a pattern; are there any other troublesome patterns? Examine bigrams from the narratives that include 'trawl'.
+
+```{r set up for bigram analysis, eval = TRUE}
+
+spp_narr_file <- file.path(dir_bd_anx, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+spp_narrs <- read_csv(spp_narr_file,
+                      col_types = cols(.default = 'c', iucn_sid = 'i'))
+
+### set up some stop words.  The stop_words df is a bit large and slow
+### to search over... also doesn't drop numbers
+cut_words <- data.frame(
+    word = c('a', 'and', 'or', 'in', 'on', 'of', 'by',
+             'to', 'but', 'the', 'from', 
+             '[0-9,;\\.]+')
+  ) %>%
+  mutate(combo = paste0('^', word, ' | ', word, '$')) %>%
+    ### e.g. not "and trawl" or "trawling and"
+  summarize(to_cut = paste0(combo, collapse = '|'))
+
+```
+
+```{r examine trawl bigrams, eval = TRUE}
+
+trawl_text_df <- spp_narrs %>%
+  select(iucn_sid:usetrade) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  ### prefilter to dramatically speed up the unnest_tokens...
+  filter(str_detect(tolower(text), 'trawl')) %>%
+  # group_by(iucn_sid, dimension) %>%
+  unnest_tokens(output = bigram, input = text, 
+                token = 'ngrams', n = 2, drop = FALSE) %>%
+  filter(str_detect(bigram, 'trawl')) %>%
+  mutate(pre_gram = ifelse(str_detect(bigram, '^trawl'), TRUE, FALSE))
+
+
+trawl_bigram_df <- trawl_text_df %>%
+  select(-text, -iucn_sid) %>%
+  filter(!str_detect(bigram, cut_words$to_cut)) %>%
+  group_by(bigram, pre_gram) %>%
+  summarize(instances = n()) %>%
+  ungroup() %>%
+  arrange(desc(instances)) %>%
+  filter(instances > 1)
+
+DT::datatable(trawl_bigram_df)
+
+```
+
+Combinations to exclude:
+
+* trawl survey
+* fishery-independent trawl, exploratory trawl, experimental trawl
+* research trawl, scientific trawl
+* trawl sample, trawl experiment, trawl research
+
+What kinds of patterns involve non-research trawls, to differentiate between mid-water and bottom?  Look at preceding and following words in triads, again using a regex string to identify instances of `[word] trawl[suffix]` or `trawl[suffix] [word]`.
+
+* bottom trawls: 
+    * bottom trawl, deep.?water trawl, demersal trawl, beam trawl, benthic trawl,
+    * crab trawl, crustacean trawl, groundfish trawl, shrimp trawl
+* midwater trawls:
+    * midwater trawl, pelagic trawl
+* indeterminate types?:
+    * otter trawl
+    
+These (exclusion and habitat types) are coded in a regex exception string.
+
+### identify keywords for pole & line combos
+
+What kinds of patterns involve line, pole-and-line, etc.  Look at preceding and following words in triads.  Rather than identify instances of tuna vs. non-tuna pole and line, we can simply specify that a given species is sensitive to low bycatch, non-destructive line fishing in whichever habitats the species occurs (pelagic, demersal, both).
+
+```{r trigram analysis for pole and line}
+
+### exclude things like:
+### "decline", "longline", "linear", "lineatus", "lineolatus"
+line_exclude <- c('[a-z]line|line[ao]|long.?line')
+
+line_text_df <- spp_narrs %>%
+  select(iucn_sid:usetrade) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  ### prefilter to dramatically speed up the unnest_tokens...
+  filter(str_detect(tolower(text), 'line')) %>%
+  # group_by(iucn_sid, dimension) %>%
+  unnest_tokens(output = trigram, input = text, 
+                token = 'ngrams', n = 3, drop = FALSE) %>%
+  filter(str_detect(trigram, 'line') &
+           !str_detect(trigram, line_exclude))
+
+
+line_trigram_df <- line_text_df %>%
+  select(-text, -iucn_sid) %>%
+  filter(!str_detect(trigram, cut_words$to_cut)) %>%
+    ### will drop "and" (etc) but only at start or end of trigram
+  group_by(trigram) %>%
+  summarize(instances = n()) %>%
+  ungroup() %>%
+  arrange(desc(instances)) %>%
+  filter(instances > 1)
+
+DT::datatable(line_trigram_df)
+
+```
+
+* some examples (consider also swapping spaces with hyphens, e.g. [^a-z] or [ -])
+    * hook(s) (and) line, hand line, troll(ing) line,            
+    * caught by line, caught in line, caught on line, caught with line, 
+    * deep water line, hook and line, pole-and-line, drop-line, 
+    * line fishery, line fisheries, industrial line fishery, inshore line fishing
+    * commercial line
+* exclude: longline (or long line)
+
+## Parse threats to count by gear type
+
+Once parsed, examine frequency of various gear types.  Presumably should be a higher proportion of gears associated with high bycatch - i.e. indiscriminate gear types.
+
+To help differentiate between mid-water trawl and bottom trawl, for species where narratives do not clearly differentiate, we will use habitat information to determine sensitivity.
+
+```{r set up gear keywords}
+### create search terms for midwater trawl:
+gears_midtrawl <- c('mid.?water trawl', 'pelagic trawl')
+### create search terms for bottom trawl:
+gears_btmtrawl <- c('bottom trawl', 
+                    'deep.?water trawl', 
+                    'demersal trawl', 
+                    'beam trawl', 
+                    'benthic trawl',
+                    'crab trawl', 'crustacean trawl', 'groundfish trawl', 
+                    'shrimp trawl', 'prawn trawl', 'scallop trawl',
+                    'danish seine')
+trawl_except <- c(
+  '(explora|experim|research|scientific|fisher[a-z]+.indep)[a-z]* trawl',
+  'trawl[a-z]* (surv|sample|experiment|research)')
+
+### create search terms for line fishing (but not longline):
+gears_line <- c('caught [a-z]+ line', # caught in/on/with line, 
+                'deep.?water line', 
+                'hook.and.line', 
+                'pole.and.line', 
+                'drop.?line', 
+                'line fish',
+                'commercial line') # line fishing/fishery/fisheries
+line_except <- 'long.?line'
+
+### create regex of gear type search terms
+gears_of_interest <- c(# 'by.?catch', 
+                       'dredge',
+                       'long.?line', 
+                       gears_line,
+                       'seine',
+                       'gill.?net',
+                       '[^a-z]trap', ### avoid "entrapment"
+                       'trawl') %>%
+  paste0(collapse = '|')
+```
+
+
+``` {r search narratives for terms}
+gear_narr_df <- spp_narrs %>%
+  gather(dimension, text, -iucn_sid) %>%
+  ### prefilter for speedier unnesting of tokens
+  filter(str_detect(tolower(text), gears_of_interest)) %>%
+  tidytext::unnest_tokens(input = text, output = sentence, token = 'sentences') %>%
+  filter(str_detect(sentence, gears_of_interest))
+
+### count all the trawl instances, and subtract out the non-stressor trawls
+trawl_narr_class <- gear_narr_df %>%
+  mutate(trawl_count = str_count(sentence, 'trawl|danish seine'),
+         trawl_count = trawl_count - str_count(sentence, trawl_except)) %>%
+  select(-sentence)
+
+gear_narr_class <- gear_narr_df %>%
+  mutate(dredge_count   = str_count(sentence, 'dredge'),
+         longline_count = str_count(sentence, 'long.?line'),
+         poleline_count = str_count(sentence, paste0(gears_line, collapse = '|')),
+         seine_count    = str_count(sentence, 'seine'), ### note: includes danish seine
+         trap_count     = str_count(sentence, 'trap'),
+         gillnet_count  = str_count(sentence, 'gill.?net'),
+         midtrawl_count = str_count(sentence, paste0(gears_midtrawl, collapse = '|')),
+         btmtrawl_count = str_count(sentence, paste0(gears_btmtrawl, collapse = '|'))) %>%
+  select(-sentence) %>%
+  full_join(trawl_narr_class, by = c('iucn_sid', 'dimension')) %>%
+  ### check that the midtrawl and btmtrawl counts don't exceed the 
+  ### total non-scientific/exploratory trawls
+  mutate(midtrawl_count = ifelse(midtrawl_count > trawl_count, trawl_count, midtrawl_count),
+         btmtrawl_count = ifelse(btmtrawl_count > trawl_count, trawl_count, btmtrawl_count)) %>%
+  select(-trawl_count)
+
+gear_narr_tidy <- gear_narr_class %>%
+  gather(gear, count, ends_with('count')) %>%
+  mutate(gear = str_replace_all(gear, '_count', '')) %>%
+  group_by(iucn_sid, gear) %>%
+  summarize(count = sum(count))
+
+write_csv(gear_narr_tidy, here('int/gear_narr_tidy.csv'))
+
+```
+
+## Combine gear-to-stressors with species IDs and habitats
+
+```{r}
+gear_narr_tidy <- read_csv(here('int/gear_narr_tidy.csv'))
+spp_dem_pel <- read_csv(here('int/spp_demersal_pelagic.csv'))
+gear_to_stressor_lookup <- read_csv(here('_raw/gear_to_stressor_lookup.csv'))
+spp_threats_from_iucn <- read_csv(here('int/spp_threats_fishing.csv'))
+
+### identify all the unique fishing stressors
+stressors <- spp_threats_from_iucn$stressor %>% unique()
+
+### separate out artisanal fishing threats as these are not gear-based
+art_fish_from_iucn <- spp_threats_from_iucn %>%
+  filter(stressor == 'art_fish') %>%
+  mutate(sensitive = as.logical(sens)) %>%
+  select(iucn_sid, stressor, sensitive) %>%
+  distinct()
+
+### for gear-related stressors, bind spp and gear habitats per species,
+### and join to the threats
+gear_sens_df <- gear_narr_tidy %>%
+  left_join(spp_dem_pel, by = 'iucn_sid') %>%
+  left_join(gear_to_stressor_lookup, by = 'gear') %>%
+  filter(spp_hab == gear_hab) %>%
+  left_join(spp_threats_from_iucn, by = c('iucn_sid', 'stressor'))
+
+### Summarize sensitivity to each stressor as any non-zero counts
+### within that stressor category.  Complete the list so all stressors
+### show up for all species, leaving NAs for those added via complete().
+gear_sens_summary <- gear_sens_df %>%
+  group_by(iucn_sid, stressor) %>%
+  filter(!is.na(sens)) %>%
+  summarize(sensitive = sum(count * sens) > 0) %>%
+  bind_rows(art_fish_from_iucn) %>%
+  group_by(iucn_sid) %>%
+  complete(stressor = stressors) %>%
+  ungroup()
+
+write_csv(gear_sens_summary, 
+          here('_output', sprintf('spp_sens_fishing_%s.csv', api_version)))
+```
+
+## Check the number of spp sensitive to different types...
+
+```{r}
+n_sens_spp <- gear_sens_summary %>%
+  filter(sensitive) %>%
+  .$iucn_sid %>%
+  unique()
+```
+
+According to this analysis so far, there are `r length(n_sens_spp)` distinct species affected by various fishing stressors.
+
+```{r}
+spp_per_stressor <- gear_sens_summary %>%
+  filter(sensitive) %>%
+  count(stressor) %>%
+  arrange(n) %>%
+  mutate(stressor = fct_inorder(stressor))
+ggplot(spp_per_stressor, aes(x = stressor, y = n)) +
+  ggtheme_plot() +
+  geom_col() + 
+  coord_flip() +
+  labs(title = 'sensitive spp by stressor',
+       y = 'number of species affected by stressor')
+```
+
+Most species are affected by artisanal fishing.
+
+```{r}
+stressor_per_spp <- gear_sens_summary %>%
+  filter(sensitive) %>%
+  count(iucn_sid) %>%
+  mutate(n_txt = as.character(n))
+
+ggplot(stressor_per_spp, aes(x = n_txt)) +
+  ggtheme_plot() +
+  geom_bar() + 
+  labs(title = 'stressor sensitivities per spp',
+       x = 'number of stressors on spp',
+       y = 'number of species')
+```
+
+Most species are affected by only one fishing stressor.

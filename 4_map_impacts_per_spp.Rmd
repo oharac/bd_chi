@@ -28,7 +28,7 @@ source(here('common_fxns.R'))
 
 # Summary
 
-For each species, generate a cumulative impact map
+For select species, generate a cumulative impact map for each year.  
 
 # Methods
 
