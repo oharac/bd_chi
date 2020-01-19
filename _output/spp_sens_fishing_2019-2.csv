@@ -1,4 +1,4 @@
-iucn_sid,stressor,sensitive
+iucn_sid,stressor,sens
 1793,art_fish,TRUE
 1793,dem_dest,FALSE
 1793,dem_nondest_hb,TRUE
@@ -9916,7 +9916,7 @@ iucn_sid,stressor,sensitive
 161349,pel_hb,NA
 161349,pel_lb,NA
 161350,art_fish,TRUE
-161350,dem_dest,FALSE
+161350,dem_dest,TRUE
 161350,dem_nondest_hb,TRUE
 161350,dem_nondest_lb,TRUE
 161350,pel_hb,NA
@@ -12825,7 +12825,7 @@ iucn_sid,stressor,sensitive
 169970,pel_lb,NA
 169972,art_fish,NA
 169972,dem_dest,FALSE
-169972,dem_nondest_hb,TRUE
+169972,dem_nondest_hb,FALSE
 169972,dem_nondest_lb,FALSE
 169972,pel_hb,NA
 169972,pel_lb,NA

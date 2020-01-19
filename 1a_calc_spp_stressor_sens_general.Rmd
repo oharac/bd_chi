@@ -76,27 +76,23 @@ spp_to_include <- spp_maps %>%
 threats_to_maps <- spp_to_include %>%
   left_join(spp_threats, by = 'iucn_sid') %>%
   ### code low-med-high sensitivity based on impact:
-  mutate(sens = case_when(score_num %in% 0:2 ~ 0,      ### no/negligible impact
-                          score_num %in% 3:5 ~ 1,      ### low impact
-                          score_num %in% 6:7 ~ 2,      ### med impact
-                          score_num > 7      ~ 3,      ### high impact
-                          TRUE               ~ NA_real_)) %>% ### set all else to NA
+  mutate(sens = case_when(score_num %in% 0:2 ~ FALSE,      ### no/negligible impact
+                          score_num > 2      ~ TRUE,
+                          TRUE               ~ NA)) %>% ### set all else to NA
   ### for NA impact, code sensitivity based on severity:
   mutate(sev = tolower(severity),
-         sens = case_when(is.na(sens) & str_detect(sev, 'negligible|no decl') ~ 0,
-                          is.na(sens) & str_detect(sev, 'very rapid decl')    ~ 3,
-                          is.na(sens) & str_detect(sev, 'rapid decl')         ~ 2,
-                          is.na(sens) & str_detect(sev, 'causing|slow, significant') ~ 1,
-                          TRUE ~ sens),
-         sens = as.integer(sens)) %>%
+         sens = case_when(is.na(sens) & str_detect(sev, 'negligible|no decl') ~ FALSE,
+                          is.na(sens) & str_detect(sev, 'very rapid decl')    ~ TRUE,
+                          is.na(sens) & str_detect(sev, 'rapid decl')         ~ TRUE,
+                          is.na(sens) & str_detect(sev, 'causing|slow, significant') ~ TRUE,
+                          TRUE ~ sens)) %>%
   ### set past impacts and unresolved sensitivies to 0:
-  mutate(sens = ifelse(timing == 'Past, Unlikely to Return', 0, sens),
-         sens = ifelse(is.na(sens), 0, sens)) %>%
+  mutate(sens = ifelse(timing == 'Past, Unlikely to Return', FALSE, sens),
+         sens = ifelse(is.na(sens), FALSE, sens)) %>%
   filter(!is.na(code)) %>% ### drop code mismatches
   filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
-  select(iucn_sid, cat_score, sens, 
-         code, 
-         # desc, 
+  select(iucn_sid, cat_score,
+         sens, 
          stressor) %>%
   distinct()
 
@@ -106,7 +102,7 @@ threats_to_maps <- spp_to_include %>%
 # [5] "Rapid Declines"                   "Slow, Significant Declines"      
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
-write_csv(threats_to_maps, 
+write_csv(threats_to_maps %>% select(-cat_score),
           here('_output', sprintf('spp_sens_general_%s.csv', api_version)))
 
 n_comp <- spp_maps %>% 
@@ -118,22 +114,14 @@ n_threatened <- spp_to_include %>%
 
 n_stressed <- threats_to_maps %>%
   filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
-  filter(sens > 0) %>%
+  filter(sens) %>%
   .$iucn_sid %>% unique() %>% length()
 
-n_stressed_no_cc <- threats_to_maps %>%
-  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
-  filter(sens > 0) %>%
-  filter(!str_detect(code, '^11')) %>%
-  .$iucn_sid %>% unique() %>% length()
-  
 ```
 
 Out of the list of `r n_comp` marine species with maps, `r n_threatened` are neither Least Concern nor Data Deficient.  
 
 The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one stressor is: `r n_stressed`.
-
-The number of threatened spp with sensitivity to at least one stressor, excluding climate stressors, is: `r n_stressed_no_cc`.
 
 NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
 <!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors -->

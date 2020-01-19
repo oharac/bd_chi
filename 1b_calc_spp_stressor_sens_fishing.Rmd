@@ -38,9 +38,21 @@ Sensitivity will denote whether a species range overlapping a stressor range con
 
 Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in `spp_rasts_mol_2019`), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.  Here we are looking at fishing threats.  To differentiate between pelagic low/high bycatch, demersal destructive, and demersal non-destructive low/high bycatch, we will mine the species narratives for gear types, and use habitat information to locate the species in the water column.
 
-In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different activities that map to "direct human" impact) we summarize to the _maximum_ score out of all listed.  For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.
+In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different mentions of pelagic high bycatch gear in different threat categories) we summarize to the _maximum_ score out of all listed.  For example, a species suffers low impact from unintentional impacts from high bycatch pelagic fishing (score = 3) but medium impact from intentional use (score = 5), the high bycatch pelagic fishing stressor layer will be weighted as a 5 across the board.
 
 In this step we will include all species including LC and DD.  We will however limit to comprehensively assessed taxa.
+
+Threats from IUCN mapped to fishing stressors:
+
+| Code  | Description                                   | Potential strs      |
+|:-----:|:----------------------------------------------|:--------------------|
+| 5.4   | Biological resource use: Fishing & harvesting aquatic resources | NA |
+| 5.4.1 | Intentional use: subsistence/small scale (species being assessed is the target) | art_fish |
+| 5.4.2 | Intentional use: large scale (species being assessed is the target) | dem_dest, dem_nondest_hb, dem_nondest_lb, pel_hb, pel_lb |
+| 5.4.3 | Unintentional effects: subsistence/small scale (species being assessed is not the target) | art_fish |
+| 5.4.4 | Unintentional effects: large scale (species being assessed is not the target) | dem_dest, dem_nondest_hb, dem_nondest_lb, pel_hb, pel_lb |
+| 5.4.5 | Persecution/control | NA |
+| 5.4.6 | Motivation Unknown/Unrecorded | NA |
 
 ```{r set up spp with maps and threats}
 spp_maps <- read_csv(here('_data', 
@@ -131,20 +143,12 @@ n_stressed <- threats_to_maps %>%
   filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
   filter(sens > 0) %>%
   .$iucn_sid %>% unique() %>% length()
-
-n_stressed_no_cc <- threats_to_maps %>%
-  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
-  filter(sens > 0) %>%
-  filter(!str_detect(code, '^11')) %>%
-  .$iucn_sid %>% unique() %>% length()
   
 ```
 
 Out of the list of `r n_comp` marine species with maps, `r n_threatened` are neither Least Concern nor Data Deficient.  
 
 The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one stressor is: `r n_stressed`.
-
-The number of threatened spp with sensitivity to at least one stressor, excluding climate stressors, is: `r n_stressed_no_cc`.
 
 NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
 <!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors -->
@@ -236,7 +240,11 @@ spp_narr_file <- file.path(dir_bd_anx, 'iucn',
                            sprintf('spp_narr_from_api_%s.csv', api_version))
 
 spp_narrs <- read_csv(spp_narr_file,
-                      col_types = cols(.default = 'c', iucn_sid = 'i'))
+                      col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(iucn_sid:usetrade) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  ### remove HTML tags since they seem to affect the unnesting of sentences
+  mutate(text = str_replace_all(text, '<.*?>', ' '))
 
 ### set up some stop words.  The stop_words df is a bit large and slow
 ### to search over... also doesn't drop numbers
@@ -254,8 +262,6 @@ cut_words <- data.frame(
 ```{r examine trawl bigrams, eval = TRUE}
 
 trawl_text_df <- spp_narrs %>%
-  select(iucn_sid:usetrade) %>%
-  gather(dimension, text, -iucn_sid) %>%
   ### prefilter to dramatically speed up the unnest_tokens...
   filter(str_detect(tolower(text), 'trawl')) %>%
   # group_by(iucn_sid, dimension) %>%
@@ -308,8 +314,6 @@ What kinds of patterns involve line, pole-and-line, etc.  Look at preceding and 
 line_exclude <- c('[a-z]line|line[ao]|long.?line')
 
 line_text_df <- spp_narrs %>%
-  select(iucn_sid:usetrade) %>%
-  gather(dimension, text, -iucn_sid) %>%
   ### prefilter to dramatically speed up the unnest_tokens...
   filter(str_detect(tolower(text), 'line')) %>%
   # group_by(iucn_sid, dimension) %>%
@@ -441,8 +445,8 @@ stressors <- spp_threats_from_iucn$stressor %>% unique()
 ### separate out artisanal fishing threats as these are not gear-based
 art_fish_from_iucn <- spp_threats_from_iucn %>%
   filter(stressor == 'art_fish') %>%
-  mutate(sensitive = as.logical(sens)) %>%
-  select(iucn_sid, stressor, sensitive) %>%
+  mutate(sens = as.logical(sens)) %>%
+  select(iucn_sid, stressor, sens) %>%
   distinct()
 
 ### for gear-related stressors, bind spp and gear habitats per species,
@@ -459,7 +463,7 @@ gear_sens_df <- gear_narr_tidy %>%
 gear_sens_summary <- gear_sens_df %>%
   group_by(iucn_sid, stressor) %>%
   filter(!is.na(sens)) %>%
-  summarize(sensitive = sum(count * sens) > 0) %>%
+  summarize(sens = sum(count * sens) > 0) %>%
   bind_rows(art_fish_from_iucn) %>%
   group_by(iucn_sid) %>%
   complete(stressor = stressors) %>%
@@ -473,7 +477,7 @@ write_csv(gear_sens_summary,
 
 ```{r}
 n_sens_spp <- gear_sens_summary %>%
-  filter(sensitive) %>%
+  filter(sens) %>%
   .$iucn_sid %>%
   unique()
 ```
@@ -482,7 +486,7 @@ According to this analysis so far, there are `r length(n_sens_spp)` distinct spe
 
 ```{r}
 spp_per_stressor <- gear_sens_summary %>%
-  filter(sensitive) %>%
+  filter(sens) %>%
   count(stressor) %>%
   arrange(n) %>%
   mutate(stressor = fct_inorder(stressor))
@@ -498,7 +502,7 @@ Most species are affected by artisanal fishing.
 
 ```{r}
 stressor_per_spp <- gear_sens_summary %>%
-  filter(sensitive) %>%
+  filter(sens) %>%
   count(iucn_sid) %>%
   mutate(n_txt = as.character(n))
 

@@ -20,6 +20,9 @@ output:
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
+
+library(tidytext) ### to help parse ngrams in the narratives
+
 ```
 
 
@@ -33,19 +36,34 @@ Sensitivity will denote whether a species range overlapping a stressor range con
 
 ## Set up stressor sensitivity dataframe
 
-Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in `spp_rasts_mol_2019`), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.
+Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in `spp_rasts_mol_2019`), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.  Here we are looking at climate threats.  To differentiate between SST, SLR, OA, and possibly UV sensitivity (though UV not included in Halpern 2019), we will mine the species narratives for keywords, and use habitat information to locate the species in the water column.
 
-In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different activities that map to "direct human" impact) we summarize to the _maximum_ score out of all listed.  For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.
+In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different mentions of SST in different threat categories) we summarize to the _maximum_ score out of all listed.  For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.
 
 In this step we will include all species including LC and DD.  We will however limit to comprehensively assessed taxa.
 
-```{r set up spp with maps and threats}
+| Code  | Description                                   | Potential strs   |
+|:-----:|:----------------------------------------------|:-----------------|
+|   11  | Climate change & severe weather               | NA               |
+|  11.1 | Habitat shifting & alteration                 | sst, slr, oa, uv | 
+|  11.2 | Droughts                                      | NA               | 
+|  11.3 | Temperature extremes                          | sst              | 
+|  11.4 | Storms & flooding                             | NA               | 
+|  11.5 | Other impacts                                 | oa, uv           | 
+
+```{r set up spp with maps and threats, eval = TRUE}
 spp_maps <- read_csv(here('_data', 
                           sprintf('spp_marine_maps_%s.csv', api_version)))
 
 spp_risk <- read_csv(here('_data', 
                           sprintf('iucn_risk_current_%s.csv', api_version))) %>%
   select(iucn_sid, cat_score)
+
+spp_narr_file <- file.path(dir_bd_anx, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+spp_narrs <- read_csv(spp_narr_file,
+                      col_types = cols(.default = 'c', iucn_sid = 'i'))
 
 chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
   mutate(stressor = str_split(stressor, ';')) %>%
@@ -58,6 +76,7 @@ spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
   left_join(chi_lookup, by = 'code') %>%
   filter(!is.na(code))
 
+
 spp_to_include <- spp_maps %>%
   left_join(spp_risk, by = 'iucn_sid') %>%
   # filter(!is.na(cat_score)) %>%
@@ -66,7 +85,9 @@ spp_to_include <- spp_maps %>%
     ### risk category is neither LC nor EX
   filter(presence != 5) %>%
     ### exclude "extinct" polygons
-  filter(comp_assessed)
+  filter(comp_assessed) %>%
+  left_join(spp_narrs)
+
 
 ### Join the maps to the threats.
 ### * recategorize sensitivities based on impact score
@@ -106,8 +127,7 @@ threats_to_maps <- spp_to_include %>%
 # [5] "Rapid Declines"                   "Slow, Significant Declines"      
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
-write_csv(threats_to_maps, 
-          here('_output', sprintf('spp_sens_climate_%s.csv', api_version)))
+write_csv(threats_to_maps, here('int/spp_threats_climate.csv'))
 
 n_comp <- spp_maps %>% 
   filter(comp_assessed) %>% 
@@ -120,12 +140,6 @@ n_stressed <- threats_to_maps %>%
   filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
   filter(sens > 0) %>%
   .$iucn_sid %>% unique() %>% length()
-
-n_stressed_no_cc <- threats_to_maps %>%
-  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
-  filter(sens > 0) %>%
-  filter(!str_detect(code, '^11')) %>%
-  .$iucn_sid %>% unique() %>% length()
   
 ```
 
@@ -133,8 +147,360 @@ Out of the list of `r n_comp` marine species with maps, `r n_threatened` are nei
 
 The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one stressor is: `r n_stressed`.
 
-The number of threatened spp with sensitivity to at least one stressor, excluding climate stressors, is: `r n_stressed_no_cc`.
-
 NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
 <!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors -->
 
+## Identify species habitat location (shallow vs. deep)
+
+For fishing stressors, we differentiated between demersal and pelagic to predict likely impacts from different gear types.  Here we examine shallow vs. deep species to help parse potential sensitivity to sea surface temperature and UV exposure, and species who rely on intertidal and shore to parse sensitivity to sea level rise.  
+
+* For SST: Shallow habitats include all neritic (9.X), epipelagic (10.1), marine intertidal (12.X), and marine coastal/supratidal (13.X).
+* For SLR: Shoreline habitats include marine intertidal (12.X) and coastal/supratidal (13.X)
+    * consider perhaps reef, seagrass, and estuary habitats (9.8, 9.9, 9.10 respectively). These are not currently included.
+
+```{r}
+spp_shallow_shore <- read_csv(file.path(dir_bd_anx, 'iucn',
+                                sprintf('spp_habs_from_api_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i',
+                                      'code' = 'c')) %>%
+  select(iucn_sid, code, habitat, suitability) %>%
+  distinct() %>%
+  mutate(code_main = as.integer(str_replace_all(code, '\\..*', ''))) %>%
+  filter(code_main %in% 9:13) %>% ### limit to marine spp
+  mutate(shallow   = code_main %in% c(9, 12, 13) | code == '10.1',
+         shoreline = code_main %in% c(12, 13)) %>%
+  group_by(iucn_sid) %>%
+  summarize(shallow = any(shallow),
+            shoreline = any(shoreline)) %>%
+  ungroup()
+
+write_csv(spp_shallow_shore, here('int/spp_shallow_shore.csv'))
+
+```
+
+## Check for climate instances in narratives
+
+### identify keywords for sea surface temperature
+
+Examine trigrams from the narratives that include 'temp' or 'sst'.  Limit to the "threats" dimension since temperature may show up in "habitat" or other dimensions more innocuously.
+
+```{r set up for ngram analysis}
+
+spp_narr_file <- file.path(dir_bd_anx, 'iucn', 
+                           sprintf('spp_narr_from_api_%s.csv', api_version))
+
+spp_narrs <- read_csv(spp_narr_file,
+                      col_types = cols(.default = 'c', iucn_sid = 'i')) %>%
+  select(iucn_sid:usetrade) %>%
+  gather(dimension, text, -iucn_sid) %>%
+  ### remove HTML tags since they seem to affect the unnesting of sentences
+  mutate(text = str_replace_all(text, '<.*?>', ' '))
+
+### set up some stop words.  The stop_words df is a bit large and slow
+### to search over... also doesn't drop numbers
+cut_words <- data.frame(
+    word = c('a', 'and', 'or', 'in', 'on', 'of', 'by',
+             'to', 'but', 'the', 'from', 
+             '[0-9,;\\.]+')
+  ) %>%
+  mutate(combo = paste0('^', word, ' | ', word, '$')) %>%
+    ### e.g. not "and trawl" or "trawling and"
+  summarize(to_cut = paste0(combo, collapse = '|'))
+
+```
+
+```{r examine temperature trigrams}
+
+sst_search_string <- 'temperature|sst'
+
+sst_text_df <- spp_narrs %>%
+  filter(dimension == 'threats') %>%
+  unnest_tokens(output = sentence, input = text, 
+                token = 'sentences', drop = FALSE) %>%
+  ### prefilter to dramatically speed up the trigrams...
+  filter(str_detect(tolower(sentence), sst_search_string)) %>%
+  # group_by(iucn_sid, dimension) %>%
+  unnest_tokens(output = trigram, input = sentence, 
+                token = 'ngrams', n = 3, drop = FALSE) %>%
+  filter(str_detect(trigram, sst_search_string))
+
+
+sst_trigram_df <- sst_text_df %>%
+  select(-text, -iucn_sid) %>%
+  filter(!str_detect(trigram, cut_words$to_cut)) %>%
+  group_by(trigram) %>%
+  summarize(instances = n()) %>%
+  ungroup() %>%
+  arrange(desc(instances)) %>%
+  filter(instances > 1)
+
+DT::datatable(sst_trigram_df)
+
+```
+
+Some frequent word combos:
+
+* sea surface temperature
+* increased (ocean/water)? temperature, increasing (water/sea)? temperature
+* high (sea)? temperature
+* temperature extreme, extreme temperature events, extreme elevated temperature
+* temperatures willis (particularly for corals)
+    * based on "Increased coral disease levels on the GBR were correlated with increased ocean temperatures (Willis et al. 2007) supporting the prediction that disease levels will be increasing with higher sea surface temperatures"
+* caution to avoid sand or air temperature combinations!
+
+### identify keywords for ocean acidification
+
+Examine trigrams for instances of "ocean acid".
+
+```{r examine OA trigrams}
+
+oa_search_string <- 'ocean acidification'
+### 1077 caught by 'acid' alone, 1055 caught by 'ocean acid',
+### 1053 caught by 'ocean acidification'
+### dropped instances reference domoic acid or lead acid batteries.
+
+oa_text_df <- spp_narrs %>%
+  filter(dimension == 'threats') %>%
+  unnest_tokens(output = sentence, input = text, 
+                token = 'sentences', drop = FALSE) %>%
+  ### prefilter to dramatically speed up the trigrams...
+  filter(str_detect(tolower(sentence), oa_search_string)) %>%
+  # group_by(iucn_sid, dimension) %>%
+  unnest_tokens(output = trigram, input = sentence, 
+                token = 'ngrams', n = 3, drop = FALSE) %>%
+  filter(str_detect(trigram, oa_search_string))
+
+oa_trigram_df <- oa_text_df %>%
+  select(-text, -iucn_sid) %>%
+  filter(!str_detect(trigram, cut_words$to_cut)) %>%
+  group_by(trigram) %>%
+  summarize(instances = n()) %>%
+  ungroup() %>%
+  arrange(desc(instances)) %>%
+  filter(instances > 1)
+
+DT::datatable(oa_trigram_df)
+
+```
+
+It appears that "ocean acid" on its own is a decent search string to identify ocean acidification threats.
+
+### identify keywords for sea level rise
+
+Examine tetragrams for instances of "sea level rise" or similar.
+
+```{r examine SLR tetragrams}
+
+slr_search_string <- 'sea level'
+### 1077 caught by 'acid' alone, 1055 caught by 'ocean acid',
+### 1053 caught by 'ocean acidification'
+### dropped instances reference domoic acid or lead acid batteries.
+
+slr_text_df <- spp_narrs %>%
+  filter(dimension == 'threats') %>%
+  unnest_tokens(output = sentence, input = text, 
+                token = 'sentences', drop = FALSE) %>%
+  ### prefilter to dramatically speed up the trigrams...
+  filter(str_detect(tolower(sentence), slr_search_string)) %>%
+  # group_by(iucn_sid, dimension) %>%
+  unnest_tokens(output = tetragram, input = sentence, 
+                token = 'ngrams', n = 4, drop = FALSE) %>%
+  filter(str_detect(tetragram, slr_search_string))
+### n_ids(slr_text_df)
+### no hits on 'slr'; 134 hits with just 'sea level'; 65 with 'sea level rise
+
+slr_tetragram_df <- slr_text_df %>%
+  select(-text, -iucn_sid) %>%
+  filter(!str_detect(tetragram, cut_words$to_cut)) %>%
+  group_by(tetragram) %>%
+  summarize(instances = n()) %>%
+  ungroup() %>%
+  arrange(desc(instances)) %>%
+  filter(instances > 1)
+
+DT::datatable(slr_tetragram_df)
+
+```
+
+Some potential matches:
+
+* sea level rise/rising
+* changing/rising sea levels
+* sea level change/changing
+
+## Parse threats to count by climate stressor type
+
+Using the above analyses, set up keywords to map species sensitivities to the various climate stressors.
+
+```{r set up climate stressor keywords}
+### set up search terms for sea level rise:
+slr_keywords <- c('sea level ris', 'changing sea level', 'rising sea level', 'sea level chang') %>%
+  paste(collapse = '|')
+
+### set up search terms for ocean acidification:
+oa_keywords <- 'ocean acidifi'
+
+### set up search terms for sea surface temperature:
+sst_keywords <- c('sea surface temper',
+                  'increas[a-z]+ (ocean|water|sea)? ?temper',
+                  'high sea temper',
+                  'temper[a-z]+ extreme',
+                  'extreme (elevated )?temper',
+                  'temper[a-z]+ willis') %>%
+  paste0(collapse = '|')
+
+cc_keywords <- paste(slr_keywords, oa_keywords, sst_keywords, sep = '|')
+
+```
+
+
+``` {r search narratives for terms}
+
+cc_narr_df <- spp_narrs %>%
+  filter(dimension == 'threats') %>%
+  tidytext::unnest_tokens(input = text, output = trigram, 
+                          token = 'ngrams', n = 3) %>%
+  filter(str_detect(trigram, cc_keywords)) %>%
+  mutate(oa_count  = str_count(trigram, oa_keywords),
+         slr_count = str_count(trigram, slr_keywords),
+         sst_count = str_count(trigram, sst_keywords)) %>%
+  select(-trigram)
+
+cc_narr_tidy <- cc_narr_df %>%
+  gather(stressor, count, ends_with('count')) %>%
+  mutate(stressor = str_replace_all(stressor, '_count', '')) %>%
+  group_by(iucn_sid, stressor) %>%
+  summarize(count = sum(count))
+
+# x <- cc_narr_tidy %>%
+#   filter(stressor == 'oa' & count > 0)
+### 1060 OA spp still here
+
+write_csv(cc_narr_tidy, here('int/cc_narr_tidy.csv'))
+
+```
+
+## Combine stressors with species IDs and habitats
+
+Note that here we filter out occurrences of:
+
+* species whose narrative suggests sensitivity to sea surface temperature but whose habitat does not include surface waters (<200m)
+* species whose narrative suggests sensitivity to sea level rise but whose habitat does not include shoreline habitats.
+
+```{r}
+cc_narr_tidy          <- read_csv(here('int/cc_narr_tidy.csv'))
+spp_shallow_shore     <- read_csv(here('int/spp_shallow_shore.csv'))
+spp_threats_from_iucn <- read_csv(here('int/spp_threats_climate.csv'))
+
+### identify all the unique climate stressors... drop 'uv' for now
+# stressors <- spp_threats_from_iucn$stressor %>% unique()
+stressors <- c('sst', 'slr', 'oa')
+
+### join stressors from narratives to impact scores; filter out
+### stressors that don't match with habitats.
+cc_sens_df <- cc_narr_tidy %>%
+  left_join(spp_shallow_shore, by = 'iucn_sid') %>%
+  left_join(spp_threats_from_iucn, by = c('iucn_sid', 'stressor')) %>%
+  filter(!(stressor == 'sst' & shallow == FALSE)) %>%
+  filter(!(stressor == 'slr' & shoreline == FALSE))
+### 866 spp sensitive to SST without regard to habitat; 865 after filter
+### 75 spp sensitive to SLR without regard to habitat; 74 after filter.
+### only 10 spp sensitive to ocean acidification - that does not seem right!
+### Check that in the next code chunk.
+
+### Summarize sensitivity to each stressor as any non-zero counts
+### within that stressor category.  Complete the list so all stressors
+### show up for all species, leaving NAs for those added via complete().
+cc_sens_summary <- cc_sens_df %>%
+  group_by(iucn_sid, stressor) %>%
+  filter(!is.na(sens)) %>%
+  summarize(sens = sum(count * sens) > 0) %>%
+  group_by(iucn_sid) %>%
+  complete(stressor = stressors) %>%
+  ungroup()
+
+write_csv(cc_sens_summary, 
+          here('_output', sprintf('spp_sens_climate_%s.csv', api_version)))
+```
+
+<!-- ### Why so few instances of sensitivity to ocean acidification? -->
+
+<!-- NOTE: THIS HAS BEEN RESOLVED, see end of commented out section. -->
+
+<!-- There are many corals included in the dataset, which do not seem to be caught by this process as being sensitive to ocean acidification.  The threat narratives claim ocean acidification is a major threat.  Examine the codes linked to corals to see what are counted as threats? -->
+
+```{r, eval = FALSE}
+cc_oa_df <- cc_sens_df %>%
+  filter(stressor == 'oa' & count > 0) %>%
+  left_join(spp_to_include, by = c('iucn_sid', 'cat_score'))
+
+corals <- spp_to_include %>%
+  filter(str_detect(tolower(dbf_file), 'coral'))
+# table(corals$cat_score)
+#   0 0.2 0.4 0.6 0.8 
+# 298 175 201  27   5
+
+coral_threats <- corals %>%
+  select(iucn_sid, sciname, cat_score, threats) %>%
+  distinct() %>%
+  left_join(spp_threats, by = 'iucn_sid') %>%
+  filter(score_num >= 3) %>%
+  mutate(code_num = str_extract(code, '[0-9]+\\.') %>% as.integer()) %>%
+  arrange(desc(code_num), desc(code)) %>%
+  mutate(txt = paste0(code, ': ', title),
+         txt = str_replace(txt, ' \\(.+\\)', ''),
+         txt = fct_inorder(txt)) %>%
+  select(iucn_sid, txt) %>%
+  distinct() %>%
+  group_by(txt) %>%
+  summarize(n_spp_impacted = n()) %>%
+  ungroup()
+  
+ggplot(coral_threats, aes(x = txt, y = n_spp_impacted)) +
+  ggtheme_plot() +
+  geom_col() +
+  labs(x = 'Threat code', y = 'Number of spp impacted') +
+  coord_flip()
+  
+```
+<!-- Note the climate threats are limited to _11.3: Temperature extremes_ and _11.4: Storms and flooding_.  It does not appear that, for corals at least, ocean acidification is counted as _11.1: habitat shifting and alteration_ as I had originally coded it.  New strategy: just count it along with temperature extremes. -->
+
+## Check the number of spp sensitive to different types...
+
+```{r}
+n_sens_spp <- cc_sens_summary %>%
+  filter(sens) %>%
+  .$iucn_sid %>%
+  unique()
+```
+
+According to this analysis so far, there are `r length(n_sens_spp)` distinct species affected by various climate stressors.
+
+```{r}
+spp_per_stressor <- cc_sens_summary %>%
+  filter(sens) %>%
+  count(stressor) %>%
+  arrange(n) %>%
+  mutate(stressor = fct_inorder(stressor))
+ggplot(spp_per_stressor, aes(x = stressor, y = n)) +
+  ggtheme_plot() +
+  geom_col() + 
+  coord_flip() +
+  labs(title = 'sensitive spp by stressor',
+       y = 'number of species affected by stressor')
+```
+
+```{r}
+stressor_per_spp <- cc_sens_summary %>%
+  filter(sens) %>%
+  count(iucn_sid) %>%
+  mutate(n_txt = as.character(n))
+
+ggplot(stressor_per_spp, aes(x = n_txt)) +
+  ggtheme_plot() +
+  geom_bar() + 
+  labs(title = 'stressor sensitivities per spp',
+       x = 'number of stressors on spp',
+       y = 'number of species')
+```
+Most species impacted by climate are impacted by two stressors (generally SST and OA).

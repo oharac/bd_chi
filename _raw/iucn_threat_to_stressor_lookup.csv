@@ -122,7 +122,7 @@ code,desc,stressor,category
 11,Climate change & severe weather,NA,NA
 11.1,Climate change & severe weather: Habitat shifting & alteration,sst;slr;oa;uv,climate
 11.2,Climate change & severe weather: Droughts,NA,NA
-11.3,Climate change & severe weather: Temperature extremes,sst,climate
+11.3,Climate change & severe weather: Temperature extremes,sst;oa,climate
 11.4,Climate change & severe weather: Storms & flooding,NA,NA
 11.5,Climate change & severe weather: Other impacts,oa;uv,climate
 12,Other options,NA,NA
