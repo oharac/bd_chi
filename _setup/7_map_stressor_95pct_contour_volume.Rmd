@@ -152,4 +152,46 @@ tmp <- parallel::mclapply(stressors, mc.cores = 8,
   })
 ```
 
+## Map results for most recent year
+
+For each stressor, choose the most recent year.  Map the 95% contour volume map against the full map - setting values for the full map to one (normalized) value and the values for the 95% contour volume to another to show contrast.  Because all the 95% contour volume cells are within the full raster, we can simply plot it in a different color on top of the full raster.
+
+Here, green is the raster condensed to the 95% contour volume while dark red is the full raster.
+
+```{r}
+str_95cv_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km_95cv'),
+                             full.names = TRUE)
+str_full_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km'),
+                             full.names = TRUE)
+str_file_df <- data.frame(str_95cv = str_95cv_files,
+                          str_full = str_full_files) %>%
+  mutate(str  = str_replace_all(basename(str_full), '_[0-9].*', ''),
+         year = str_extract(basename(str_full), '[0-9]{4}'),
+         year = as.integer(year)) %>%
+  group_by(str) %>%
+  filter(year == max(year))
+
+for(stressor in str_file_df$str) {
+  ### stressor <- str_file_df$str[1]
+  message('plotting map for ', stressor)
+  file_df <- str_file_df %>%
+    filter(str == stressor)
+  rast_full <- raster(file_df$str_full)
+  rast_full_norm <- rast_full / rast_full
+  rast_95cv <- raster(file_df$str_95cv)
+  rast_95cv_norm <- rast_95cv / rast_95cv
+
+  vec_full <- values(rast_full)
+  vec_95cv <- values(rast_95cv)
+  a_full <- vec_full[!is.na(vec_full) & vec_full > 0] %>% length()
+  a_95cv <- vec_95cv[!is.na(vec_95cv) & vec_95cv > 0] %>% length()
+  
+  a_condensed <- round(a_95cv / a_full * 100, 2)
+  plot_title <- sprintf('%s: %s pct of full area', stressor, a_condensed)
+  plot(rast_full_norm, 
+       main = plot_title, col = 'darkred', legend = FALSE)
+  plot(rast_95cv_norm, 
+       col = 'green', add = TRUE, legend = FALSE)
+}
+```
 
