@@ -30,7 +30,7 @@ dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
 
 # Summary
 
-Here we will calculate, for each species, a map of impacted area for each of the stressors to which the species is sensitive; stressor ranges may change over time as well.  These maps will be saved as a .csv of `cell_id`, stressor value `str_val`, and `str_year`.  The stressor values can easily be normalized later if desired.
+Here we will calculate, for each species, a map of impacted area for each of the stressors to which the species is sensitive; stressor ranges may change over time as well.  These maps will be saved as a .csv of `cell_id` and `str_year`.  The stressor values are dropped here to save on resulting file size; simply mapping present or not present.  Stressor values can be recovered from the stressor maps themselves.
 
 Maps (.csvs) will be saved for each species in a folder for each stressor.  For non-impacted species, a place-holder will be saved, perhaps with `cell_id = NA`.
 
@@ -55,6 +55,14 @@ spp_str_df <- read_csv(here('_output',
 spp_ids <- spp_str_df$iucn_sid %>% unique() %>% sort()
 
 str_names <- spp_str_df$stressor %>% unique() %>% sort()
+
+### spp to check for sensitivity to OA and SST: wide-ranging spp sensitive to
+### wide-ranging stressors
+### 2477, 8005, 22698209, 22694740, 22697870, 22698375, 8153, 13583, 6336
+# check_ids <- c(2477, 8005, 22698209, 22694740, 22697870, 22698375, 8153, 13583, 6336)
+# check_spp_str <- spp_str_df %>%
+#   filter(iucn_sid %in% check_ids)
+### none are sensitive to OA; 6336, 8153,	22694740,	22698375 are sensitive to SST
 ```
 
 ## Loop over stressors
@@ -80,8 +88,9 @@ stack_to_df <- function(str_stack) {
       rast <- str_stack[[x]]
       df <- data.frame(cell_id = 1:ncell(rast),
                        str_val = values(rast)) %>%
-        filter(!is.na(str_val))
-      })
+        filter(!is.na(str_val)) %>%
+        select(-str_val)
+      }) 
   names(rast_df_list) <- names(str_stack)
   rast_df <- bind_rows(rast_df_list, .id = 'str_year') %>%
     mutate(stressor = str_replace(str_year, '_[0-9]{4}', ''),
@@ -150,8 +159,14 @@ for(str_name in str_names) {
     filter(stressor == str_name) %>%
     filter(sens > 0 & !is.na(sens))
   
+  ### Stressors with large maps (e.g. OA, SST) take up a lot of memory -
+  ### esp if spp also have large maps.  Limit cores such that the
+  ### cores * stack_df_size ~ 25% of Mazu memory (119 GB)
+  stack_df_size <- object.size(str_df)
+  num_cores <- min(as.integer(119e9 / stack_df_size * .25), 16)
+
   # for(spp_id in spp_ids) {
-  tmp <- parallel::mclapply(spp_ids, mc.cores = 16,
+  tmp <- parallel::mclapply(spp_ids, mc.cores = num_cores,
     FUN = function(spp_id) { 
       ### spp_id <- spp_ids[2]
       ### spp_id <- spp_not_done[1]
@@ -170,7 +185,6 @@ for(str_name in str_names) {
           cat_msg('Spp ', spp_id, ' is not sensitive to ', str_name)
           spp_str_intsx <- data.frame(
             cell_id = NA,
-            str_val  = NA,
             stressor = str_df$stressor[1],
             year = str_df$year %>% unique()
           )
@@ -185,14 +199,17 @@ for(str_name in str_names) {
 
 # Check results
 
-Pull all results and make sure they seem valid... this chunk is not evaluated when knitting.
+Make sure all spp are represented in all stressors (even if an empty csv as a placeholder).  Using file size as a proxy for the map size, we can get an impression of how widely distributed the stressor/species interactions are. 
 
 ```{r}
 spp_mapped <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
                          pattern = '.csv',
                          recursive = TRUE, full.names = TRUE)
 
-chk_df <- data.frame(spp_mapped) %>%
+filesize_mb <- file.size(spp_mapped) / 1e6
+
+chk_df <- data.frame(spp_mapped,
+                     filesize_mb) %>%
   mutate(str = dirname(spp_mapped) %>% basename(),
          spp = basename(spp_mapped) %>% 
            str_extract('[0-9]{3,}') %>%
@@ -210,6 +227,15 @@ chk_sum <- chk_df %>%
   distinct()
 
 knitr::kable(chk_sum)
+
+### plot file size densities for each stressor, dropping the
+### empty maps (file size 226 B or .000226 MB)
+ggplot(chk_df %>% filter(filesize_mb > .0003), aes(x = filesize_mb)) +
+  ggtheme_plot() +
+  geom_density(fill = 'slateblue', alpha = .4) +
+  scale_x_log10() +
+  theme(axis.text.y = element_blank()) +
+  facet_wrap(~ str, scales = 'free_y')
 
 ```
 

@@ -1,10 +1,13 @@
 To do:
 
 [ ] Update species list and maps for IUCN API version 2019-3 or maybe 2020-1
-[ ] Update threat listings based on narrative text and habitat info
-    [ ] Critical for fisheries! differentiate pel_hb, pel_lb, dem_dest, dem_nondest_hb, dem_nondest_lb
-    [ ] Critical for climate stressors - OA, SST, UV, SLR
-[ ] Update species-stressor intersections based on updated species and threats
+[ ] Check stressor maps for proper calculation of 95% contour volume
+    [ ] Ocean acidification in particular!
+[X] Update threat listings based on narrative text and habitat info
+    [X] Critical for fisheries! differentiate pel_hb, pel_lb, dem_dest, dem_nondest_hb, dem_nondest_lb
+    [X] Critical for climate stressors - OA, SST, UV, SLR
+[x] Update species-stressor intersections based on updated species and threats
+    [x] Use just cell ID, not stressor value, for more nimble read/write
 * From intersections, calculate impacts for all spp
     [ ] Impacted range, and pct range, per threat
     [ ] Impacted range, and pct range, cumulative over all threats
