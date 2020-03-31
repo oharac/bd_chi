@@ -49,24 +49,34 @@ Get all the stressor layers that have been aggregated to 10 km Mollweide.
 str_files_all <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km'),
                         pattern = '.tif', full.names = TRUE)
 
-str_df <- data.frame(file = str_files_all) %>%
+str_df_all <- data.frame(file = str_files_all) %>%
   mutate(stressor = str_replace(basename(file), '_[0-9]{4}.+', ''),
          year = as.integer(str_extract(basename(file), '[0-9]{4}')))
 
+str_years <- str_df_all %>%
+  group_by(stressor) %>%
+  summarize(year_min = min(year),
+            year_max = max(year),
+            range_03_13 = year_min <= 2003 & year_max >= 2013) %>%
+  filter(range_03_13)
+
+str_df <- str_df_all %>%
+  filter(stressor %in% str_years$stressor) %>%
+  filter(year >= 2003 & year <= 2013)
 ```
 
 ## Loop over all stressors, process 95% contour volume
 
-For each stressor, across the entire time series, determine a threshold for the 95% contour volume.  Use this threshold to clip values in all years of the stressor and save each year's map as a raster.  After determining the threshold, use `mclapply` for parallel calculations.
+For each stressor, across the limited time series series, determine a threshold for the 95% contour volume.  Use this threshold to clip values in all years of the stressor and save each year's map as a raster.  After determining the threshold, use `mclapply` for parallel calculations.
 
 ### Determine thresholds for each stressor
 
-Gather all rasters for a given stressor, arrange values from high to low, determine the 95% contour volume threshold.  While we are at it, calculate 95% contour volume threshold for each year to examine changes over time.  Save these values as a csv.
+Gather all rasters for a given stressor, arrange values from high to low, determine the 95% contour volume threshold.  This will be based on values across ALL years in the range; so for stressors that increase over time, the threshold will most likely accept less than 95% in early years and more than 95% in later years.  While we are at it, calculate 95% contour volume threshold for each year to examine changes over time.  Save these values as a csv.
 
 ```{r}
 reload <- FALSE
 str_thresh_file <- here('_output', 'str_thresholds_95cv.csv')
-
+# unlink(str_thresh_file)
 if(!file.exists(str_thresh_file) | reload) {
   stressors <- str_df$stressor %>% unique() %>% sort()
   
@@ -82,7 +92,7 @@ if(!file.exists(str_thresh_file) | reload) {
       tmp_df <- data.frame(
         stressor = str,
         thresh = thresh,
-        timescale = 'all years')
+        timescale = '2003-2013')
       return(tmp_df)
     })
   
@@ -113,12 +123,15 @@ if(!file.exists(str_thresh_file) | reload) {
 
 ### Clip individual stressor maps to 95% contour volume
 
-Using the all years threshold, clip each stressor map to values greater than the threshold.  
+Using the threshold across the range of years (2003-2013), clip each stressor map to values greater than the threshold.  
 
 ```{r}
 reload <- FALSE
 
 stressors <- str_df$stressor %>% unique() %>% sort()
+
+outfile_dir <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
+# unlink(file.path(outfile_dir, '*.*'))
 
 tmp <- parallel::mclapply(stressors, mc.cores = 8,
   FUN = function(str) { ### str <- stressors[1]
@@ -131,15 +144,14 @@ tmp <- parallel::mclapply(stressors, mc.cores = 8,
     
     ### get the threshold for this stressor from the saved threshold df
     thresh_all_yrs <- thresh_df %>%
-      filter(timescale == 'all years') %>%
+      filter(timescale == '2003-2013') %>%
       filter(stressor == str) %>%
       .$thresh
     
     ### set up filename(s) for the output(s)
     new_files <- str_replace(basename(f), '.tif', '_95cv.tif') %>%
       str_replace('_rescaled', '')
-    outfiles <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv',
-                         new_files)
+    outfiles <- file.path(outfile_dir, new_files)
     
     if(any(!file.exists(outfiles)) | reload) {
       ### gather all rasters for this stressor into a stack
@@ -154,24 +166,27 @@ tmp <- parallel::mclapply(stressors, mc.cores = 8,
 
 ## Map results for most recent year
 
-For each stressor, choose the most recent year.  Map the 95% contour volume map against the full map - setting values for the full map to one (normalized) value and the values for the 95% contour volume to another to show contrast.  Because all the 95% contour volume cells are within the full raster, we can simply plot it in a different color on top of the full raster.
+For each stressor, choose a mid year: 2010 (arbitrary).  Map the 95% contour volume map against the full map - setting values for the full map to one (normalized) value and the values for the 95% contour volume to another to show contrast.  Because all the 95% contour volume cells are within the full raster, we can simply plot it in a different color on top of the full raster.
 
 Here, green is the raster condensed to the 95% contour volume while dark red is the full raster.
 
 ```{r}
 str_95cv_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km_95cv'),
                              full.names = TRUE)
-str_full_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km'),
-                             full.names = TRUE)
+str_full_files <- str_df$file
+stressors <- str_df$stressor %>% unique() %>% sort()
+
+plot_year <- 2010
+
 str_file_df <- data.frame(str_95cv = str_95cv_files,
                           str_full = str_full_files) %>%
   mutate(str  = str_replace_all(basename(str_full), '_[0-9].*', ''),
          year = str_extract(basename(str_full), '[0-9]{4}'),
          year = as.integer(year)) %>%
   group_by(str) %>%
-  filter(year == max(year))
+  filter(year == plot_year)
 
-for(stressor in str_file_df$str) {
+for(stressor in stressors) {
   ### stressor <- str_file_df$str[1]
   message('plotting map for ', stressor)
   file_df <- str_file_df %>%

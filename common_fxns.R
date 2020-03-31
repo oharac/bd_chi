@@ -17,15 +17,15 @@ dir_output  <- file.path(dir_git, '_output')
 dir_bd_anx   <- file.path(dir_O, 'git-annex/bd_chi')
 
 
-### cat if not knitting; message if knitting
+### rewrite message: cat if not knitting; message if knitting
 
-cat_msg <- function(x, ...) {
+message <- function(x, ...) {
   if(is.null(knitr:::.knitEnv$input.dir)) {
     ### not in knitr environment, so use cat()
-    cat(x, ..., '\n')
+    base::cat(x, ..., '\n')
   } else {
     ### in knitr env, so use message()
-    message(x, ...)
+    base::message(x, ...)
   }
   return(invisible(NULL))
 }

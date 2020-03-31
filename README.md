@@ -2,6 +2,7 @@ To do:
 
 * [ ] Update species list and maps for IUCN API version 2019-3 or maybe 2020-1
 * [ ] Check stressor maps for proper calculation of 95% contour volume
+    * [X] Clip all stressor year ranges to 2002-2013
     * [ ] Ocean acidification in particular!
     * [ ] While you're at it, crop the SLR raster to just coastal areas!
 * [X] Update threat listings based on narrative text and habitat info

@@ -49,8 +49,8 @@ Note that the intersection cells include only those cells where the species AND 
 The species sensitivity dataframe is created in script 1: `1_calc_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors.
 
 ```{r}
-spp_str_df <- read_csv(here('_output', 
-                            sprintf('spp_sensitivity_%s.csv', api_version)))
+spp_str_df <- read_csv(file.path(dir_output,
+                                 sprintf('spp_sensitivity_%s.csv', api_version)))
 
 spp_ids <- spp_str_df$iucn_sid %>% unique() %>% sort()
 
@@ -63,6 +63,14 @@ str_names <- spp_str_df$stressor %>% unique() %>% sort()
 # check_spp_str <- spp_str_df %>%
 #   filter(iucn_sid %in% check_ids)
 ### none are sensitive to OA; 6336, 8153,	22694740,	22698375 are sensitive to SST
+
+str_w_maps <- list.files(dir_str_95cv) %>%
+  str_replace('_[0-9].*', '') %>%
+  unique()
+
+if(any(!str_names %in% str_w_maps)) {
+  cat('NOTE: some listed stressors do not have maps! \n')
+}
 ```
 
 ## Loop over stressors
@@ -119,21 +127,21 @@ calc_intsx <- function(spp_id, str_df) {
     filter(presence > 0 & !is.na(presence) & presence != 5) %>%
     select(-presence)
   spp_str_intsx <- spp_map %>%
-    inner_join(str_df, by = 'cell_id')
+    inner_join(str_df, by = 'cell_id') %>%
+    select(-stressor)
+  
   if(nrow(spp_str_intsx) == 0) {
     ### no intersection; warn and create empty df
     cat_msg('No intersection found for species ', spp_id, ' and stressor ', str_name)
     spp_str_intsx <- data.frame(
       cell_id = NA,
-      str_val  = NA,
-      stressor = str_df$stressor[1],
       year = str_df$year %>% unique())
   }
   return(spp_str_intsx)
 }
 ```
 
-Using this function, loop through each of the included stressors, build the stack, convert to df for easier handling, and then loop over all species to create a map of cell ID, stressor value, and year for all stressor occurrences on the species range.
+Using this function, loop through each of the included stressors, build the stack, convert to df for easier handling, and then loop over all species to create a map of cell ID and year for all stressor occurrences on the species range.  The stressor name will be included in the filename, so no need to include a "stressor" column here... this should save significantly on file size.
 
 ```{r}
 
@@ -174,7 +182,8 @@ for(str_name in str_names) {
       #         '; calculating spp/str intersection')
       
       spp_str_file <- file.path(dir_spp_str_rast, 
-                                sprintf('spp_str_intsx_%s_mol10km.csv', spp_id))
+                                sprintf('spp_intsx_%s_%s_mol10km.csv', 
+                                        str_name, spp_id))
       
       if(!file.exists(spp_str_file) | reload) {
         if(spp_id %in% spp_str_sens$iucn_sid) {
@@ -185,7 +194,6 @@ for(str_name in str_names) {
           cat_msg('Spp ', spp_id, ' is not sensitive to ', str_name)
           spp_str_intsx <- data.frame(
             cell_id = NA,
-            stressor = str_df$stressor[1],
             year = str_df$year %>% unique()
           )
         }
@@ -229,8 +237,8 @@ chk_sum <- chk_df %>%
 knitr::kable(chk_sum)
 
 ### plot file size densities for each stressor, dropping the
-### empty maps (file size 226 B or .000226 MB)
-ggplot(chk_df %>% filter(filesize_mb > .0003), aes(x = filesize_mb)) +
+### empty maps (file size 101 B or .000101 MB)
+ggplot(chk_df %>% filter(filesize_mb > .000102), aes(x = filesize_mb)) +
   ggtheme_plot() +
   geom_density(fill = 'slateblue', alpha = .4) +
   scale_x_log10() +

@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Compiled on Sun Jan 12 13:51:53 2020 by ohara" />
+<meta name="author" content="Compiled on Sun Mar 29 15:57:28 2020 by ohara" />
 
 
 <title>Calculate species stressor impacts</title>
@@ -1695,7 +1695,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Calculate species stressor impacts</h1>
-<h4 class="author"><em>Compiled on Sun Jan 12 13:51:53 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Sun Mar 29 15:57:28 2020 by ohara</em></h4>
 
 </div>
 
@@ -1709,23 +1709,45 @@ div.tocify {
 <a class="sourceLine" id="cb1-7" title="7">dir_spp_maps &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_rasts_mol_2019&#39;</span>)</a></code></pre></div>
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
-<p>For each species, pull in all associated stressor intersections, as well as species range. For each year, summarize impacted range and % impacted range for each stressor, and for cumulative.</p>
+<p>For each species, pull in all associated stressor intersections, as well as species range. For each year, summarize impacted range and % impacted range for each stressor, and for cumulative. For each year, also calculate the number of impacts per cell and save as a map of species cumulative impact.</p>
 </div>
 <div id="methods" class="section level1">
 <h1><span class="header-section-number">2</span> Methods</h1>
 <div id="create-list-of-spp" class="section level2">
 <h2><span class="header-section-number">2.1</span> create list of spp</h2>
 </div>
-<div id="loop-over-spp" class="section level2">
-<h2><span class="header-section-number">2.2</span> loop over spp</h2>
-<div id="calculate-individual-stressor-impacts-range-and-pct" class="section level3">
-<h3><span class="header-section-number">2.2.1</span> calculate individual stressor impacts range and pct</h3>
+<div id="loop-over-species-by-id" class="section level2">
+<h2><span class="header-section-number">2.2</span> loop over species by ID</h2>
+<p>For each species, create a dataframe summarizing cumulative impacts:</p>
+<ul>
+<li>calculate individual stressor impacts range and pct</li>
+<li>calculate cumulative impact</li>
+<li>bind ’em together and save it as .csv to annex, <code>spp_impacts</code> folder.</li>
+</ul>
+<div id="set-up-functions" class="section level3">
+<h3><span class="header-section-number">2.2.1</span> set up functions</h3>
 </div>
-<div id="calculate-cumulative-impact" class="section level3">
-<h3><span class="header-section-number">2.2.2</span> calculate cumulative impact</h3>
+<div id="calculate-species-cumulative-impacts-non-cc" class="section level3">
+<h3><span class="header-section-number">2.2.2</span> calculate species cumulative impacts, non-CC</h3>
 </div>
-<div id="bind-em-together-and-save-it" class="section level3">
-<h3><span class="header-section-number">2.2.3</span> bind ’em together and save it</h3>
+<div id="calculate-species-cumulative-impacts-cc-only" class="section level3">
+<h3><span class="header-section-number">2.2.3</span> calculate species cumulative impacts, CC only</h3>
+</div>
+</div>
+<div id="calculate-maps-of-cumulative-impacts" class="section level2">
+<h2><span class="header-section-number">2.3</span> Calculate maps of cumulative impacts</h2>
+<p>For each species, create a map of cumulative impacts:</p>
+<ul>
+<li><code>left_join</code> each stressor intersection to the species range by <code>cell_id</code></li>
+<li>summarize number of stressors in each cell</li>
+<li>write out as .csv to annex, <code>spp_impact_rasts</code></li>
+</ul>
+<p>Each of these will be performed for non-climate stressors, and then separately for climate stressors. Full cumulative can be found from simply adding ’em up.</p>
+<div id="map-species-cumulative-impacts-non-cc" class="section level3">
+<h3><span class="header-section-number">2.3.1</span> map species cumulative impacts, non-CC</h3>
+</div>
+<div id="map-species-cumulative-impacts-climate-only" class="section level3">
+<h3><span class="header-section-number">2.3.2</span> map species cumulative impacts, climate only</h3>
 </div>
 </div>
 </div>
