@@ -57,7 +57,8 @@ str_dirs <- list.files(dir_str_mol, recursive = TRUE, full.names = TRUE) %>%
 # [23] "uv/final" 
 
 for(dir in str_dirs) {
-  ### dir <- str_dirs[2]
+  ### dir <- str_dirs[14] ### slr
+  ### dir <- str_dirs[13] ### shipping
   message('Processing stressors in ', dir)
   files <- list.files(dir, pattern = '.tif$', full.names = TRUE)
   
@@ -90,5 +91,25 @@ for(dir in str_dirs) {
 }
 ```
 
+## Clip Sea Level Rise stressors to shallow waters only
+
+SLR stressor map covers the whole ocean; but impacts would only affect coastal species.  Since several species sensitive to SLR are wide-ranging (e.g. seabirds, turtles) we don't want to suggest SLR impacts far at sea, so we will clip the SLR stressor layers to shallow waters only.
+
+```{r}
+bathy_rast <- raster(here('_spatial', 'bathy_mol.tif'))
+
+values(bathy_rast)[values(bathy_rast) > 10] <- NA
+
+slr_rast_files <- list.files(dir_str_10km, pattern = '^slr_', full.names = TRUE)
+
+for(f in slr_rast_files) {
+  ### f <- slr_rast_files[1]
+  message('Enshallowing SLR stressor layer: ', f)
+  r <- raster(f)
+  r_shallow <- mask(r, bathy_rast)
+  writeRaster(r_shallow, f, overwrite = TRUE)
+}
+
+```
 
 

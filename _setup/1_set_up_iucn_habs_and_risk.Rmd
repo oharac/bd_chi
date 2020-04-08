@@ -20,6 +20,7 @@ output:
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
+source(here::here('_setup/api_fxns.R'))
 
 ```
 
@@ -48,7 +49,7 @@ reload <- FALSE
 
 if(!file.exists(spp_info_from_api_file) | reload) {
   
-  cat_msg('Using API to create full species list from scratch')
+  message('Using API to create full species list from scratch')
   
   spp_npage_url <- sprintf('http://apiv3.iucnredlist.org/api/v3/speciescount?token=%s', 
                            api_key)
@@ -65,16 +66,17 @@ if(!file.exists(spp_info_from_api_file) | reload) {
     setNames(names(.) %>%
                str_replace('_name', ''))
   
-  cat_msg('Full list length: ', nrow(spp_df_all), '; unique species IDs: ', 
+  message('Full list length: ', nrow(spp_df_all), '; unique species IDs: ', 
           length(spp_df_all$iucn_sid %>% unique()))
   write_csv(spp_df_all, spp_info_from_api_file)
   
 } else {
   
-  cat_msg('File of API species list exists: \n  ', spp_info_from_api_file)
+  message('File of API species list exists: \n  ', spp_info_from_api_file)
 
 }
 
+# spp_df_all <- read_csv(spp_info_from_api_file)
 ```
 
 ### Determine marine species using habitat information
@@ -93,19 +95,18 @@ reload <- FALSE
 
 if(!file.exists(spp_habs_from_api_file) | reload) {
   
-  cat_msg('Using API to determine species habitats from full species info list')
+  message('Using API to determine species habitats from full species info list')
   
   spp_ids_all <- read_csv(spp_info_from_api_file) %>%
     .$iucn_sid
   
   spp_habs_url <- 'http://apiv3.iucnredlist.org/api/v3/habitats/species/id/%s?token=%s'
   
-  
   ### Breaking this into chunks...
   ### 500 spp takes 184 seconds; at that rate, 87851 species should take 
   ###   about 9 hrs.  Each chunk will save to tmp for later combining.
 
-  chunk_size <- 10
+  chunk_size <- 500
   n_chunks <- ceiling(length(spp_ids_all)/chunk_size)
   
   if(!dir.exists(file.path(dir_bd_anx, 'tmp'))) {
@@ -116,22 +117,24 @@ if(!file.exists(spp_habs_from_api_file) | reload) {
     ### j <- 2
     spp_index <- c( ((j - 1) * chunk_size + 1) : min((j * chunk_size), length(spp_ids_all)) )
     chunk_file <- file.path(dir_bd_anx, 'tmp', 
-                            sprintf('spp_habs_chunk_%s_%s.csv', 
-                            min(spp_index), max(spp_index)))
+                            sprintf('spp_habs_chunk_%s_%s_%s.csv', 
+                            min(spp_index), max(spp_index), api_version))
 
     if(!file.exists(chunk_file)) {
-      cat_msg('Getting habitat info for species ', min(spp_index), ' to ', max(spp_index))
+      message('Getting habitat info for species ', min(spp_index), ' to ', max(spp_index))
       
       spp_ids_chunk <- spp_ids_all[spp_index]
+      # system.time({
       spp_habs_chunk <- mc_get_from_api(spp_habs_url, spp_ids_chunk, api_key, 
-                                        cores = 12, delay = .5, verbose = FALSE)
-      cat_msg('... found ', nrow(spp_habs_chunk), ' habitat rows for these species')
+                                        cores = 12, delay = 1, verbose = FALSE)
+      # })
+      message('... found ', nrow(spp_habs_chunk), ' habitat rows for these species')
       
       write_csv(spp_habs_chunk, chunk_file)
       
     } else {
       
-      cat_msg('Chunk file ', chunk_file, ' already exists; skipping these spp')
+      message('Chunk file ', chunk_file, ' already exists; skipping these spp')
       
     }
   }
@@ -160,10 +163,17 @@ if(!file.exists(spp_habs_from_api_file) | reload) {
   
 } else {
   
-  cat_msg('File of species habitats from API exists: \n  ', spp_habs_from_api_file)
+  message('File of species habitats from API exists: \n  ', spp_habs_from_api_file)
 
 }
 
+
+```
+
+```{r check habs file}
+habs <- read_csv(spp_habs_from_api_file) %>%
+  filter(str_detect(api_error, 'try-error'))
+if(nrow(habs) > 0) stop('Some habitat queries resulted in a try-error')
 
 ```
 
@@ -177,7 +187,7 @@ reload <- FALSE
 
 if(!file.exists(spp_sys_from_api_file) | reload) {
   
-  cat_msg('Using API to determine species systems from full species info list')
+  message('Using API to determine species systems from full species info list')
   
   spp_ids_all <- read_csv(spp_info_from_api_file) %>%
     .$iucn_sid
@@ -199,23 +209,23 @@ if(!file.exists(spp_sys_from_api_file) | reload) {
                             min(spp_index), max(spp_index)))
 
     if(!file.exists(chunk_file) | reload) {
-      cat_msg('Getting systems info for species ', min(spp_index), ' to ', max(spp_index))
+      message('Getting systems info for species ', min(spp_index), ' to ', max(spp_index))
       
       spp_ids_chunk <- spp_ids_all[spp_index]
       spp_sys_chunk <- mc_get_from_api(spp_systems_url, spp_ids_chunk, api_key, 
-                                       cores = 12, delay = .5, verbose = FALSE)
+                                       cores = 12, delay = 1, verbose = FALSE)
 
       spp_sys_chunk <- spp_sys_chunk %>%
         select(iucn_sid = name, 
                sciname = scientific_name, comname = main_common_name,
                contains('system'), year = published_year, category, criteria)
-      cat_msg('... found ', nrow(spp_sys_chunk), ' systems for these species')
+      message('... found ', nrow(spp_sys_chunk), ' systems for these species')
       
       write_csv(spp_sys_chunk, chunk_file)
       
     } else {
       
-      cat_msg('Chunk file ', chunk_file, ' already exists; skipping these spp')
+      message('Chunk file ', chunk_file, ' already exists; skipping these spp')
       
     }
   }
@@ -237,11 +247,20 @@ if(!file.exists(spp_sys_from_api_file) | reload) {
   
 } else {
   
-  cat_msg('File of species habitats from API exists: \n  ', spp_sys_from_api_file)
+  message('File of species systems from API exists: \n  ', spp_sys_from_api_file)
 
 }
 
 
+```
+
+```{r check systems file}
+systems <- read_csv(spp_sys_from_api_file)
+if('api_error' %in% names(systems)) {
+  systems <- systems %>%
+    filter(str_detect(api_error, 'try-error'))
+  if(nrow(systems) > 0) stop('Some system queries resulted in a try-error')
+}
 ```
 
 #### Generate Habitat inclusion list
@@ -318,28 +337,28 @@ spp_habs_and_systems <- spp_habs_from_api %>%
 #   filter(include == TRUE)
 # length(qwer$iucn_sid %>% unique())
 # length(qwer %>% filter(!cat %in% 17:18) %>% .$iucn_sid %>% unique())
-### 15105 spp marine by habitat only (NAs dropped); note undoubtedly
-### some "other" and "unknown" that are NOT marine - only 12108 when
+### 19517 spp marine by habitat only (NAs dropped); note undoubtedly
+### some "other" and "unknown" that are NOT marine - only 16069 when
 ### excluding "other" and "unknown"
 
 # asdf <- spp_habs_and_systems %>%
 #   filter(marine_system) %>%
 #   distinct()
 # length(asdf$iucn_sid %>% unique())
-### 13188 spp by marine_system only; some might be marine/terrestrial
+### 16304 spp by marine_system only; some might be marine/terrestrial
 
 # zxcv <- spp_habs_and_systems %>%
 #   filter(include == TRUE | (is.na(include) & marine_system == TRUE)) %>%
 #   distinct()
 # length(zxcv$iucn_sid %>% unique())
 # length(zxcv %>% filter(!cat %in% 17:18) %>% .$iucn_sid %>% unique())
-### 16253 in marine habitats, and/or with NA habitat but marine_system
-### 13256 when ignoring "other" and "unknown"
+### 19788 in marine habitats, and/or with NA habitat but marine_system
+### 16340 when ignoring "other" and "unknown"
 
 # qwer <- spp_habs_and_systems %>%
 #   filter((include == TRUE | is.na(include)) & marine_system == TRUE)
 # length(qwer$iucn_sid %>% unique())
-### 12934 both marine hab (or NA hab) AND marine_system
+### 16039 both marine hab (or NA hab) AND marine_system
 
 ### Let's examine the spp that are marine_system but not by hab,
 ### and by hab but not marine_system.
@@ -347,14 +366,14 @@ spp_habs_and_systems <- spp_habs_from_api %>%
 #   filter(include == TRUE & !marine_system)
 # length(asdf$iucn_sid %>% unique())
 # length(asdf %>% filter(!cat %in% 17:18) %>% .$iucn_sid %>% unique())
-### 3319 spp: including "other" and "unknown" requires an additional filter... just
-### too many extras included here.  782 if we ignore those.
+### 3749 spp: including "other" and "unknown" requires an additional filter... just
+### too many extras included here.  904 if we ignore those.
 # zxcv <- spp_habs_and_systems %>%
 #   group_by(iucn_sid) %>%
 #   mutate(include = any(include == TRUE)) %>%
 #   filter(include == FALSE & marine_system)
 # length(zxcv$iucn_sid %>% unique())
-### 254 spp here.  This looks pretty solid - the remainders look like
+### 265 spp here.  This looks pretty solid - the remainders look like
 ### they are inland wetlands, coastal lakes, caves, etc.  Some may
 ### be misclassified by IUCN as to their habitats.
 
@@ -384,7 +403,7 @@ marg_suit <- spp_marine %>%
   left_join(read_csv(spp_info_from_api_file), by = 'iucn_sid') %>%
   select(iucn_sid, sciname, suit_all, kingdom, phylum, class, order, family)
 
-### 21 spp
+### 20 spp
 write_csv(marg_suit, 
           file.path(dir_setup, 'int', sprintf('spp_marine_marginal_%s.csv', api_version)))
   
@@ -403,7 +422,7 @@ spp_habs_clean <- spp_marine %>%
 
 write_csv(spp_habs_clean, 
           file.path(dir_data, sprintf('spp_marine_from_api_%s.csv', api_version)))
-
+### 16019 total marine species
 ```
   
 -----
@@ -443,18 +462,18 @@ if(!file.exists(spp_timeseries_file) | reload) {
                             min(spp_index), max(spp_index)))
 
     if(!file.exists(chunk_file)) {
-      cat_msg('Getting past assessment info for species ', min(spp_index), ' to ', max(spp_index))
+      message('Getting past assessment info for species ', min(spp_index), ' to ', max(spp_index))
       
       spp_ids_chunk <- sid_list[spp_index]
       spp_past_chunk <- mc_get_from_api(spp_hist_url, spp_ids_chunk, api_key, 
-                                        delay = .5, cores = 16, verbose = FALSE)
-      cat_msg('... found ', nrow(spp_past_chunk), ' past assessment rows for these species')
+                                        delay = 1, cores = 12, verbose = FALSE)
+      message('... found ', nrow(spp_past_chunk), ' past assessment rows for these species')
       
       write_csv(spp_past_chunk, chunk_file)
       
     } else {
       
-      cat_msg('Chunk file ', chunk_file, ' already exists; skipping these spp')
+      message('Chunk file ', chunk_file, ' already exists; skipping these spp')
       
     }
   }
@@ -500,10 +519,10 @@ if(!file.exists(spp_timeseries_file) | reload) {
 
 ``` {r get_iucn_current_assessment}
 
-spp_current_file <- file.path(dir_data, 
-                              sprintf('iucn_risk_current_%s.csv', api_version))
-iucn_spp_info <- read_csv(file.path(dir_bd_anx, 
-                                    sprintf('iucn/spp_info_from_api_%s.csv', api_version)))
+spp_curr_file <- file.path(dir_data, 
+                           sprintf('iucn_risk_current_%s.csv', api_version))
+iucn_spp_info <- read_csv(file.path(dir_bd_anx, 'iucn',
+                                    sprintf('spp_info_from_api_%s.csv', api_version)))
 
 iucn_marine_spp <- read_csv(file.path(dir_data,
                                       sprintf('spp_marine_from_api_%s.csv', api_version))) %>%
@@ -511,7 +530,7 @@ iucn_marine_spp <- read_csv(file.path(dir_data,
 
 reload <- FALSE
 
-if(!file.exists(spp_current_file) | reload) {
+if(!file.exists(spp_curr_file) | reload) {
 
   spp_curr_url <- 'http://apiv3.iucnredlist.org/api/v3/species/id/%s?token=%s'
   
@@ -520,28 +539,72 @@ if(!file.exists(spp_current_file) | reload) {
     unique() %>%
     sort()
   
-  # sid_list <- sid_list[1:100]
-    
-  ptm <- proc.time()
-  spp_current_df <- mc_get_from_api(spp_curr_url, sid_list, api_key, 
-                                    delay = .5, cores = 16, verbose = FALSE)
-  cat_msg('elapsed time: ', (proc.time() - ptm)[3])
-    #   user   system  elapsed 
-    # 74.756   23.032 1251.880
+  chunk_size <- 500
+  n_chunks <- ceiling(length(sid_list)/chunk_size)
+  
+  if(!dir.exists(file.path(dir_bd_anx, 'tmp'))) {
+    dir.create(file.path(dir_bd_anx, 'tmp'))
+  }
+  
+  for(j in 1:n_chunks) { 
+    ### j <- 1
+    spp_index <- c( ((j - 1) * chunk_size + 1) : min((j * chunk_size), length(sid_list)) )
+    chunk_file <- file.path(dir_bd_anx, 'tmp', 
+                    sprintf('spp_curr_chunk_%s_%s.csv', 
+                            min(spp_index), max(spp_index)))
+
+    if(!file.exists(chunk_file) | reload) {
+      message('Getting current assessment info for species ', min(spp_index), ' to ', max(spp_index))
+      
+      spp_ids_chunk <- sid_list[spp_index]
+      system.time({
+      spp_curr_chunk <- mc_get_from_api(spp_curr_url, spp_ids_chunk, api_key, 
+                                        cores = 12, delay = 1, verbose = FALSE)
+      })
+      message('... found ', nrow(spp_curr_chunk), ' current assessments for these species')
+      
+      write_csv(spp_curr_chunk, chunk_file)
+      
+    } else {
+      
+      message('Chunk file ', chunk_file, ' already exists; skipping these spp')
+      
+    }
+  }
+
+  spp_curr_chunk_files <- list.files(file.path(dir_bd_anx, 'tmp'), 
+                                     pattern = 'spp_curr_chunk', 
+                                     full.names = TRUE)
+  
+  spp_current_df <- lapply(spp_curr_chunk_files, FUN = function(x) {
+      read_csv(x, col_types = cols(.default = 'c'))
+    }) %>%
+    bind_rows()
+  
   spp_current_df1 <- spp_current_df %>%
-    select(iucn_sid = name, sciname = scientific_name,
-           main_common_name, 
-           published_year, code = category, 
-           criteria)
+    transmute(iucn_sid = as.integer(name),
+              sciname = scientific_name,
+              comname = main_common_name, 
+              pub_year = as.integer(published_year), 
+              code = category, 
+              depth_upper = as.integer(depth_upper), 
+              depth_lower = as.integer(depth_lower),
+              elev_upper = as.integer(elevation_upper), 
+              elev_lower = as.integer(elevation_lower),
+              aoo_km2 = as.integer(aoo_km2), 
+              eoo_km2 = as.integer(eoo_km2),
+              criteria)
   ### dropping columns: 
   # kingdom, phylum, class, order, family, genus, 
   # authority, marine_system, freshwater_system, terrestrial_system, 
-  # assessor, reviewer, aoo_km2, eoo_km2, elevation_upper, elevation_lower, 
-  # depth_upper, depth_lower, errata_flag, errata_reason, amended_flag, amended_reason
+  # assessor, reviewer, errata_flag, errata_reason, amended_flag, amended_reason
   ### keeping all listings regardless of NE or DD
 
+  ### Note that the system info is available here as well... should I just do this
+  ### function instead of the system function?
+  
   ### Clean up the time series: reclassify old codes to current and add scores
-  cat_lookup <- read_csv(file.path(dir_setup, 'raw', 'risk_code_lookup.csv')) %>%
+  cat_lookup <- read_csv(here('_raw', 'risk_code_lookup.csv')) %>%
     select(-category)
   
   spp_current_df2 <- spp_current_df1 %>%
@@ -552,7 +615,7 @@ if(!file.exists(spp_current_file) | reload) {
     arrange(iucn_sid) %>%
     mutate(iucn_version = api_version)
   
-  write_csv(spp_current_df2, spp_current_file)
+  write_csv(spp_current_df2, spp_curr_file)
   
 }
 

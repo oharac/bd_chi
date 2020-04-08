@@ -47,9 +47,39 @@ write_csv(sens_all_df,
 
 ```
 
+## Species impacted by each stressor
+
+Plotting the number of species impacted by each stressor.  This plot includes species that:
+
+* have an IUCN range map
+* are in a comprehensively assessed taxon
+* are threatened or near threatened (i.e. not LC or EX)
+* are sensitive to at least one stressor in our study
+
 ```{r}
+spp_marine <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv', api_version)))
+
+spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
+
+spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version))) %>%
+  select(iucn_sid, cat_score)
+
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
+
+spp_thr_with_maps <- spp_marine %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  filter(!is.na(cat_score)) %>%
+    ### risk category is NA/DD
+  filter(!cat_score %in% c(0, 1)) %>%
+    ### risk category is neither LC nor EX
+  left_join(spp_comp, by = 'iucn_sid') %>%
+  filter(!is.na(taxon)) %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  distinct()
+
 plot_df <- sens_all_df %>%
   filter(sens) %>%
+  filter(iucn_sid %in% spp_thr_with_maps$iucn_sid) %>%
   group_by(stressor) %>%
   summarize(n_spp = n()) %>%
   arrange(n_spp) %>%

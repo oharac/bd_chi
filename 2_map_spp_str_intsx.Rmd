@@ -24,7 +24,7 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 source(here('common_fxns.R'))
 
 dir_str_95cv <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
-dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
+dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
 ```
 
 
@@ -46,15 +46,22 @@ Note that the intersection cells include only those cells where the species AND 
 
 ## Get the species sensitivities
 
-The species sensitivity dataframe is created in script 1: `1_calc_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors.
+The species sensitivity dataframe is created in script 1: `1_calc_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors; load the maps file to determine which of these species have range maps as well.  Note, the sensitivity file includes non-threatened species, so these will be included in the overall set of intersection maps.  Make sure to exclude non-threatened species when aggregating species maps to taxon level!
 
 ```{r}
-spp_str_df <- read_csv(file.path(dir_output,
-                                 sprintf('spp_sensitivity_%s.csv', api_version)))
+spp_str_df <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)))
 
-spp_ids <- spp_str_df$iucn_sid %>% unique() %>% sort()
+spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
 
-str_names <- spp_str_df$stressor %>% unique() %>% sort()
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
+
+intsx_df <- spp_str_df %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  inner_join(spp_comp, by = 'iucn_sid')
+
+spp_ids <- intsx_df$iucn_sid %>% unique() %>% sort()
+
+str_names <- intsx_df$stressor %>% unique() %>% sort()
 
 ### spp to check for sensitivity to OA and SST: wide-ranging spp sensitive to
 ### wide-ranging stressors
@@ -69,8 +76,10 @@ str_w_maps <- list.files(dir_str_95cv) %>%
   unique()
 
 if(any(!str_names %in% str_w_maps)) {
-  cat('NOTE: some listed stressors do not have maps! \n')
+  message('NOTE: some listed stressors do not have maps! \n')
 }
+
+
 ```
 
 ## Loop over stressors
@@ -109,10 +118,10 @@ stack_to_df <- function(str_stack) {
 
 get_spp_map <- function(spp_id) {
   spp_map_file <- file.path(dir_spp_maps, 
-                            sprintf('iucn_sid_%s_mol.csv', spp_id))
+                            sprintf('iucn_sid_%s.csv', spp_id))
   if(!file.exists(spp_map_file)) {
-    warning('Map does not exist: ', basename(spp_map_file))
-    return(NULL)
+    stop('Map does not exist: ', basename(spp_map_file))
+    # return(NULL)
   }
   spp_map <- read_csv(spp_map_file, col_types = cols(.default = 'i'))
   if(nrow(spp_map) == 0) {
@@ -132,7 +141,7 @@ calc_intsx <- function(spp_id, str_df) {
   
   if(nrow(spp_str_intsx) == 0) {
     ### no intersection; warn and create empty df
-    cat_msg('No intersection found for species ', spp_id, ' and stressor ', str_name)
+    message('No intersection found for species ', spp_id, ' and stressor ', str_name)
     spp_str_intsx <- data.frame(
       cell_id = NA,
       year = str_df$year %>% unique())
@@ -153,7 +162,7 @@ reload <- FALSE
 
 for(str_name in str_names) {
   ### str_name <- str_names[1]
-  cat_msg('Processing ', str_name)
+  message('Processing ', str_name)
   
   dir_spp_str_rast <- file.path(dir_bd_anx, 'spp_str_rasts', str_name)
   if(!dir.exists(dir_spp_str_rast)) {
@@ -163,9 +172,10 @@ for(str_name in str_names) {
   str_stack <- build_str_stack(str_name)
   str_df <- stack_to_df(str_stack)
   
+  ### Determine which species are sensitive to this stressor
   spp_str_sens <- spp_str_df %>%
     filter(stressor == str_name) %>%
-    filter(sens > 0 & !is.na(sens))
+    filter(sens == TRUE & !is.na(sens))
   
   ### Stressors with large maps (e.g. OA, SST) take up a lot of memory -
   ### esp if spp also have large maps.  Limit cores such that the
@@ -176,13 +186,13 @@ for(str_name in str_names) {
   # for(spp_id in spp_ids) {
   tmp <- parallel::mclapply(spp_ids, mc.cores = num_cores,
     FUN = function(spp_id) { 
-      ### spp_id <- spp_ids[2]
+      ### spp_id <- spp_ids[1]
       ### spp_id <- spp_not_done[1]
-      # cat_msg('species: ', spp_id, '; stressor: ', str_name,
+      # message('species: ', spp_id, '; stressor: ', str_name,
       #         '; calculating spp/str intersection')
       
       spp_str_file <- file.path(dir_spp_str_rast, 
-                                sprintf('spp_intsx_%s_%s_mol10km.csv', 
+                                sprintf('spp_intsx_%s_%s.csv', 
                                         str_name, spp_id))
       
       if(!file.exists(spp_str_file) | reload) {
@@ -191,7 +201,7 @@ for(str_name in str_names) {
           spp_str_intsx <- calc_intsx(spp_id, str_df)
         } else {
           ### species is not sensitive; create dummy intersection
-          cat_msg('Spp ', spp_id, ' is not sensitive to ', str_name)
+          # message('Spp ', spp_id, ' is not sensitive to ', str_name)
           spp_str_intsx <- data.frame(
             cell_id = NA,
             year = str_df$year %>% unique()
@@ -199,9 +209,11 @@ for(str_name in str_names) {
         }
         write_csv(spp_str_intsx, spp_str_file)
       } else {
-        # cat_msg(basename(spp_str_file), ' exists: skipping!')
+        # message(basename(spp_str_file), ' exists: skipping!')
       }
+      return(TRUE)
     }) ### end of mclapply
+  message('For stressor ', str_name, ' found ', sum(unlist(tmp)), ' instances')
 }
 ```
 
@@ -220,10 +232,11 @@ chk_df <- data.frame(spp_mapped,
                      filesize_mb) %>%
   mutate(str = dirname(spp_mapped) %>% basename(),
          spp = basename(spp_mapped) %>% 
-           str_extract('[0-9]{3,}') %>%
+           str_extract('[0-9]+') %>%
            as.integer()) %>%
   group_by(str) %>%
-  mutate(n_spp = length(unique(spp)))
+  mutate(n_spp = n_distinct(spp)) %>%
+  ungroup()
 
 spp_done <- chk_df %>%
   filter(str == 'art_fish') %>%

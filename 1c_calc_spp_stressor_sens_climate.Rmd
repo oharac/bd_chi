@@ -42,28 +42,26 @@ In cases where a species is impacted by multiple threats that map to a single st
 
 In this step we will include all species including LC and DD.  We will however limit to comprehensively assessed taxa.
 
-| Code  | Description                                   | Potential strs   |
-|:-----:|:----------------------------------------------|:-----------------|
-|   11  | Climate change & severe weather               | NA               |
-|  11.1 | Habitat shifting & alteration                 | sst, slr, oa, uv | 
-|  11.2 | Droughts                                      | NA               | 
-|  11.3 | Temperature extremes                          | sst              | 
-|  11.4 | Storms & flooding                             | NA               | 
-|  11.5 | Other impacts                                 | oa, uv           | 
+| Code  | Description                                   | Potential strs  |
+|:-----:|:----------------------------------------------|:----------------|
+|   11  | Climate change & severe weather               | NA              |
+|  11.1 | Habitat shifting & alteration                 | sst, slr, oa    | 
+|  11.2 | Droughts                                      | NA              | 
+|  11.3 | Temperature extremes                          | sst, oa^*^      | 
+|  11.4 | Storms & flooding                             | NA              | 
+|  11.5 | Other impacts                                 | sst^*^, oa, slr | 
+
+\* Note that ocean acidification effects are often described in narratives for species only classified with code 11.3, and sea surface temperature, ocean acidification, and sea level rise impacts are often described in narratives for species only classified with code 11.5.
 
 ```{r set up spp with maps and threats, eval = TRUE}
-spp_maps <- read_csv(here('_data', 
-                          sprintf('spp_marine_maps_%s.csv', api_version)))
+spp_marine <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv', api_version)))
 
-spp_risk <- read_csv(here('_data', 
-                          sprintf('iucn_risk_current_%s.csv', api_version))) %>%
+spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
+
+spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version))) %>%
   select(iucn_sid, cat_score)
 
-spp_narr_file <- file.path(dir_bd_anx, 'iucn', 
-                           sprintf('spp_narr_from_api_%s.csv', api_version))
-
-spp_narrs <- read_csv(spp_narr_file,
-                      col_types = cols(.default = 'c', iucn_sid = 'i'))
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
 
 chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
   mutate(stressor = str_split(stressor, ';')) %>%
@@ -76,49 +74,32 @@ spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
   left_join(chi_lookup, by = 'code') %>%
   filter(!is.na(code))
 
-
-spp_to_include <- spp_maps %>%
-  left_join(spp_risk, by = 'iucn_sid') %>%
-  # filter(!is.na(cat_score)) %>%
-    ### risk category is NA/DD
-  # filter(!cat_score %in% c(0, 1)) %>%
-    ### risk category is neither LC nor EX
-  filter(presence != 5) %>%
-    ### exclude "extinct" polygons
-  filter(comp_assessed) %>%
-  left_join(spp_narrs)
-
-
 ### Join the maps to the threats.
 ### * recategorize sensitivities based on impact score
 ### * if no impact score, categorize sensitivities based on severity
 ### * rather than filtering, set NA and past scores to 0
 ###   * this allows non-threatened species to remain in the mix
-threats_to_maps <- spp_to_include %>%
+threats_to_marine <- spp_marine %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
   left_join(spp_threats, by = 'iucn_sid') %>%
   ### code low-med-high sensitivity based on impact:
-  mutate(sens = case_when(score_num %in% 0:2 ~ 0,      ### no/negligible impact
-                          score_num %in% 3:5 ~ 1,      ### low impact
-                          score_num %in% 6:7 ~ 2,      ### med impact
-                          score_num > 7      ~ 3,      ### high impact
-                          TRUE               ~ NA_real_)) %>% ### set all else to NA
+  mutate(sens = case_when(score_num %in% 0:2 ~ FALSE,     ### no/negligible impact
+                          score_num > 2      ~ TRUE,      ### non-negligible impact
+                          TRUE               ~ NA)) %>%   ### set all else to NA
   ### for NA impact, code sensitivity based on severity:
   mutate(sev = tolower(severity),
-         sens = case_when(is.na(sens) & str_detect(sev, 'negligible|no decl') ~ 0,
-                          is.na(sens) & str_detect(sev, 'very rapid decl')    ~ 3,
-                          is.na(sens) & str_detect(sev, 'rapid decl')         ~ 2,
-                          is.na(sens) & str_detect(sev, 'causing|slow, significant') ~ 1,
-                          TRUE ~ sens),
-         sens = as.integer(sens)) %>%
+         sens = case_when(is.na(sens) & str_detect(sev, 'negligible|no decl') ~ FALSE,
+                          is.na(sens) & str_detect(sev, 'very rapid decl')    ~ TRUE,
+                          is.na(sens) & str_detect(sev, 'rapid decl')         ~ TRUE,
+                          is.na(sens) & str_detect(sev, 'causing|slow, significant') ~ TRUE,
+                          TRUE ~ sens)) %>%
   ### set past impacts and unresolved sensitivies to 0:
-  mutate(sens = ifelse(timing == 'Past, Unlikely to Return', 0, sens),
-         sens = ifelse(is.na(sens), 0, sens)) %>%
+  mutate(sens = ifelse(timing == 'Past, Unlikely to Return', FALSE, sens),
+         sens = ifelse(is.na(sens), FALSE, sens)) %>%
   filter(!is.na(code)) %>% ### drop code mismatches
   filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
   select(iucn_sid, cat_score, sens, 
-         code, 
-         # desc, 
-         stressor) %>%
+         code, stressor) %>%
   distinct()
 
 ### sensitivity categories:
@@ -127,28 +108,40 @@ threats_to_maps <- spp_to_include %>%
 # [5] "Rapid Declines"                   "Slow, Significant Declines"      
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
-write_csv(threats_to_maps, here('int/spp_threats_climate.csv'))
+write_csv(threats_to_marine, here('int/spp_threats_climate.csv'))
 
-n_comp <- spp_maps %>% 
-  filter(comp_assessed) %>% 
+```
+
+``` {r}
+n_comp <- spp_marine %>% 
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
   .$iucn_sid %>% unique() %>% length()
-n_threatened <- spp_to_include %>% 
+n_threatened <- spp_risk %>% 
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
   filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
   .$iucn_sid %>% unique() %>% length()
 
-n_stressed <- threats_to_maps %>%
+spp_stressed <- threats_to_marine %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
   filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
-  filter(sens > 0) %>%
+  filter(sens) 
+
+n_stressed <- spp_stressed %>%
   .$iucn_sid %>% unique() %>% length()
   
 ```
 
 Out of the list of `r n_comp` marine species with maps, `r n_threatened` are neither Least Concern nor Data Deficient.  
 
-The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one stressor is: `r n_stressed`.
+The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one __climate__ stressor is: `r n_stressed`.
 
 NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
-<!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors -->
+<!-- 6957 comp-assessed mapped species -->
+<!-- 1357 spp with category NC to CR -->
+<!-- 555 with sensitivity to climate stressors -->
 
 ## Identify species habitat location (shallow vs. deep)
 
@@ -254,7 +247,7 @@ Examine trigrams for instances of "ocean acid".
 
 ```{r examine OA trigrams}
 
-oa_search_string <- 'ocean acidification'
+oa_search_string <- 'ocean acidification|ocean acidity'
 ### 1077 caught by 'acid' alone, 1055 caught by 'ocean acid',
 ### 1053 caught by 'ocean acidification'
 ### dropped instances reference domoic acid or lead acid batteries.
@@ -346,6 +339,8 @@ sst_keywords <- c('sea surface temper',
                   'high sea temper',
                   'temper[a-z]+ extreme',
                   'extreme (elevated )?temper',
+                  'climate change',
+                  'el ni[nñ]o', ### the ñ is not working right...
                   'temper[a-z]+ willis') %>%
   paste0(collapse = '|')
 
@@ -357,14 +352,13 @@ cc_keywords <- paste(slr_keywords, oa_keywords, sst_keywords, sep = '|')
 ``` {r search narratives for terms}
 
 cc_narr_df <- spp_narrs %>%
-  filter(dimension == 'threats') %>%
-  tidytext::unnest_tokens(input = text, output = trigram, 
-                          token = 'ngrams', n = 3) %>%
-  filter(str_detect(trigram, cc_keywords)) %>%
-  mutate(oa_count  = str_count(trigram, oa_keywords),
-         slr_count = str_count(trigram, slr_keywords),
-         sst_count = str_count(trigram, sst_keywords)) %>%
-  select(-trigram)
+  filter(dimension %in% c('threats', 'rationale')) %>%
+  tidytext::unnest_tokens(input = text, output = sentence, 
+                          token = 'sentences', drop = TRUE) %>%
+  filter(str_detect(sentence, cc_keywords)) %>%
+  mutate(oa_count  = str_count(sentence, oa_keywords),
+         slr_count = str_count(sentence, slr_keywords),
+         sst_count = str_count(sentence, sst_keywords))
 
 cc_narr_tidy <- cc_narr_df %>%
   gather(stressor, count, ends_with('count')) %>%
@@ -468,13 +462,40 @@ ggplot(coral_threats, aes(x = txt, y = n_spp_impacted)) +
 ## Check the number of spp sensitive to different types...
 
 ```{r}
-n_sens_spp <- cc_sens_summary %>%
-  filter(sens) %>%
+spp_sens <- cc_sens_summary %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  filter(sens)
+
+n_spp_sens <- spp_sens %>%
   .$iucn_sid %>%
-  unique()
+  unique() %>%
+  length()
+
+drop_check_all <- spp_marine %>%
+  filter(iucn_sid %in% spp_stressed$iucn_sid) %>%
+  filter(!iucn_sid %in% spp_sens$iucn_sid) %>%
+  left_join(spp_narrs, by = 'iucn_sid') %>%
+  left_join(spp_maps, by = 'iucn_sid') %>%
+  # left_join(spp_comp %>% select(-sciname), by = 'iucn_sid') %>%
+  select(iucn_sid, sciname, dimension, text) %>%
+  distinct()
+
+drop_check <- drop_check_all %>%
+  filter(dimension %in% c('rationale',
+                          'threats')) %>%
+  ### prefilter to dramatically speed up the unnest_tokens...
+  # filter(str_detect(tolower(text), 'climate|temp|acid|el ni.o')) %>%
+  unnest_tokens(output = sentence, input = text, 
+                token = 'sentences', drop = TRUE) %>%
+  filter(str_detect(sentence, 'climate|temperature|acid|el ni.o|sea level|warming|sea ice'))
 ```
 
-According to this analysis so far, there are `r length(n_sens_spp)` distinct species affected by various climate stressors.
+According to this analysis so far, there are `r n_spp_sens` distinct threatened species (with maps, comprehensively assessed, etc) affected by various climate stressors.  Note that `r n_stressed` species are listed as threatened therefore a few are not being captured via specific mentions of climate impacts.  Some may be indirect (e.g. food web interactions) or not climate related at all.  See here for a sample of some that mention climate search terms but do not seem to indicate direct impacts:
+
+`r DT::datatable(drop_check)`
 
 ```{r}
 spp_per_stressor <- cc_sens_summary %>%

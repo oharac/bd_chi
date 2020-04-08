@@ -21,12 +21,13 @@ output:
 library(raster)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
-source(here('common_fxns.R'))
+source(here::here('common_fxns.R'))
+source(here::here('_setup/api_fxns.R'))
 
 dir_bli <- file.path(dir_M, 'git-annex/globalprep/_raw_data/birdlife_intl/d2019')
-dir_shp <- file.path(dir_M, 'git-annex/globalprep/_raw_data/iucn_spp/d2019')
+dir_shp <- file.path(dir_M, 'git-annex/globalprep/_raw_data/iucn_spp/d2020-1')
   ### in this folder are shapefiles at a taxonomic level, from
-  ### IUCN spatial data download (version 2019-2).
+  ### IUCN spatial data download (version 2020-1).
 
 ```
 
@@ -104,8 +105,7 @@ marine_spp <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv',
 
 ### This is *all* spp from the API, filtered down to those in marine_spp: 
 api_spp <- read_csv(file.path(dir_bd_anx, 'iucn', 
-                              sprintf('spp_info_from_api_%s.csv', api_version)),
-                    col_types = 'dccccccccc') %>%
+                              sprintf('spp_info_from_api_%s.csv', api_version))) %>%
   filter(iucn_sid %in% marine_spp$iucn_sid)
 
 ### Define helper function to cleanly get the info from DBF files,
@@ -149,7 +149,7 @@ shp_subpops <- shps_df %>%
   filter(!is.na(shp_subpop)) %>%
   distinct() %>%
   mutate(shp_subpop_clean = str_replace(tolower(shp_subpop), ' subpopulation| ocean', ''),
-         shp_subpop_clean = str_replace_all(shp_subpop_clean, '[^a-z]', ' '),
+         shp_subpop_clean = str_replace_all(shp_subpop_clean, '[^a-z]+', ' '),
          shp_subpop_clean = str_trim(shp_subpop_clean),
          shp_subpop_clean = str_replace(shp_subpop_clean, 'noth', 'north'))
            ### fix typo
@@ -160,7 +160,7 @@ api_subpops <- api_spp %>%
   filter(sciname %in% shp_subpops$sciname) %>%
   distinct() %>%
   mutate(api_subpop_clean = str_replace_all(tolower(api_subpop), ' subpopulation| ocean', ''),
-         api_subpop_clean = str_replace_all(api_subpop_clean, '[^a-z]', ' ') %>% str_trim)
+         api_subpop_clean = str_replace_all(api_subpop_clean, '[^a-z]+', ' ') %>% str_trim)
 
 subpops_match_raw <- shp_subpops %>%
   full_join(api_subpops, by = 'sciname') %>%
@@ -190,24 +190,27 @@ subpops_match <- subpops_match_raw %>%
 
 ### Check for missed matches:
 
-# api_subpops$api_iucn_sid[!api_subpops$api_iucn_sid %in% subpops_match$api_iucn_sid]
-### API subpop, not matched: 16369383 Tursiops truncatus 
-###                                   Mediterranean subpopulation
-### * OK - no polygon for this subpopulation.  Regional assessment?
-### API subpop, not matched: 44187 Orcaella brevirostris 
-###                                Malampaya Sound subpopulation
-### * Doesn't look like there is a shape for this subpop... Sorry dude!
+api_subpops$api_iucn_sid[!api_subpops$api_iucn_sid %in% subpops_match$api_iucn_sid]
+### * API subpop, not matched: 16369383 Tursiops truncatus 
+###     * Mediterranean subpopulation
+###     * OK - no polygon for this subpopulation.  Regional assessment?
+### * API subpop, not matched: 44187 Orcaella brevirostris 
+###     * Malampaya Sound subpopulation
+###     * Malampaya Sound is Philippines
+###     * Doesn't look like there is a shape for this subpop... Sorry dude!
+### * API subpop, not matched: 123095978 Orcaella brevirostris 
+###     * Iloilo-Guimaras Subpopulation
+###     * Iloilo and Guimaras are Philippines
+###     * Doesn't look like there is a shape for this subpop... Sorry dude!
 
 # shp_subpops[!shp_subpops$shp_subpop %in% subpops_match$shp_subpop, ]
-### Shapefile subpop, not matched: 16285718 Chelonia mydas Hawaiian subpopulation
-### * OK: the shapefile ID matches the API ID - will match automatically
-### Balaena mysticetus in Bering-Chukchi-Beaufort Sea seems to not be 
-###   a distinct assessment subpopulation, though there's a polygon.
-### * Add to global population if not already?
-### Dermochelys coriacea Southeast Atlantic is 46967848
-### * Not in API subpops; Data deficient; ok to drop it
-### Orcaella brevirostris Chilika Lake, Mekong River, Songkhla Lake
-### * In shapefile, but not showing up in assessments
+### * Shapefile subpop, not matched: 16285718 Chelonia mydas Hawaiian subpopulation
+###     * OK: the shapefile ID matches the API ID - will match automatically
+### * Dermochelys coriacea Southeast Atlantic is 46967848
+###     * Not in API subpops; Data deficient; ok to drop it
+### * Orcaella brevirostris 15419 
+###     * Chilika Lake (India), Mekong River (Cambodia/Vietnam), Songkhla Lake (Thailand)
+###     * In shapefile, but not showing up in assessments
 subpops_file <- here('_setup', 'int',
                     sprintf('subpops_match_api_to_shp_%s.csv', 
                             api_version))
@@ -227,13 +230,36 @@ if(!file.exists(comp_file)) {
     .$result
   
   comp_spp_url <- 'http://apiv3.iucnredlist.org/api/v3/comp-group/getspecies/%s?token=%s'
-  comp_spp <- mc_get_from_api(comp_spp_url, comp_gps$group_name, api_key) %>%
-    select(iucn_sid = taxonid, sciname = scientific_name)
+  comp_spp <- mc_get_from_api(comp_spp_url, comp_gps$group_name, api_key, 
+                              add_param_val = TRUE) %>%
+    select(iucn_sid = taxonid, sciname = scientific_name, taxon = param_val)
+  
+  ### NOTE: sygnathiformes and clupeiformes not included here? wtf
+  ### add them in:
+  spp_info <- read_csv(file.path(dir_bd_anx, 'iucn',
+                                 sprintf('spp_info_from_api_%s.csv', api_version)))
+  syngnathids <- spp_info %>%
+    filter(tolower(family) %in% c('syngnathidae', 'aulostomidae', 
+                                  'centriscidae', 'fistulariidae', 
+                                  'pegasidae', 'solenostomidae')) %>%
+    mutate(taxon = 'syngnathiformes')
+  clupeids <- spp_info %>%
+    filter(tolower(order) == 'clupeiformes') %>%
+    mutate(taxon = 'clupeiformes')
+  ### NOTE: turtles also not included here
+  turtles <- c('Dermochelys', 'Caretta', 'Lepidochelys', 
+               'Natator', 'Chelonia', 'Eretmochelys')
+  turtles <- spp_info %>%
+    filter(genus %in% turtles) %>%
+    mutate(taxon = 'sea_turtles')
+    
+  comp_spp <- bind_rows(comp_spp, clupeids, syngnathids, turtles) %>%
+    select(iucn_sid, sciname, taxon) %>%
+    distinct()
   
   write_csv(comp_spp, comp_file)
 } else {
-  comp_spp <- read_csv(comp_file,
-                       col_types = 'dc')
+  # comp_spp <- read_csv(comp_file)
 }
 ```
 
@@ -241,15 +267,12 @@ if(!file.exists(comp_file)) {
 
 From the species range map shapefiles, pull map info from the .dbf files.  For species listed in multiple files (e.g. sea snakes and reptiles), remove duplicates.  For species with polygons differentiated by subpopulation, adjust the iucn_sid to match the subpop info.
 
-Add a flag for comprehensively-assessed spp - fix BONEFISH_TARPONS to all be assessed - either it's comprehensive or not - and add sea turtle species (6 of 7 assessed).
-
 ``` {r generate map list from dbfs}
 
 iucn_dbfs  <- list.files(dir_shp, pattern = '\\.dbf$', full.names = TRUE)
 bli_dbfs   <- list.files(dir_bli, pattern = '\\.dbf$', full.names = TRUE)
 
 map_files  <- c(iucn_dbfs, bli_dbfs)
-
 
 # spp_group_names <- map_files %>%
 #   basename() %>%
@@ -276,22 +299,11 @@ map_info_raw <- lapply(map_files, get_dbf) %>%
 ### No subspecies vary by IUCN code; drop field for simplicity
 ### and include all at species level
 
-map_info_sans_dupes <- map_info_raw %>%
-  group_by(shp_iucn_sid) %>%
-  filter(!(str_detect(dbf_file, 'MARINEFISH|REPTILE|CORALS_PART_2_1|MANGROVES') & 
-             length(unique(dbf_file)) > 1)) %>%
-  filter(!(shp_iucn_sid == 196026 & str_detect(dbf_file, 'SEASNAKE'))) %>%
-    ### in REPTILES, SEASNAKES, and HAGFISH - ditch any dupes
-  ungroup() %>%
-  distinct()
-### NOTE: still has terrestrial mammals and reptiles in it...
-
 subpops_match <- read_csv(here('_setup', 'int',
                                sprintf('subpops_match_api_to_shp_%s.csv', 
-                                       api_version)),
-                          col_types = 'dccdc')
+                                       api_version)))
 
-map_info_add_subpops <- map_info_sans_dupes %>%
+map_info_add_subpops <- map_info_raw %>%
   full_join(subpops_match, by = c('shp_iucn_sid', 'sciname', 'subpop' = 'shp_subpop')) %>%
   mutate(iucn_sid = ifelse(is.na(api_iucn_sid), shp_iucn_sid, api_iucn_sid)) %>%
   select(shp_iucn_sid, iucn_sid, sciname, presence, subpop, dbf_file) %>%
@@ -299,51 +311,32 @@ map_info_add_subpops <- map_info_sans_dupes %>%
 
 ### filter to marine habitat species (to drop terrestrial reptiles e.g.)
 marine_spp_ids <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv',
-                                                 api_version)),
-                           col_types = 'dcc') %>%
+                                                 api_version))) %>%
   select(iucn_sid, max_depth)
 
 marine_map_info <- map_info_add_subpops %>%
-  inner_join(marine_spp_ids, by = 'iucn_sid') %>%
-  mutate(comp_assessed = iucn_sid %in% comp_spp$iucn_sid)
-
-# comp_assess_check <- marine_map_info %>%
-#   mutate(dbf_short = basename(dbf_file)) %>%
-#   group_by(dbf_short, comp_assessed) %>%
-#   summarize(n_in_gp = n()) %>%
-#   group_by(dbf_short) %>%
-#   mutate(both = n() == 2)
-
-### at this point, fix a few "comprehensively assessed" issues:
-### * add turtles as comprehensive
-### * some species from Spatial Data Download groups do not
-###   show up as comprehensively assessed despite text on the IUCN site
-turtles <- c('Dermochelys', 'Caretta', 'Lepidochelys', 
-             'Natator', 'Chelonia', 'Eretmochelys') %>%
-  paste0(collapse = '|')
-assessed_gps <- c('BONEFISH', 'CORALS', 'SEACUCUMBERS', 
-                  # 'CLUPEIFORM', 'SYNGATHIFORM', 
-                  'bli_marine') %>%
-  paste0(collapse = '|')
-  ### NOTE: Damselfish removed at recommendation of Gina Ralph
-  ### Others, assume that availability of maps on Spatial Data Download Page
-  ### is indication of comprehensive assessment despite API call
-
-marine_map_info <- marine_map_info %>%
-  mutate(comp_assessed = ifelse(str_detect(dbf_file, assessed_gps), 
-                                TRUE, comp_assessed),
-         comp_assessed = ifelse(str_detect(sciname, turtles), 
-                                TRUE, comp_assessed))
+  inner_join(marine_spp_ids, by = 'iucn_sid')
 
 write_csv(marine_map_info, 
           here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
 
 ```
 
+## Table of species to include
+
+To this point we have created a list of all marine species with maps in the shapefiles from IUCN.  Here we will generate a table of the subset of marine species considered in this study.  Included species meet the following criteria:
+
+* species has a polygon feature in one of the shapefiles
+* species is listed in a taxon with comprehensively assessed status (incl manually adjusted ones)
+* species extinction risk is threatened or near threatened (i.e. not Least Concern, Extinct, or Data Deficient)
+
+Note that when processing these down, we will focus on threatened marine species with sensitivity to the particular stressors; additionally, some species listed here may have maps that don't overlap with ocean area, creating a degenerate range map.
+
 ``` {r generate table of species}
 
 marine_map_info <- read_csv(here('_data',
     sprintf('spp_marine_maps_%s.csv', api_version))) %>%
+  filter(presence != 5) %>%
   select(-presence) %>%
   distinct()
 
@@ -351,13 +344,15 @@ taxa_info <- read_csv(file.path(dir_bd_anx, 'iucn',
                                 sprintf('spp_info_from_api_%s.csv', api_version))) %>%
   select(iucn_sid, kingdom:family)
 
+comp_info <- read_csv(comp_file)
+
 cat_info <- read_csv(here('_data', 
                           sprintf('iucn_risk_current_%s.csv', api_version))) %>%
   select(iucn_sid, cat_score) %>%
-  filter(!is.na(cat_score))
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1))
 
 included_maps <- marine_map_info %>%
-  filter(comp_assessed) %>%
+  filter(iucn_sid %in% comp_info$iucn_sid) %>%
   filter(iucn_sid %in% cat_info$iucn_sid) %>%
   select(iucn_sid, shp_iucn_sid, subpop, sciname, dbf_file) %>%
   left_join(taxa_info, by = 'iucn_sid') %>%

@@ -31,9 +31,112 @@ reload <- FALSE
 
 # Summary
 
+Create a species richness map for only the species included in this assessment.
+
 Combine taxa-level impact and refugia maps to create maps of number of species impacted per cell, per year, and species in refugia (i.e., zero impact) per cell, per year.
 
+Plot maps as animated rasters, both by absolute numbers of species impacted in a location and by proportion of species.
+
 # Methods
+
+## Create species richness map for this assessment
+
+Set up the dataframe of species to include.  By taxon, load all species range maps, smash down to taxon-level species richness; then combine these for a total species richness.
+
+```{r Identify species in this assessment}
+
+### Load spp info for sensitivity, risk, comprehensive status, and maps
+spp_sens <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
+spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
+spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version))) %>%
+  filter(presence != 5) %>%
+  .$iucn_sid %>%
+  unique()
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version))) %>%
+  select(-sciname)
+
+### Combine to make a species list that includes species that are:
+### * threatened or near threatened
+### * included in a comprehensively-assessed taxon
+### * mapped
+###
+### NOTE: for comparing pct of threatened spp that are impacted, we will look
+### at ALL threatened/mapped/comprehensive spp, not just those with one or
+### more sensitivities!
+
+spp_incl <- spp_risk %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  filter(iucn_sid %in% spp_maps) %>%
+  left_join(spp_comp, by = c('iucn_sid')) %>%
+  filter(!is.na(taxon))
+
+# spp_incl$iucn_sid %>% n_distinct()
+### 1255 if we limit to just sensitive spp, 1357 if we include all
+### mapped/threatened/comp assessed spp
+```
+
+```{r map to raster function}
+cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+
+map_to_rast <- function(map_df, cell_val = 'n_spp') {
+  # map_rast <- raster::subs(cell_id_rast, as.data.frame(map_df), 
+  #                          by = 'cell_id', which = val)
+  map_rast <- raster(cell_id_rast)
+  values(map_rast)[map_df$cell_id] <- map_df[[cell_val]]
+  return(map_rast)
+}
+```
+
+``` {r create species richness map}
+spp_rich_mapfile <- here('_output/n_spp_map.tif')
+if(!file.exists(spp_rich_mapfile) | reload) {
+  
+  spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+  
+  taxa_gps <- spp_incl$taxon %>% unique() %>% sort()
+  
+  taxa_map_list <- vector('list', length = length(taxa_gps))
+  for(i in seq_along(taxa_gps)) {
+    # i <- 2
+    taxa_gp <- taxa_gps[i]
+    spp_ids_taxa <- spp_incl %>%
+      filter(taxon == taxa_gp) %>%
+      .$iucn_sid %>%
+      unique()
+    
+    map_list <- parallel::mclapply(spp_ids_taxa,
+      FUN = function(id) {
+        # id <- spp_ids_taxa[1]
+        spp_f <- file.path(spp_range_dir, sprintf('iucn_sid_%s.csv', id))
+        spp_df <- read_csv(spp_f, col_types = 'ii') %>%
+          mutate(iucn_sid = id) %>%
+          mutate(present = (presence != 5) & !is.na(presence))
+      })
+    map_df <- bind_rows(map_list)
+    map_nspp_df <- map_df %>%
+      group_by(cell_id) %>%
+      summarize(n_spp = sum(present))
+    taxa_map_list[[i]] <- map_to_rast(map_nspp_df)
+  }
+  
+  taxa_map_stack <- stack(taxa_map_list)
+  spp_rich_rast <- raster::calc(taxa_map_stack, 
+                                fun = sum, na.rm = TRUE) %>%
+    mask(ocean_a_rast)
+  
+  writeRaster(spp_rich_rast, spp_rich_mapfile)
+}
+
+spp_rich_rast <- raster(spp_rich_mapfile)
+plot(spp_rich_rast, main = 'Species richness')
+
+```
+
+
+## Setup for mapping across all taxa
 
 For each combination of climate/no climate and impacts/refugia:
 
@@ -42,7 +145,7 @@ For each combination of climate/no climate and impacts/refugia:
 * animate over the years
 
 ```{r identify taxa map files}
-spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
+spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
 
 taxon_impact_map_dir <- file.path(dir_bd_anx, 'taxon_impact_rasts')
 taxon_refugia_map_dir <- file.path(dir_bd_anx, 'taxon_refugia_rasts')
@@ -59,9 +162,15 @@ taxa_map_df <- data.frame(map = all_maps) %>%
 
 ```{r animate function}
 make_ramp <- function(n, palette) {
-  n_even <- round(n + 50, -2)
-  breaks <- seq(1, n_even, length.out = 100)
-  labels <- seq(0, n_even, by = 100)
+  if(n > 101) {
+    n_even <- round(n + 50, -2)
+    breaks <- seq(.5, n_even, length.out = 100)
+    labels <- seq(0, n_even, by = 100)
+  } else {
+    n_even <- n
+    breaks <- seq(min(0.5, n / 100), n, length.out = 100)
+    labels <- seq(0, n, by = (n / 10))
+  }
   colors <- hcl.colors(length(breaks), palette = palette)
   
   ### For breaks and colors, add a different color for 
@@ -87,16 +196,19 @@ make_gifs <- function(map_stack, filename, layer_names = NULL) {
              main = layer_names[i])
       }}, 
       interval = 0.5, movie.name = filename, 
-      ani.width = 700, ani.height = 500)
+      ani.width = 700, ani.height = 420)
   })
   
   return(invisible(NULL))
 }
+
+nspp_rast <- spp_rich_rast
+values(nspp_rast)[values(nspp_rast) == 0] <- NA
 ```
 
 ## Create impact map for all included spp, non-climate
 
-```{r}
+```{r impact all non-climate}
 
 cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
 ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
@@ -132,20 +244,41 @@ for(y in yrs) {
 ``` {r}
 ### Animate the results
 gif_file <- here('figs/impact_no_cc.gif')
-rast_files <- sprintf(outfile_stem, yrs)
-map_stack <- stack(rast_files)
 
-make_gifs(map_stack, 
-          filename = gif_file,
-          layer_names = paste('Non-climate impacts', yrs))
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files)
+  
+  make_gifs(map_stack, 
+            filename = gif_file,
+            layer_names = paste('Non-climate impacts', yrs))
+}
 
 knitr::include_graphics(gif_file)
 ```
 
+``` {r}
+### Animate the results
+gif_file <- here('figs/impact_pct_no_cc.gif')
+
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files) 
+  x <- map_stack / nspp_rast
+  values(x)[values(x) > 1] <- 1
+  x <- x * 100
+  
+  make_gifs(x, 
+            filename = gif_file,
+            layer_names = paste('Non-climate impacts pct', yrs))
+}
+
+knitr::include_graphics(gif_file)
+```
 
 ## Create impact map for all included spp, climate only
 
-```{r}
+```{r impact all cc only}
 
 cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
 ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
@@ -181,19 +314,41 @@ for(y in yrs) {
 ``` {r}
 ### Animate the results
 gif_file <- here('figs/impact_cc_only.gif')
-rast_files <- sprintf(outfile_stem, yrs)
-map_stack <- stack(rast_files)
 
-make_gifs(map_stack, 
-          filename = gif_file,
-          layer_names = paste('Climate impacts', yrs))
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files)
+  
+  make_gifs(map_stack, 
+            filename = gif_file,
+            layer_names = paste('Climate impacts', yrs))
+}
+
+knitr::include_graphics(gif_file)
+```
+
+``` {r}
+### Animate the results
+gif_file <- here('figs/impact_pct_cc_only.gif')
+
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files) 
+  x <- map_stack / nspp_rast * 1
+  values(x)[values(x) > 1] <- 1
+  x <- x * 100
+  
+  make_gifs(x, 
+            filename = gif_file,
+            layer_names = paste('Climate impacts pct', yrs))
+}
 
 knitr::include_graphics(gif_file)
 ```
 
 ## Create refugia map for all included spp, non-climate
 
-```{r}
+```{r refugia map all non-climate}
 
 cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
 ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
@@ -229,12 +384,34 @@ for(y in yrs) {
 ``` {r}
 ### Animate the results
 gif_file <- here('figs/refugia_no_cc.gif')
-rast_files <- sprintf(outfile_stem, yrs)
-map_stack <- stack(rast_files)
 
-make_gifs(map_stack, 
-          filename = gif_file,
-          layer_names = paste('Non-climate refugia', yrs))
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files)
+  
+  make_gifs(map_stack, 
+            filename = gif_file,
+            layer_names = paste('Non-climate refugia', yrs))
+}
+
+knitr::include_graphics(gif_file)
+```
+
+``` {r}
+### Animate the results
+gif_file <- here('figs/refugia_pct_no_cc.gif')
+
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files) 
+  z <- map_stack / nspp_rast
+  values(z)[values(z) > 1] <- 1
+  z <- z * 100
+  
+  make_gifs(z, 
+            filename = gif_file,
+            layer_names = paste('Non-climate refugia pct', yrs))
+}
 
 knitr::include_graphics(gif_file)
 ```
@@ -242,7 +419,7 @@ knitr::include_graphics(gif_file)
 
 ## Create refugia map for all included spp, climate only
 
-```{r}
+```{r refugia map all climate only}
 
 cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
 ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
@@ -278,14 +455,35 @@ for(y in yrs) {
 ``` {r}
 ### Animate the results
 gif_file <- here('figs/refugia_cc_only.gif')
-rast_files <- sprintf(outfile_stem, yrs)
-map_stack <- stack(rast_files)
 
-make_gifs(map_stack, 
-          filename = gif_file,
-          layer_names = paste('Climate refugia', yrs))
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files)
+  
+  make_gifs(map_stack, 
+            filename = gif_file,
+            layer_names = paste('Climate refugia', yrs))
+}
 
 knitr::include_graphics(gif_file)
 ```
 
+``` {r}
+### Animate the results
+gif_file <- here('figs/refugia_pct_cc_only.gif')
+
+if(!file.exists(gif_file) | reload) {
+  rast_files <- sprintf(outfile_stem, yrs)
+  map_stack <- stack(rast_files) 
+  x <- map_stack / nspp_rast * 1
+  values(x)[values(x) > 1] <- 1
+  x <- x * 100
+  
+  make_gifs(x, 
+            filename = gif_file,
+            layer_names = paste('Climate refugia pct', yrs))
+}
+
+knitr::include_graphics(gif_file)
+```
 

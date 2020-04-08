@@ -39,11 +39,11 @@ valid_check <- function(spp_shp) {
   valid <- st_is_valid(spp_shp)
   ### can return a vector if multiple polygons with same ID
   if(any(!valid)) {
-    cat_msg('Found invalid geometries')
+    message('Found invalid geometries')
     
     bbox_shp <- st_bbox(spp_shp)
     if(bbox_shp$xmin < -180 | bbox_shp$xmax > 180) {
-      cat_msg('Bounding box outside +/- 180; buffering with dist = 0')
+      message('Bounding box outside +/- 180; buffering with dist = 0')
       ### check area before and after buffering to make sure no loss
       area_pre  <- st_area(spp_shp) %>% as.numeric() / 1e6
       spp_shp   <- st_buffer(spp_shp, dist = 0) %>%
@@ -61,17 +61,17 @@ valid_check <- function(spp_shp) {
         ### use all.equal() for near equality, and for comparing all 
         ### elements in case of a vector.  If a difference, choose an arbitrary
         ### threshold for "close enough".
-        cat_msg('Error: area_pre = ', round(sum(area_pre), 3), 
+        message('Error: area_pre = ', round(sum(area_pre), 3), 
                 '; area_post = ', round(sum(area_post), 3), 
                 '; area_ratio = ', round(area_ratio, 5), '; not equal!')
         stop('Area_pre and area_post not equal!')
       } else {
-        cat_msg('Area check good!  area_pre = ', round(sum(area_pre), 3), 
+        message('Area check good!  area_pre = ', round(sum(area_pre), 3), 
                 '; area_post = ', round(sum(area_post), 3), 
                 '; area_ratio = ', round(area_ratio, 5), '; all equal!')
       }
     } else {
-      cat_msg('bbox not exceeded; no need to fix polygon with buffer')
+      message('bbox not exceeded; no need to fix polygon with buffer')
     }
   }
   return(spp_shp)
@@ -79,6 +79,22 @@ valid_check <- function(spp_shp) {
 
 drop_geom <- function(sf) {
   sf %>% as.data.frame() %>% select(-geometry)
+}
+
+### Raster functions
+
+aggregate_to_cellid <- function(rast, cell_id_mol) {
+  ### aggregates a CHI raster (Mollweide 1 km) to SPP CRS (GP 10 km)
+  ### returns as a dataframe, which can then be used to do raster::subs()
+  df <- data.frame(val      = values(rast),
+                   cell_id  = values(cell_id_mol)) %>%
+    filter(!is.na(cell_id)) %>%
+    group_by(cell_id) %>%
+    summarize(n_cells = sum(!is.na(val)),
+              mean_val = mean(val, na.rm = TRUE)) %>%
+    ungroup()
+  
+  return(df)
 }
 
 calc_cv_thresh <- function(rast, pct = 0.95) {

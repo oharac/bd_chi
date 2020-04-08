@@ -133,7 +133,7 @@ rgn_to_meow_df <- data.frame(iucn_rgn = names(rgn_to_meow),
          priority = n()) %>%
   arrange(priority)
 
-write_csv(rgn_to_meow_df, file.path(dir_git, sprintf('spatial/iucn_rgn_to_meow.csv')))
+write_csv(rgn_to_meow_df, here('_spatial/iucn_rgn_to_meow.csv'))
 
 ```
 
@@ -161,7 +161,7 @@ rgn_to_lme_df <- data.frame(iucn_rgn = names(rgn_to_lme),
          priority = n()) %>%
   arrange(priority)
 
-write_csv(rgn_to_lme_df, file.path(dir_git, sprintf('spatial/iucn_rgn_to_lme.csv')))
+write_csv(rgn_to_lme_df, here('_spatial/iucn_rgn_to_lme.csv'))
 
 ```
 
@@ -169,12 +169,4 @@ Where an LME is assigned to multiple regions, use a prioritization then averagin
 
 * Prioritize by the region comprising the smallest number of LMEs; e.g. Mediterranean has 1 LME, North Africa has 3, Europe has 8; they all overlap in LME 26.  So for the score for LME 26 for a species assessed in all three regions, keep the score for the Mediterranean.
 * If after prioritizing, multiple regions still overlap in an LME, take the average score of the overlapping regional assessments for that LME.
-
------
-
-``` {r prov_footer, results = 'asis'}
-
-prov_wrapup(commit_outputs = FALSE)
-
-```
 

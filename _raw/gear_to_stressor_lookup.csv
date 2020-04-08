@@ -13,3 +13,4 @@ longline,longline tuna,high,pel,FALSE,pel_hb
 trap,trap,high,dem,FALSE,dem_nondest_hb
 midtrawl,trawl midwater,high,pel,FALSE,pel_hb
 btmtrawl,trawl bottom,high,dem,TRUE,dem_dest
+btmtrawl,trawl bottom,high,pel,TRUE,dem_dest

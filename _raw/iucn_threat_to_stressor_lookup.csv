@@ -124,6 +124,6 @@ code,desc,stressor,category
 11.2,Climate change & severe weather: Droughts,NA,NA
 11.3,Climate change & severe weather: Temperature extremes,sst;oa,climate
 11.4,Climate change & severe weather: Storms & flooding,NA,NA
-11.5,Climate change & severe weather: Other impacts,oa;uv,climate
+11.5,Climate change & severe weather: Other impacts,oa;uv;slr;sst,climate
 12,Other options,NA,NA
 12.1,Other options: Other threat,NA,NA

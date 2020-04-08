@@ -20,7 +20,8 @@ output:
 
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
-source(here('common_fxns.R'))
+source(here::here('common_fxns.R'))
+source(here::here('_setup/api_fxns.R'))
 
 ```
 
@@ -138,7 +139,7 @@ global_marine_spp_risk <- read_csv(here(sprintf('_data/iucn_risk_current_%s.csv'
 rgn_marine_spp <- read_csv(rgn_spp_info_file)
 
 rgn_spp_list <- global_marine_spp_risk %>%
-  select(iucn_sid, sciname, main_common_name, global_cat = cat, global_cat_score = cat_score) %>%
+  select(iucn_sid, sciname, comname, global_cat = cat, global_cat_score = cat_score) %>%
   inner_join(rgn_marine_spp %>%
                select(iucn_sid, 
                       # rgn_sciname = sciname, rgn_pop = population,

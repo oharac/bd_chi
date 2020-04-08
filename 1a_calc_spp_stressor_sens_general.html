@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Sat Jan 18 17:04:55 2020 by ohara" />
+<meta name="author" content="Compiled on Mon Apr 6 12:33:30 2020 by ohara" />
 
 
 <title>Calculate general stressor sensitivities from IUCN impact scores</title>
@@ -68,8 +68,6 @@ overflow: auto;
 margin-left: 2%;
 position: fixed;
 border: 1px solid #ccc;
-webkit-border-radius: 6px;
-moz-border-radius: 6px;
 border-radius: 6px;
 }
 
@@ -97,9 +95,14 @@ font-size: 12px;
 .tocify-subheader .tocify-subheader {
 text-indent: 30px;
 }
-
 .tocify-subheader .tocify-subheader .tocify-subheader {
 text-indent: 40px;
+}
+.tocify-subheader .tocify-subheader .tocify-subheader .tocify-subheader {
+text-indent: 50px;
+}
+.tocify-subheader .tocify-subheader .tocify-subheader .tocify-subheader .tocify-subheader {
+text-indent: 60px;
 }
 
 .tocify .tocify-item > a, .tocify .nav-list .nav-header {
@@ -503,13 +506,13 @@ float: none;
 
           item.append($("<a/>", {
 
-            "text": self.text()
+            "html": self.html()
 
           }));
 
         } else {
 
-          item.text(self.text());
+          item.html(self.html());
 
         }
 
@@ -1284,7 +1287,7 @@ window.initializeCodeFolding = function(show) {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show)
+    if (show || $(this)[0].classList.contains('fold-show'))
       div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
@@ -1420,7 +1423,7 @@ code span.wa { color: #008000; font-weight: bold; } /* Warning */
       if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -1477,7 +1480,6 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -1539,6 +1541,7 @@ summary {
   border: none;
   display: inline-block;
   border-radius: 4px;
+  background-color: transparent;
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li {
@@ -1551,56 +1554,12 @@ summary {
 }
 </style>
 
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-
-$(document).ready(function () {
-  $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
-  });
-});
-</script>
-
 <!-- code folding -->
 <style type="text/css">
 .code-folding-btn { margin-bottom: 4px; }
 </style>
-<script>
-$(document).ready(function () {
-  window.initializeCodeFolding("hide" === "show");
-});
-</script>
 
 
-
-<script>
-$(document).ready(function ()  {
-
-    // move toc-ignore selectors from section div to header
-    $('div.section.toc-ignore')
-        .removeClass('toc-ignore')
-        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
-
-    // establish options
-    var options = {
-      selectors: "h1,h2,h3",
-      theme: "bootstrap3",
-      context: '.toc-content',
-      hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
-      },
-      ignoreSelector: ".toc-ignore",
-      scrollTo: 0
-    };
-    options.showAndHide = true;
-    options.smoothScroll = true;
-
-    // tocify
-    var toc = $("#TOC").tocify(options).data("toc-tocify");
-});
-</script>
 
 <style type="text/css">
 
@@ -1614,6 +1573,12 @@ $(document).ready(function ()  {
 }
 }
 
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
 
 .toc-content {
   padding-left: 30px;
@@ -1649,8 +1614,6 @@ div.tocify {
 
 .tocify-subheader .tocify-item {
   font-size: 0.90em;
-  padding-left: 25px;
-  text-indent: 0;
 }
 
 .tocify .list-group-item {
@@ -1695,7 +1658,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Calculate general stressor sensitivities from IUCN impact scores</h1>
-<h4 class="author"><em>Compiled on Sat Jan 18 17:04:55 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Mon Apr 6 12:33:30 2020 by ohara</em></h4>
 
 </div>
 
@@ -1712,12 +1675,18 @@ div.tocify {
 <h1><span class="header-section-number">2</span> Methods</h1>
 <div id="set-up-stressor-sensitivity-dataframe" class="section level2">
 <h2><span class="header-section-number">2.1</span> Set up stressor sensitivity dataframe</h2>
-<p>Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in <code>spp_rasts_mol_2019</code>), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.</p>
+<p>Using all listed threats and the threat-to-stressor lookup, identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field. Here we will consider all species, regardless of mapped status, comprehensively assessed status, or threatened status.</p>
 <p>In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different activities that map to “direct human” impact) we summarize to the <em>maximum</em> score out of all listed. For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.</p>
-<p>In this step we will include all species including LC and DD. We will however limit to comprehensively assessed taxa.</p>
-<p>Out of the list of 6739 marine species with maps, 1339 are neither Least Concern nor Data Deficient.</p>
-<p>The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one stressor is: 683.</p>
-<p>NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc. These can be found from the impacted area dataframe. <!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors --></p>
+<p>Out of the list of 6957 marine species with maps in comprehensively-assessed taxa, 1357 are not Least Concern, Extinct, nor Data Deficient.</p>
+<p>The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one <strong>general</strong> stressor is: 687. General stressors comprise:</p>
+<ul>
+<li><code>direct_human</code></li>
+<li><code>nutrient</code></li>
+<li><code>organic</code></li>
+<li><code>shipping</code></li>
+<li><code>light</code></li>
+</ul>
+<p>NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc. These can be found from the impacted area dataframe. <!-- 6957 comp-assessed mapped species  --> <!-- 1357 spp with category NC to CR  --> <!--  687 with sensitivity to general stressors --></p>
 </div>
 </div>
 
@@ -1739,6 +1708,54 @@ $(document).ready(function () {
 });
 
 
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
 </script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->

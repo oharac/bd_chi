@@ -45,23 +45,34 @@ Identify the species included in the impacted list (using the IUCN species IDs o
 
 impact_map_dir <- file.path(dir_bd_anx, 'spp_impact_rasts')
 
-spp_impacted <- list.files(impact_map_dir,
-                           recursive = TRUE, full.names = TRUE) %>%
-  str_extract('[0-9]{3,}') %>%
+### identify spp with impact maps
+spp_impacted <- list.files(impact_map_dir, recursive = TRUE) %>%
+  str_extract('[0-9]+') %>%
   as.integer() %>%
   unique()
 
+### Load spp info for sensitivity, risk, comprehensive status, and maps
+spp_sens <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
+spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
 spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
-spp_taxa_all <- spp_maps %>%
-  mutate(taxon = basename(tolower(dbf_file)) %>% str_replace('.dbf', '')) %>%
-  select(iucn_sid, sciname, taxon, comp_assessed) %>%
-  distinct()
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
 
-spp_taxa <- spp_taxa_all %>%
-  filter(iucn_sid %in% spp_impacted)
+### Combine to make a species list that includes species that are:
+### * sensitive to one or more stressors
+### * threatened or near threatened
+### * included in a comprehensively-assessed taxon
+### * mapped
+spp_incl <- spp_sens %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  left_join(spp_comp, by = c('iucn_sid', 'sciname')) %>%
+  filter(!is.na(taxon)) %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid)
 
-taxa_dropped <- spp_taxa_all %>%
-  filter(!taxon %in% spp_taxa$taxon) %>%
+taxa_dropped <- spp_comp %>%
+  filter(!taxon %in% spp_incl$taxon) %>%
   .$taxon %>% unique()
 ```
 
@@ -69,19 +80,19 @@ Taxonomic groups dropped from this analysis - i.e., group does not have any spec
 
 `r taxa_dropped`
 
+The one vulnerable tarpon species (i.e. not LC, EX, or DD) is not sensitive to any of the stressors and is not mapped, so the whole taxon is dropped from this analysis.
+
 ``` {r setup directories and parameters}
-spp_impact_map_dir <- file.path(dir_bd_anx, 'spp_impact_rasts')
-spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2019')
+### directories for inputs
+spp_impact_map_dir   <- file.path(dir_bd_anx, 'spp_impact_rasts')
+spp_range_dir        <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+
+### directories for outputs
 taxon_impact_map_dir <- file.path(dir_bd_anx, 'taxon_impact_rasts')
 ### unlink(file.path(taxon_impact_map_dir, '*.*'))
 taxon_refugia_map_dir <- file.path(dir_bd_anx, 'taxon_refugia_rasts')
 ### unlink(file.path(taxon_refugia_map_dir, '*.*'))
 
-taxon_gps <- spp_taxa$taxon %>% unique() %>% sort()
-
-subgp_size <- 40 ### number of spp to process at a time
-year_span <- 2003:2013
-reload <- FALSE
 ```
 
 ## Loop over taxonomic groups to create taxa-level impact maps
@@ -150,9 +161,14 @@ map_to_rast <- function(map_df, cell_val = 'n_spp') {
   return(map_rast)
 }
 
+taxon_gps <- spp_incl$taxon %>% unique() %>% sort()
+
+subgp_size <- 24 ### number of spp to process at a time
+year_span <- 2003:2013
+reload <- FALSE
 ```
 
-```{r create taxa maps no climate}
+```{r create taxa maps non climate}
 
 for(taxon_gp in taxon_gps) {
   ### taxon_gp <- taxon_gps[2]
@@ -162,24 +178,26 @@ for(taxon_gp in taxon_gps) {
                                       taxon_gp, year_span))
   
   if(any(!file.exists(taxon_map_files)) | reload) {
-    spp_in_taxa <- spp_taxa %>%
-      filter(taxon == taxon_gp)
+    spp_ids_taxa <- spp_incl %>%
+      filter(taxon == taxon_gp) %>%
+      .$iucn_sid %>% 
+      unique() %>% sort()
     
-    spp_ids <- spp_in_taxa$iucn_sid
-    
-    n_subgps <- ceiling(nrow(spp_in_taxa) / subgp_size)
-    message('Processing impacts for ', taxon_gp, ' non-climate: ', length(spp_ids), 
-      ' species broken into ', n_subgps, ' groups.')
+    n_subgps <- ceiling(length(spp_ids_taxa) / subgp_size)
+    message('Processing impacts for ', taxon_gp, 
+            ' non-climate: ', length(spp_ids_taxa), 
+            ' species broken into ', n_subgps, ' groups.')
     
     ### initialize a list to store 
     taxon_impacts_list <- vector('list', length = n_subgps)
     for(i in 1:n_subgps) {
-      # i <- 1
+      # i <- 6
       message('  processing group ', i)
-      spp_id_vec <- get_spp_vec(spp_ids, i, subgp_size)
+      spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
       
       impact_maps <- parallel::mclapply(spp_id_vec,
           FUN = function(spp_id) {
+            ### spp_id <- spp_id_vec[1]
             imp_file <- file.path(spp_impact_map_dir, 
                                sprintf('spp_impact_map_%s_no_cc.csv', spp_id))
             imp_map <- get_spp_impact(spp_id, imp_file)
@@ -187,7 +205,8 @@ for(taxon_gp in taxon_gps) {
         bind_rows()
       impacts_gp <- impact_maps %>%
         group_by(cell_id, year) %>%
-        summarize(n_spp = n_distinct(iucn_sid))
+        summarize(n_spp = n_distinct(iucn_sid)) %>%
+        ungroup()
       
       taxon_impacts_list[[i]] <- impacts_gp
     }
@@ -208,7 +227,7 @@ for(taxon_gp in taxon_gps) {
       taxon_impact_yr_df <- taxon_impacts_df %>%
         filter(year == year_span[i])
       taxon_impact_yr_rast <- map_to_rast(taxon_impact_yr_df)
-      writeRaster(taxon_impact_yr_rast, taxon_map_file)
+      writeRaster(taxon_impact_yr_rast, taxon_map_file, overwrite = TRUE)
     }
 
   } else {
@@ -229,21 +248,22 @@ for(taxon_gp in taxon_gps) {
                                       taxon_gp, year_span))
   
   if(any(!file.exists(taxon_map_files)) | reload) {
-    spp_in_taxa <- spp_taxa %>%
-      filter(taxon == taxon_gp)
+    spp_ids_taxa <- spp_incl %>%
+      filter(taxon == taxon_gp) %>%
+      .$iucn_sid %>% 
+      unique() %>% sort()
     
-    spp_ids <- spp_in_taxa$iucn_sid
-    
-    n_subgps <- ceiling(nrow(spp_in_taxa) / subgp_size)
-    message('Processing impacts for ', taxon_gp, ' climate only: ', length(spp_ids), 
-      ' species broken into ', n_subgps, ' groups.')
+    n_subgps <- ceiling(length(spp_ids_taxa) / subgp_size)
+    message('Processing impacts for ', taxon_gp,
+            ' climate only: ', length(spp_ids_taxa), 
+            ' species broken into ', n_subgps, ' groups.')
     
     ### initialize a list to store 
     taxon_impacts_list <- vector('list', length = n_subgps)
     for(i in 1:n_subgps) {
       # i <- 1
       message('  processing group ', i)
-      spp_id_vec <- get_spp_vec(spp_ids, i, subgp_size)
+      spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
       
       impact_maps <- parallel::mclapply(spp_id_vec,
           FUN = function(spp_id) {
@@ -254,7 +274,8 @@ for(taxon_gp in taxon_gps) {
         bind_rows()
       impacts_gp <- impact_maps %>%
         group_by(cell_id, year) %>%
-        summarize(n_spp = n_distinct(iucn_sid))
+        summarize(n_spp = n_distinct(iucn_sid)) %>%
+        ungroup()
       
       taxon_impacts_list[[i]] <- impacts_gp
     }
@@ -275,7 +296,7 @@ for(taxon_gp in taxon_gps) {
       taxon_impact_yr_df <- taxon_impacts_df %>%
         filter(year == year_span[i])
       taxon_impact_yr_rast <- map_to_rast(taxon_impact_yr_df)
-      writeRaster(taxon_impact_yr_rast, taxon_map_file)
+      writeRaster(taxon_impact_yr_rast, taxon_map_file, overwrite = TRUE)
     }
     
   } else {
@@ -309,13 +330,13 @@ for(taxon_gp in taxon_gps) {
                                        taxon_gp, year_span))
   
   if(any(!file.exists(taxon_map_files)) | reload) {
-    spp_in_taxa <- spp_taxa %>%
-      filter(taxon == taxon_gp)
+    spp_ids_taxa <- spp_incl %>%
+      filter(taxon == taxon_gp) %>%
+      .$iucn_sid %>% 
+      unique() %>% sort()
     
-    spp_ids <- spp_in_taxa$iucn_sid
-    
-    n_subgps <- ceiling(nrow(spp_in_taxa) / subgp_size)
-    message('Processing refugia for ', taxon_gp, ' non-climate: ', length(spp_ids), 
+    n_subgps <- ceiling(length(spp_ids_taxa) / subgp_size)
+    message('Processing refugia for ', taxon_gp, ' non-climate: ', length(spp_ids_taxa), 
       ' species broken into ', n_subgps, ' groups.')
     
     ### initialize a list to store 
@@ -323,20 +344,21 @@ for(taxon_gp in taxon_gps) {
     for(i in 1:n_subgps) {
       # i <- 1
       message('  processing group ', i)
-      spp_id_vec <- get_spp_vec(spp_ids, i, subgp_size)
+      spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
 
       refugia_maps <- parallel::mclapply(spp_id_vec,
           FUN = function(spp_id) {
             imp_file <- file.path(spp_impact_map_dir, 
                                sprintf('spp_impact_map_%s_no_cc.csv', spp_id))
             rng_file <- file.path(spp_range_dir,
-                               sprintf('iucn_sid_%s_mol.csv', spp_id))        
+                               sprintf('iucn_sid_%s.csv', spp_id))        
             ref_map <- calc_spp_refugia(spp_id, rng_file, imp_file)
           }, mc.cores = subgp_size) %>%
         bind_rows()
       refugia_gp <- refugia_maps %>%
         group_by(cell_id, year) %>%
-        summarize(n_spp = n_distinct(iucn_sid))
+        summarize(n_spp = n_distinct(iucn_sid)) %>%  
+        ungroup()
       
       taxon_refugia_list[[i]] <- refugia_gp
     }
@@ -357,7 +379,7 @@ for(taxon_gp in taxon_gps) {
       taxon_ref_yr_df <- taxon_refugia_df %>%
         filter(year == year_span[i])
       taxon_ref_yr_rast <- map_to_rast(taxon_ref_yr_df)
-      writeRaster(taxon_ref_yr_rast, taxon_map_file)
+      writeRaster(taxon_ref_yr_rast, taxon_map_file, overwrite = TRUE)
     }
     
   } else {
@@ -376,13 +398,13 @@ for(taxon_gp in taxon_gps) {
                                sprintf('taxon_refugia_%s_%s_cc_only.tif',
                                        taxon_gp, year_span))
   if(any(!file.exists(taxon_map_files)) | reload) {
-    spp_in_taxa <- spp_taxa %>%
-      filter(taxon == taxon_gp)
+    spp_ids_taxa <- spp_incl %>%
+      filter(taxon == taxon_gp) %>%
+      .$iucn_sid %>% 
+      unique() %>% sort()
     
-    spp_ids <- spp_in_taxa$iucn_sid
-    
-    n_subgps <- ceiling(nrow(spp_in_taxa) / subgp_size)
-    message('Processing refugia for ', taxon_gp, ' climate only: ', length(spp_ids), 
+    n_subgps <- ceiling(length(spp_ids_taxa) / subgp_size)
+    message('Processing refugia for ', taxon_gp, ' climate only: ', length(spp_ids_taxa), 
       ' species broken into ', n_subgps, ' groups.')
     
     ### initialize a list to store 
@@ -390,20 +412,21 @@ for(taxon_gp in taxon_gps) {
     for(i in 1:n_subgps) {
       # i <- 1
       message('  processing group ', i)
-      spp_id_vec <- get_spp_vec(spp_ids, i, subgp_size)
+      spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
 
       refugia_maps <- parallel::mclapply(spp_id_vec,
           FUN = function(spp_id) {
             imp_file <- file.path(spp_impact_map_dir, 
                                sprintf('spp_impact_map_%s_cc_only.csv', spp_id))
             rng_file <- file.path(spp_range_dir,
-                               sprintf('iucn_sid_%s_mol.csv', spp_id))        
+                               sprintf('iucn_sid_%s.csv', spp_id))        
             ref_map <- calc_spp_refugia(spp_id, rng_file, imp_file)
           }, mc.cores = subgp_size) %>%
         bind_rows()
       refugia_gp <- refugia_maps %>%
         group_by(cell_id, year) %>%
-        summarize(n_spp = n_distinct(iucn_sid))
+        summarize(n_spp = n_distinct(iucn_sid)) %>%   
+        ungroup()
       
       taxon_refugia_list[[i]] <- refugia_gp
     }
@@ -424,7 +447,7 @@ for(taxon_gp in taxon_gps) {
       taxon_ref_yr_df <- taxon_refugia_df %>%
         filter(year == year_span[i])
       taxon_ref_yr_rast <- map_to_rast(taxon_ref_yr_df)
-      writeRaster(taxon_ref_yr_rast, taxon_map_file)
+      writeRaster(taxon_ref_yr_rast, taxon_map_file, overwrite = TRUE)
     }
 
   } else {

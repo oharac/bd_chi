@@ -173,6 +173,9 @@ Here, green is the raster condensed to the 95% contour volume while dark red is 
 ```{r}
 str_95cv_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km_95cv'),
                              full.names = TRUE)
+# slr_95cv_files <- str_95cv_files[str_detect(str_95cv_files, 'slr_')]
+# unlink(slr_95cv_files)
+
 str_full_files <- str_df$file
 stressors <- str_df$stressor %>% unique() %>% sort()
 

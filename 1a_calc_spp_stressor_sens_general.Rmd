@@ -33,19 +33,19 @@ Sensitivity will denote whether a species range overlapping a stressor range con
 
 ## Set up stressor sensitivity dataframe
 
-Using all listed threats and the threat-to-stressor lookup, and focusing on those species with valid maps (i.e. a csv file in `spp_rasts_mol_2019`), identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.
+Using all listed threats and the threat-to-stressor lookup, identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field.  Here we will consider all species, regardless of mapped status, comprehensively assessed status, or threatened status.
 
 In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different activities that map to "direct human" impact) we summarize to the _maximum_ score out of all listed.  For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.
 
-In this step we will include all species including LC and DD.  We will however limit to comprehensively assessed taxa.
+```{r set up spp with threats}
+spp_marine <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv', api_version)))
 
-```{r set up spp with maps and threats}
-spp_maps <- read_csv(here('_data', 
-                          sprintf('spp_marine_maps_%s.csv', api_version)))
+spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
 
-spp_risk <- read_csv(here('_data', 
-                          sprintf('iucn_risk_current_%s.csv', api_version))) %>%
+spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version))) %>%
   select(iucn_sid, cat_score)
+
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
 
 chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
   mutate(stressor = str_split(stressor, ';')) %>%
@@ -58,25 +58,16 @@ spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
   left_join(chi_lookup, by = 'code') %>%
   filter(!is.na(code))
 
-spp_to_include <- spp_maps %>%
-  left_join(spp_risk, by = 'iucn_sid') %>%
-  # filter(!is.na(cat_score)) %>%
-    ### risk category is NA/DD
-  # filter(!cat_score %in% c(0, 1)) %>%
-    ### risk category is neither LC nor EX
-  filter(presence != 5) %>%
-    ### exclude "extinct" polygons
-  filter(comp_assessed)
-
-### Join the maps to the threats.
+### Join the marine species list to the threats.
 ### * recategorize sensitivities based on impact score
 ### * if no impact score, categorize sensitivities based on severity
 ### * rather than filtering, set NA and past scores to 0
 ###   * this allows non-threatened species to remain in the mix
-threats_to_maps <- spp_to_include %>%
+threats_to_marine <- spp_marine %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
   left_join(spp_threats, by = 'iucn_sid') %>%
-  ### code low-med-high sensitivity based on impact:
-  mutate(sens = case_when(score_num %in% 0:2 ~ FALSE,      ### no/negligible impact
+  ### code sensitivity based on impact:
+  mutate(sens = case_when(score_num %in% 0:2 ~ FALSE,   ### no/negligible impact
                           score_num > 2      ~ TRUE,
                           TRUE               ~ NA)) %>% ### set all else to NA
   ### for NA impact, code sensitivity based on severity:
@@ -92,8 +83,7 @@ threats_to_maps <- spp_to_include %>%
   filter(!is.na(code)) %>% ### drop code mismatches
   filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
   select(iucn_sid, cat_score,
-         sens, 
-         stressor) %>%
+         sens, stressor) %>%
   distinct()
 
 ### sensitivity categories:
@@ -102,27 +92,42 @@ threats_to_maps <- spp_to_include %>%
 # [5] "Rapid Declines"                   "Slow, Significant Declines"      
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
-write_csv(threats_to_maps %>% select(-cat_score),
+write_csv(threats_to_marine %>% select(-cat_score),
           here('_output', sprintf('spp_sens_general_%s.csv', api_version)))
+```
 
-n_comp <- spp_maps %>% 
-  filter(comp_assessed) %>% 
+``` {r calc comparisons}
+n_comp <- spp_marine %>% 
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
   .$iucn_sid %>% unique() %>% length()
-n_threatened <- spp_to_include %>% 
+n_threatened <- spp_risk %>% 
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
   filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
   .$iucn_sid %>% unique() %>% length()
 
-n_stressed <- threats_to_maps %>%
+n_stressed <- threats_to_marine %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
   filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
   filter(sens) %>%
   .$iucn_sid %>% unique() %>% length()
 
 ```
 
-Out of the list of `r n_comp` marine species with maps, `r n_threatened` are neither Least Concern nor Data Deficient.  
+Out of the list of `r n_comp` marine species with maps in comprehensively-assessed taxa, `r n_threatened` are not Least Concern, Extinct, nor Data Deficient.  
 
-The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one stressor is: `r n_stressed`.
+The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one __general__ stressor is: `r n_stressed`.  General stressors comprise:
+
+* `direct_human`
+* `nutrient`
+* `organic`
+* `shipping`
+* `light`
 
 NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
-<!-- 6739 comp-assessed mapped species, 1339 spp with category NC to CR, 1066 with sensitivity to stressors, 1015 with sensitivity to non-climate stressors -->
+<!-- 6957 comp-assessed mapped species  -->
+<!-- 1357 spp with category NC to CR  -->
+<!--  687 with sensitivity to general stressors -->
 
