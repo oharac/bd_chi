@@ -45,36 +45,15 @@ Set up the dataframe of species to include.  By taxon, load all species range ma
 
 ```{r Identify species in this assessment}
 
-### Load spp info for sensitivity, risk, comprehensive status, and maps
-spp_sens <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i'))
-spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i'))
-spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version))) %>%
-  filter(presence != 5) %>%
-  .$iucn_sid %>%
-  unique()
-spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version))) %>%
-  select(-sciname)
+spp_incl <- get_incl_spp()
 
-### Combine to make a species list that includes species that are:
-### * threatened or near threatened
-### * included in a comprehensively-assessed taxon
-### * mapped
-###
-### NOTE: for comparing pct of threatened spp that are impacted, we will look
-### at ALL threatened/mapped/comprehensive spp, not just those with one or
-### more sensitivities!
-
-spp_incl <- spp_risk %>%
-  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
-  filter(iucn_sid %in% spp_maps) %>%
-  left_join(spp_comp, by = c('iucn_sid')) %>%
-  filter(!is.na(taxon))
+spp_sens <- spp_incl %>%
+  filter(!is.na(stressor))
 
 # spp_incl$iucn_sid %>% n_distinct()
-### 1255 if we limit to just sensitive spp, 1357 if we include all
-### mapped/threatened/comp assessed spp
+# spp_incl %>% filter(!is.na(stressor)) %>% .$iucn_sid %>% n_distinct()
+### 1006 if we limit to just sensitive spp, 1273 if we include all
+### spp that are mapped/threatened/comp assessed
 ```
 
 ```{r map to raster function}
@@ -127,7 +106,7 @@ if(!file.exists(spp_rich_mapfile) | reload) {
                                 fun = sum, na.rm = TRUE) %>%
     mask(ocean_a_rast)
   
-  writeRaster(spp_rich_rast, spp_rich_mapfile)
+  writeRaster(spp_rich_rast, spp_rich_mapfile, overwrite = TRUE)
 }
 
 spp_rich_rast <- raster(spp_rich_mapfile)
@@ -420,6 +399,7 @@ knitr::include_graphics(gif_file)
 ## Create refugia map for all included spp, climate only
 
 ```{r refugia map all climate only}
+# reload <- TRUE
 
 cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
 ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))

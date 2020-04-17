@@ -37,20 +37,13 @@ For each species, pull in all associated stressor intersections, as well as spec
 
 ## Create list of species for mapping cumulative impacts
 
-Here we will identify all species with sensitivity to one or more stressor, and a range map.  For each of these species 
+Here we will identify all species with sensitivity to one or more stressor, and a range map.
 
 ```{r setup file names and species ids for processing}
-spp_sens <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i'))
+spp_incl <- get_incl_spp() %>%
+  filter(!is.na(stressor))
 
-spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
-
-spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
-
-spp_ids <- spp_sens %>%
-  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
-  filter(iucn_sid %in% spp_comp$iucn_sid) %>%
-  .$iucn_sid %>%
+spp_ids <- spp_incl$iucn_sid %>%
   unique() %>% sort()
 
 ocean_area_rast <- raster(here('_spatial/ocean_area_mol.tif'))

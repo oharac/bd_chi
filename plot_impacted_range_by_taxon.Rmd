@@ -1,0 +1,237 @@
+---
+title: 'Plot impacts per taxon'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+```
+
+
+# Summary
+
+For each species, identify the proportion of range impacted by 1+, 2+, 3+, etc stressors.  Identify the range class (small, med, large - decide thresholds using quantiles?).  Then make a plot by taxa, gridded with taxa along the side, range class along the top; each facet will have stacked bars showing proportion of species falling into certain percents of impacted range.
+
+# Methods
+
+* Gather species maps by taxonomic group (IUCN comprehensively assessed groups)
+* read in all impact maps for species for all years.
+
+## Match threatened species to taxonomic groups per IUCN
+
+Identify the species included in this assessment (sensitive, threatened, mapped, comprehensive).  Pull those `.csv` files from the `spp_impacts` directory, combine into a big ol' dataframe.  Here we will focus on the cumulative impacts only (broken into climate and non-climate).
+
+```{r identify included species}
+
+### Load spp info for sensitivity, risk, comprehensive status, and maps
+spp_sens <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
+spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
+spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version))) %>%
+  filter(presence != 5)
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version))) %>%
+  select(-sciname)
+
+### Combine to make a species list that includes species that are:
+### * sensitive to one or more stressors
+### * threatened or near threatened
+### * included in a comprehensively-assessed taxon
+### * mapped
+spp_incl <- spp_sens %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  left_join(spp_comp, by = c('iucn_sid')) %>%
+  filter(!is.na(taxon)) %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid)
+
+taxa_dropped <- spp_comp %>%
+  filter(!taxon %in% spp_incl$taxon) %>%
+  .$taxon %>% unique()
+
+```
+
+```{r}
+spp_order <- read_csv(file.path(dir_bd_anx, 'iucn/spp_info_from_api_2020-1.csv')) %>%
+  select(iucn_sid, kingdom, phylum, class, order) 
+
+spp_impacted <- spp_incl$iucn_sid %>% unique() %>% sort()
+
+expand_impacts <- function(df, id, cum = TRUE) {
+  range <- df$range_km2[!is.na(df$range_km2)][1]
+  
+  if(cum) {
+    df <- df %>%
+      filter(stressor == 'cumulative') 
+  }
+  df1 <- df %>%
+    group_by(impacts) %>%
+    complete(year = 2003:2013,
+             fill = list(stressor = 'cumulative',
+                         impact_km2 = 0,
+                         range_km2  = range,
+                         pct_impact = 0,
+                         iucn_sid = id)) %>%
+    ungroup() %>%
+    arrange(impacts, year) %>%
+    filter(!is.na(year))
+  
+  return(df1)
+}
+  
+
+get_impacts <- function(id) {
+  f_stem <- file.path(dir_bd_anx, 'spp_impacts', 'spp_impacts_%s_%s.csv')
+  no_cc <- read_csv(sprintf(f_stem, id, 'no_cc'), col_types = 'cidddi') %>%
+        mutate(impacts = 'non-climate')
+  cc  <- read_csv(sprintf(f_stem, id, 'cc_only'), col_types = 'cidddi') %>%
+    mutate(impacts = 'climate')
+  
+  df <- bind_rows(no_cc, cc) %>%
+    expand_impacts(id)
+   
+  return(df)
+}
+
+big_ol_df <- parallel::mclapply(spp_impacted,
+    FUN = get_impacts, mc.cores = 24) %>%
+  bind_rows() %>%
+  left_join(spp_order, by = 'iucn_sid') %>%
+  left_join(spp_comp, by = 'iucn_sid')
+
+```
+
+## Divide into impact range classes and summarize
+
+```{r}
+set_range_class <- function(df) {
+  r_cl <- c('0%'        = 0, 
+            '1% - 50%'  = 50,
+            '51% - 90%' = 90,
+            '91% - 99%' = 99,
+            '100%'      = 100)
+
+  df1 <- df %>%
+    mutate(tmp = round(100 * pct_impact)) %>%
+    rowwise() %>%
+    mutate(cl = 1 + sum(tmp > r_cl)) %>%
+    ungroup() %>%
+    arrange(desc(pct_impact)) %>%
+    mutate(range_class = names(r_cl)[cl],
+           range_class = fct_inorder(range_class)) %>%
+    select(-tmp, -cl)
+
+  return(df1)
+}
+
+df <- big_ol_df %>% 
+  filter(taxon == 'sea_turtles') %>%
+  select(iucn_sid, impacts, year, stressor, impact_km2, range_km2, pct_impact) %>%
+  distinct()
+  
+imp_range_taxa_sum <- big_ol_df %>%
+  set_range_class() %>%
+  group_by(class) %>%
+  mutate(n_total = n_distinct(iucn_sid)) %>%
+  group_by(class, n_total, impacts, range_class, year) %>%
+  summarize(n_spp = n_distinct(iucn_sid)) %>%
+  ungroup()
+```
+
+## Some plots
+
+### density plot
+
+```{r}
+test_df <- big_ol_df %>% 
+  filter(year %in% c(2003, 2008, 2013)) %>% 
+  mutate(year = factor(year)) %>%
+  filter(impacts == 'non-climate') %>%
+  group_by(class) %>%
+  filter(n() > 60) %>%
+  ungroup()
+
+ggplot(test_df, 
+       aes(x = pct_impact, color = year)) +
+  geom_density() +
+  facet_wrap( ~ class, ncol = 1, scales = 'free_y',
+              strip.position = 'left') +
+  labs(title = 'non-climate')
+
+```
+
+```{r}
+test_df <- big_ol_df %>% 
+  filter(year %in% c(2003, 2008, 2013)) %>% 
+  mutate(year = factor(year)) %>%
+  filter(impacts == 'climate') %>%
+  group_by(class) %>%
+  filter(n() > 60) %>%
+  ungroup()
+
+ggplot(test_df, 
+       aes(x = pct_impact, color = year)) +
+  geom_density() +
+  facet_wrap( ~ class, ncol = 1, scales = 'free_y',
+              strip.position = 'left') +
+  labs(title = 'climate')
+
+```
+
+### stacked bars
+
+```{r}
+test_df <- imp_range_taxa_sum %>%
+  filter(year %in% c(2003, 2008, 2013)) %>% 
+  filter(impacts == 'non-climate') %>%
+  mutate(year = factor(year),
+         pct_in_taxa = n_spp / n_total)
+  
+ggplot(test_df, aes(x = year, y = pct_in_taxa)) +
+  geom_col(aes(fill = range_class)) +
+  coord_flip() +
+  facet_wrap( ~ class, ncol = 1, scales = 'free_y',
+              strip.position = 'left') +
+  theme(strip.placement = 'outside',
+        strip.text.y = element_text(angle = 45),
+        axis.title.y = element_blank()) +
+  labs(title = 'non-climate')
+  
+```
+
+```{r}
+test_df <- imp_range_taxa_sum %>%
+  filter(year %in% c(2003, 2008, 2013)) %>% 
+  filter(impacts == 'climate') %>%
+  mutate(year = factor(year),
+         pct_in_taxa = n_spp / n_total)
+  
+ggplot(test_df, aes(x = year, y = pct_in_taxa)) +
+  geom_col(aes(fill = range_class)) +
+  coord_flip() +
+  facet_wrap( ~ class, ncol = 1, scales = 'free_y',
+              strip.position = 'left') +
+  theme(strip.placement = 'outside',
+        strip.text.y = element_text(angle = 45),
+        axis.title.y = element_blank()) +
+  labs(title = 'climate')
+  
+```

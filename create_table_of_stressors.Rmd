@@ -1,0 +1,102 @@
+---
+title: 'Combine stressor sensitivities'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+library(flextable)
+```
+
+
+# Summary
+
+Stressor sensitivity is a very simplified version of stressor weights (see draft1 folder for complicated version).  Here, we will simply note whether a given species is sensitive to a given stressor, using the IUCN impact weights (i.e. non-negligible impact score), ranked as 0-3 (no, low, medium, high impact) for later differentiation if necessary.  For species with NA impact scores, we can imply sensitivity based on other fields, e.g. severity.  This version of sensitivity is not related to the range of exposure, as the weight calculation was doing.
+
+Sensitivity will denote whether a species range overlapping a stressor range constitutes an impact.
+
+# Methods
+
+Gather processed sensitivity dataframe.
+
+```{r}
+
+spp_sens <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
+spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i'))
+spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version))) %>%
+  filter(presence != 5)
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version))) %>%
+  select(-sciname)
+
+### Combine to make a species list that includes species that are:
+### * sensitive to one or more stressors
+### * threatened or near threatened
+### * included in a comprehensively-assessed taxon
+### * mapped
+spp_incl <- spp_sens %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  left_join(spp_comp, by = c('iucn_sid')) %>%
+  filter(!is.na(taxon)) %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid)
+
+```
+
+## Match threat codes to stressors
+
+```{r}
+threat_to_stressor <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
+  mutate(code_main = str_extract(code, '[0-9]+') %>% as.numeric(),
+         code_short = str_extract(code, '[0-9]+\\.[0-9]+')) %>%
+  mutate(stressor = str_split(stressor, ';')) %>%
+  unnest(stressor) %>%
+  separate(desc, into = c('desc_main', 'desc_sub', 'desc_subsub'), 
+           sep = ': ', remove = FALSE)
+
+thr_to_spp <- spp_incl %>%
+  left_join(threat_to_stressor, by = c('code', 'stressor')) %>%
+  filter(sens) %>%
+  mutate(desc_main = sprintf('%s. %s', code_main, desc_main),
+         desc_sub = sprintf('%s. %s', code_short, desc_sub)) %>%
+  select(code_main, desc_main, desc_sub, stressor, iucn_sid, category) %>%
+  distinct()
+
+threat_table <- thr_to_spp %>%
+  group_by(code_main, desc_main, desc_sub, stressor)  %>%
+  summarize(n_spp = n_distinct(iucn_sid)) %>%
+  ungroup() %>%
+  arrange(code_main, stressor) %>%
+  select(-code_main) %>%
+  setNames(c('Threat category', 'Threat subcategory', 'Stressor', 'n spp'))
+
+flextable(threat_table) %>%
+  theme_vanilla() %>%
+  align(part = 'all', align = 'left') %>%
+  align(part = 'all', j = 4, align = 'center') %>%
+  # bg(bg = 'white', part = 'header') %>%
+  # border(border.bottom = officer::fp_border(), part = 'header') %>%
+  font(font = 'Arial', part = 'all') %>%
+  fontsize(size = 8, part = 'all') %>%
+  width(1:2, width = 2.5) %>%
+  width(3, width = 1) %>%
+  merge_v(j = 1:3)
+  
+```
+

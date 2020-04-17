@@ -406,7 +406,7 @@ cc_sens_df <- cc_narr_tidy %>%
 ### within that stressor category.  Complete the list so all stressors
 ### show up for all species, leaving NAs for those added via complete().
 cc_sens_summary <- cc_sens_df %>%
-  group_by(iucn_sid, stressor) %>%
+  group_by(iucn_sid, stressor, code) %>%
   filter(!is.na(sens)) %>%
   summarize(sens = sum(count * sens) > 0) %>%
   group_by(iucn_sid) %>%

@@ -487,7 +487,7 @@ stressors <- spp_threats_from_iucn$stressor %>% unique()
 ### separate out artisanal fishing threats as these are not gear-based
 art_fish_from_iucn <- spp_threats_from_iucn %>%
   filter(stressor == 'art_fish') %>%
-  select(iucn_sid, stressor, sens) %>%
+  select(iucn_sid, stressor, sens, code) %>%
   distinct()
 
 ### for gear-related stressors, bind spp and gear habitats per species,
@@ -502,7 +502,7 @@ gear_sens_df <- gear_narr_tidy %>%
 ### within that stressor category.  Complete the list so all stressors
 ### show up for all species, leaving NAs for those added via complete().
 gear_sens_summary <- gear_sens_df %>%
-  group_by(iucn_sid, stressor) %>%
+  group_by(iucn_sid, stressor, code) %>%
   filter(!is.na(sens)) %>%
   summarize(sens = sum(count * sens) > 0) %>%
   bind_rows(art_fish_from_iucn) %>%
@@ -553,7 +553,9 @@ According to this analysis so far, there are `r n_spp_sens` distinct threatened 
 
 ```{r}
 spp_per_stressor <- gear_sens_summary %>%
+  select(-code) %>%
   filter(sens) %>%
+  distinct() %>%
   filter(iucn_sid %in% spp_stressed$iucn_sid) %>%
   count(stressor) %>%
   arrange(n) %>%
@@ -570,7 +572,9 @@ Most species are affected by artisanal fishing.
 
 ```{r}
 stressor_per_spp <- gear_sens_summary %>%
+  select(-code) %>%
   filter(sens) %>%
+  distinct() %>%
   filter(iucn_sid %in% spp_stressed$iucn_sid) %>%
   count(iucn_sid) %>%
   mutate(n_txt = as.character(n))

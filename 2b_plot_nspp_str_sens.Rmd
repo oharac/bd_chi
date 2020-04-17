@@ -1,0 +1,291 @@
+---
+title: 'Plot species stressor sensitivities'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+library(sf)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+```
+
+
+# Summary
+
+Here we create a plot of stressors and proportion of species sensitive to those stressors, by taxa, and broken into size quantiles.
+
+## Methods summary
+
+First: generate a file of species ranges; the main concern is birds who may have inland ranges that are not included in the marine range maps.  We can generate the list by counting cells in range maps for non-birds, then for birds, loading polygons and fasterizing them to count the cells to get the total range area based on the full polygons.
+
+Then: divide species into quintiles by range; for each stressor, determine the number and proportion of species, in each range quintile, that are sensitive to that stressor.
+
+# Methods
+
+## Get species ranges
+
+```{r}
+
+spp_sens <- get_incl_spp() %>%
+  filter(!is.na(stressor)) %>%
+  select(-code) %>%
+  distinct()
+
+spp_range_file <- here('int/spp_ranges_incl_birds.csv')
+
+if(!file.exists(spp_range_file)) {
+  
+  ### get marine ranges for all species, by summing ocean area of
+  ### cells in range csv files
+  spp_ids_all <- spp_sens %>%
+    .$iucn_sid %>% unique() %>% sort()
+  
+  ocean_a_rast <- raster::raster(here('_spatial/ocean_area_mol.tif'))
+  cell_area_km2 <-  (res(ocean_a_rast)[1])^2 / 1e6
+  ocean_a_vec <- values(ocean_a_rast) * cell_area_km2
+  
+  range_marine_list <- parallel::mclapply(spp_ids_all,
+      FUN = function(id) { # id <- spp_ids_all[1]
+        f <- file.path(dir_spp_maps, sprintf('iucn_sid_%s.csv', id))
+        tmp <- read_csv(f) %>%
+          filter(presence != 5 & !is.na(presence))
+        area_km2 <- ocean_a_vec[tmp$cell_id]
+        df <- data.frame(iucn_sid = id, 
+                         marine_km2 = sum(area_km2))
+      }, mc.cores = 24)
+  
+  ### get all bird species full ranges (not just marine)
+  spp_ids_bird <- spp_sens %>%
+    filter(taxon == 'birds') %>%
+    .$iucn_sid %>% unique() %>% sort()
+  
+  bli_shp <- file.path(dir_M, 'git-annex/globalprep', 
+                       '_raw_data/birdlife_intl/d2019',
+                       'bli_marine_v2018.shp')
+
+  bird_maps <- sf::read_sf(bli_shp) %>%
+    filter(iucn_sid %in% spp_ids_bird) %>%
+    filter(presence != 5 & !is.na(presence)) %>%
+    st_transform(crs(ocean_a_rast))
+  
+  range_bird_list <- parallel::mclapply(spp_ids_bird,
+      FUN = function(id) { # id <- spp_ids_bird[1]
+        map <- bird_maps %>%
+          filter(iucn_sid == id)
+        rast <- fasterize::fasterize(map, ocean_a_rast)
+        v <- values(rast)[!is.na(values(rast))] ### drop NAs
+        v <- v[v != 5] ### drop extinct polygons
+        v <- v / v ### normalize (in case of other presence codes)
+        df <- data.frame(iucn_sid = id,
+                         bird_km2 = sum(v) * cell_area_km2)
+        return(df)
+      }, mc.cores = 12)
+  
+  ### just save the ids and ranges - no need for names
+  range_ids_df <- bind_rows(range_marine_list) %>%
+    left_join(bind_rows(range_bird_list), by = 'iucn_sid') 
+    
+  write_csv(range_ids_df, spp_range_file)
+}
+
+### to interrogate the data, let's add names for reference
+range_ratios_df <- read_csv(spp_range_file) %>%
+  left_join(spp_sens %>% 
+              select(iucn_sid, sciname, comname) %>%
+              distinct(), 
+            by = 'iucn_sid') %>%
+  mutate(ratio = marine_km2 / bird_km2) %>% filter(ratio > 1.01) %>%
+  arrange(desc(ratio))
+
+```
+
+#### NOTE: do some bird spp have total ranges noted as less than their marine range?  
+
+`r knitr::kable(range_ratios_df)`
+
+Check these species to make sure the marine range mapping algorithm is correct.
+
+* Black-footed albatross (22698350) shows a marine range map with 802,666 presence cells; but the rasterized polygon shows only 509,153 cells.
+
+## Plot species x stressor sensitivity by range
+
+For each stressor, determine how many threatened marine species are noted as being impacted.  Break this into range quintiles to see how sensitivity varies by range size.
+``` {r}
+
+str_names <- spp_sens$stressor %>% unique() %>% sort()
+
+range_df <- read_csv(spp_range_file) %>%
+  mutate(range_km2 = ifelse(is.na(bird_km2), marine_km2, bird_km2),
+         qtile     = cut(range_km2, 
+                         breaks = quantile(range_km2, probs = (0:5) / 5),
+                         labels = 1:5, include.lowest = TRUE))
+# table(range_df$quintile)
+range_cuts <- range_df %>%
+  group_by(qtile) %>%
+  summarize(range_min = min(range_km2),
+            range_max = max(range_km2))
+
+
+qtile_sum_df <- spp_sens %>%
+  left_join(range_df, by = 'iucn_sid') %>%
+  group_by(stressor, qtile) %>%
+  summarize(n_quint = n()) %>%
+  group_by(stressor) %>%
+  complete(qtile, fill = list(n_quint = 0)) %>%
+  mutate(n_tot = sum(n_quint),
+         pct_quint = n_quint / n_tot) %>%
+  ungroup() %>%
+  arrange(qtile, pct_quint) %>%
+  mutate(stressor = fct_inorder(stressor))
+
+lbls <- qtile_sum_df %>%
+  select(stressor, qtile, pct_quint, n_quint) %>%
+  group_by(stressor) %>%
+  mutate(y_pos = cumsum(pct_quint) - .5 * pct_quint) %>%
+  ungroup()
+
+n_tot_lbls <- qtile_sum_df %>%
+  select(stressor, n_tot) %>%
+  distinct()
+  
+ggplot(qtile_sum_df, aes(x = stressor)) +
+  ggtheme_plot() +
+  geom_col(aes(y = pct_quint, fill = as.character(qtile)),
+           position = position_stack(reverse = TRUE)) +
+  geom_text(data = lbls, aes(y = y_pos, label = n_quint),
+            size = 2, color = 'grey20') +
+  geom_text(data = n_tot_lbls, y = 1.01,
+            aes(label = paste0('n = ', n_tot)),
+            size = 3, hjust = 0, color = 'grey20') +
+  scale_fill_brewer(palette = 'Blues') +
+  scale_y_continuous(limits = c(0, 1.15), 
+                     expand = c(0, 0),
+                     breaks = (0:4) / 4) +
+  theme(panel.grid.major = element_blank()) +
+  labs(fill = 'range quintile',
+       y = 'proportion of species',
+       title = 'Spp/stressor sensitivity, by range quintile') +
+  coord_flip()
+
+```
+
+`r knitr::kable(range_cuts)`
+
+## Plot species x stressor sensitivity by taxon
+
+``` {r}
+
+spp_class_order <- read_csv(file.path(dir_bd_anx, 'iucn',
+                               sprintf('spp_info_from_api_%s.csv', api_version))) %>%
+  select(iucn_sid, class, order)
+
+taxon_gped <- spp_sens %>%
+  left_join(spp_class_order, by = c('iucn_sid')) %>%
+  # mutate(taxon = ifelse(class == 'ACTINOPTERYGII',
+  #                       tolower(order), tolower(class)))
+  mutate(taxon = tolower(class))
+  
+
+taxon_sum_df <- taxon_gped %>%
+  group_by(stressor, taxon) %>%
+  summarize(n_taxa = n()) %>%
+  group_by(stressor) %>%
+  complete(taxon, fill = list(n_taxa = 0)) %>%
+  mutate(n_tot = sum(n_taxa),
+         pct_taxa = n_taxa / n_tot) %>%
+  ungroup() %>%
+  arrange(pct_taxa) %>%
+  mutate(stressor = fct_inorder(stressor))
+
+lbls <- taxon_sum_df %>%
+  select(stressor, taxon, pct_taxa, n_taxa) %>%
+  group_by(stressor) %>%
+  mutate(y_pos = cumsum(pct_taxa) - .5 * pct_taxa) %>%
+  ungroup()
+
+n_tot_lbls <- taxon_sum_df %>%
+  select(stressor, n_tot) %>%
+  distinct()
+  
+ggplot(taxon_sum_df, aes(x = stressor)) +
+  ggtheme_plot() +
+  geom_col(aes(y = pct_taxa, fill = as.character(taxon)),
+           position = position_stack(reverse = TRUE)) +
+  geom_text(data = lbls, aes(y = y_pos, label = n_taxa),
+            size = 2, color = 'grey20') +
+  geom_text(data = n_tot_lbls, y = 1.01,
+            aes(label = paste0('n = ', n_tot)),
+            size = 3, hjust = 0, color = 'grey20') +
+  # scale_fill_brewer(palette = 'Blues') +
+  scale_y_continuous(limits = c(0, 1.15), 
+                     expand = c(0, 0),
+                     breaks = (0:4) / 4) +
+  theme(panel.grid.major = element_blank()) +
+  labs(fill = 'taxon',
+       y = 'proportion of species',
+       title = 'Spp/stressor sensitivity, by taxon') +
+  coord_flip()
+```
+
+```{r}
+spp_all_incl <- get_incl_spp() %>%
+  select(-code) %>%
+  mutate(stressor = ifelse(is.na(stressor), 'none', stressor)) %>%
+  distinct()
+
+taxon_gped2 <- spp_all_incl %>%
+  left_join(spp_class_order, by = c('iucn_sid')) %>%
+  # mutate(taxon = ifelse(class == 'ACTINOPTERYGII',
+  #                       tolower(order), tolower(class)))
+  mutate(taxon = tolower(class))
+  
+taxon_sum_df2 <- taxon_gped2 %>%
+  group_by(stressor, taxon) %>%
+  summarize(n_taxa = n()) %>%
+  group_by(stressor) %>%
+  mutate(n_tot = sum(n_taxa)) %>%
+  ungroup()
+
+taxon_count <- taxon_gped2 %>%
+  select(iucn_sid, taxon) %>%
+  distinct() %>%
+  group_by(taxon) %>%
+  summarize(n_in_taxa = n()) %>%
+  spread(taxon, n_in_taxa) %>%
+  mutate(n_tot = rowSums(.),
+         stressor = 'total species')
+
+
+taxon_sum_table <- taxon_sum_df2 %>%
+  filter(stressor != 'none') %>%
+  spread(taxon, n_taxa) %>%
+  arrange(desc(n_tot)) %>%
+  bind_rows(taxon_sum_df2 %>%
+    filter(stressor == 'none') %>%
+    spread(taxon, n_taxa)) %>%
+  bind_rows(taxon_count)
+
+options(knitr.kable.NA = '')
+
+knitr::kable(taxon_sum_table %>%
+               setNames(names(.) %>% str_sub(1, 6)))
+```
+

@@ -42,8 +42,9 @@ sens_cc  <- read_csv(here('_output', sprintf('spp_sens_climate_%s.csv', api_vers
                      col_types = cols('iucn_sid' = 'i', 'code' = 'c'))
 
 sens_all_df <- bind_rows(sens_gen, sens_fis, sens_cc)
-write_csv(sens_all_df, 
-          here('_output', sprintf('spp_sensitivity_%s.csv', api_version)))
+
+sens_all_file <- here('_output', sprintf('spp_sensitivity_%s.csv', api_version))
+write_csv(sens_all_df, sens_all_file)
 
 ```
 
@@ -52,34 +53,22 @@ write_csv(sens_all_df,
 Plotting the number of species impacted by each stressor.  This plot includes species that:
 
 * have an IUCN range map
-* are in a comprehensively assessed taxon
+* are in a comprehensively assessed taxon (and birds are seabirds)
 * are threatened or near threatened (i.e. not LC or EX)
 * are sensitive to at least one stressor in our study
 
 ```{r}
-spp_marine <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv', api_version)))
 
-spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
+sens_all_df <- read_csv(sens_all_file, col_types = cols('iucn_sid' = 'i'))
 
-spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version))) %>%
-  select(iucn_sid, cat_score)
-
-spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
-
-spp_thr_with_maps <- spp_marine %>%
-  left_join(spp_risk, by = 'iucn_sid') %>%
-  filter(!is.na(cat_score)) %>%
-    ### risk category is NA/DD
-  filter(!cat_score %in% c(0, 1)) %>%
-    ### risk category is neither LC nor EX
-  left_join(spp_comp, by = 'iucn_sid') %>%
-  filter(!is.na(taxon)) %>%
-  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
-  distinct()
+spp_incl <- get_incl_spp() %>%
+  filter(!is.na(stressor))
 
 plot_df <- sens_all_df %>%
   filter(sens) %>%
-  filter(iucn_sid %in% spp_thr_with_maps$iucn_sid) %>%
+  select(-code, -sens) %>%
+  distinct() %>%
+  filter(iucn_sid %in% spp_incl$iucn_sid) %>%
   group_by(stressor) %>%
   summarize(n_spp = n()) %>%
   arrange(n_spp) %>%

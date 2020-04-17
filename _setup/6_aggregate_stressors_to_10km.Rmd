@@ -85,7 +85,7 @@ for(dir in str_dirs) {
         ### TRUE!
     
       } else {
-        message('File exists: ', str_10km_file, '... skipping!')
+        # message('File exists: ', str_10km_file, '... skipping!')
       }
     })
 }
@@ -112,4 +112,78 @@ for(f in slr_rast_files) {
 
 ```
 
+## Map all stressors in gifs
+
+```{r}
+  
+library(animation)
+
+make_gifs <- function(map_stack, filename, layer_names = NULL) {
+  if(is.null(layer_names)) layer_names = names(map_stack)
+
+  x <- values(map_stack)[values(map_stack) > 0] %>%
+    min(na.rm = TRUE)
+
+  power_adj <- -1 * round(log10(mean(values(map_stack), na.rm = TRUE) * 2)) + 1
+  message('Adjusting by power of ', 1/power_adj)
+  map_stack_adj <- map_stack^(1 / power_adj)
+  
+  ramp_breaks <- c(0, seq(x, 1, length.out = 100))
+  ramp_labels <- seq(0, 1, .2)
+  ramp_colors <- c('grey40', hcl.colors(n = 100, palette = 'viridis'))
+
+  capture.output({
+    saveGIF({
+      for(i in 1:nlayers(map_stack_adj)){
+        plot(map_stack_adj[[i]], 
+             col = ramp_colors,
+             breaks = ramp_breaks,
+             axes = FALSE,
+             axis.args = list(at = ramp_labels^(1 / power_adj), labels = ramp_labels),
+             main = layer_names[i])
+      }}, 
+      interval = 0.5, movie.name = filename, 
+      ani.width = 700, ani.height = 420)
+  })
+  
+  return(invisible(NULL))
+}
+```
+
+``` {r, results = 'asis'}
+str_10km_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km'),
+                             full.names = TRUE)
+years <- 2003:2013
+
+str_map_df <- data.frame(str_file = str_10km_files) %>%
+  mutate(str = str_replace(basename(str_file), '_[0-9].+', ''),
+         year = str_extract(basename(str_file), '[0-9]{4}') %>%
+           as.integer()) %>%
+  group_by(str) %>%
+  filter(min(year) <= 2003 & max(year) >= 2013) %>%
+  ungroup() %>%
+  filter(year %in% years)
+
+stressors <- str_map_df$str %>% unique()
+
+for(stressor in stressors) { ### stressor <- stressors[8]
+  ### Animate the results
+  gif_file <- here('_setup', sprintf('figs/str_movie_%s.gif', stressor))
+  
+  str_maps <- str_map_df %>%
+    filter(str == stressor) %>%
+    .$str_file
+    
+  if(!file.exists(gif_file)) {
+    message('creating ', gif_file)
+    rast_files <- str_maps
+    map_stack <- stack(rast_files) 
+    make_gifs(map_stack, 
+              filename = gif_file,
+              layer_names = paste(stressor, years))
+  }
+  
+  cat(sprintf('![](%s)', gif_file))
+}
+```
 

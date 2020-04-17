@@ -46,22 +46,23 @@ Note that the intersection cells include only those cells where the species AND 
 
 ## Get the species sensitivities
 
-The species sensitivity dataframe is created in script 1: `1_calc_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors; load the maps file to determine which of these species have range maps as well.  Note, the sensitivity file includes non-threatened species, so these will be included in the overall set of intersection maps.  Make sure to exclude non-threatened species when aggregating species maps to taxon level!
+The species sensitivity dataframe is created in script 1: `1d_combine_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors; load the maps file to determine which of these species have range maps as well.  Note, the sensitivity file includes non-threatened species, so these will be included in the overall set of intersection maps.  Make sure to exclude non-threatened species when aggregating species maps to taxon level!
 
 ```{r}
-spp_str_df <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)))
 
-spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
+spp_incl_all <- get_incl_spp(include_all_risk = TRUE) %>%
+  filter(!is.na(stressor)) %>%
+  select(-code) %>%
+  distinct()
 
-spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
+spp_ids <- spp_incl_all$iucn_sid %>% unique() %>% sort()
 
-intsx_df <- spp_str_df %>%
-  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
-  inner_join(spp_comp, by = 'iucn_sid')
+str_names <- spp_incl_all$stressor %>% unique() %>% sort()
 
-spp_ids <- intsx_df$iucn_sid %>% unique() %>% sort()
-
-str_names <- intsx_df$stressor %>% unique() %>% sort()
+spp_str_df <- spp_incl_all %>%
+  select(iucn_sid, stressor) %>%
+  distinct()
+  
 
 ### spp to check for sensitivity to OA and SST: wide-ranging spp sensitive to
 ### wide-ranging stressors
@@ -78,7 +79,6 @@ str_w_maps <- list.files(dir_str_95cv) %>%
 if(any(!str_names %in% str_w_maps)) {
   message('NOTE: some listed stressors do not have maps! \n')
 }
-
 
 ```
 
@@ -174,8 +174,7 @@ for(str_name in str_names) {
   
   ### Determine which species are sensitive to this stressor
   spp_str_sens <- spp_str_df %>%
-    filter(stressor == str_name) %>%
-    filter(sens == TRUE & !is.na(sens))
+    filter(stressor == str_name)
   
   ### Stressors with large maps (e.g. OA, SST) take up a lot of memory -
   ### esp if spp also have large maps.  Limit cores such that the

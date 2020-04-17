@@ -1,0 +1,146 @@
+---
+title: 'Plot species impact trends'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+library(sf)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+```
+
+
+# Summary
+
+Here we plot species impact trends - how impacted range area is changing over time.  We can look at this on a stressor-by-stressor basis, and grouped by cumulative non-climate and climate stressors.  
+
+## Methods summary
+
+Read in all the impact summaries.  Attach taxonomic information and range information.
+
+For each stressor, calculate impact trends by taxon, by range size, and overall.  
+
+* Impact trend will be change in percent impacted range? 
+* or absolute?  This devalues small-ranged species.  Perhaps in the range size calculations.
+
+# Methods
+
+## Get impact summaries
+
+Load the impact summaries, attach info on taxonomic groupings and range quintiles.
+
+```{r assemble data frame}
+
+spp_incl <- get_incl_spp() %>%
+  select(-code) %>%
+  distinct()
+
+spp_impact_dir <- file.path(dir_bd_anx, 'spp_impacts')
+imp_files <- list.files(spp_impact_dir, full.names = TRUE)
+
+spp_range_file <- here('int/spp_ranges_incl_birds.csv')
+spp_ranges <- read_csv(spp_range_file) %>%
+  left_join(spp_incl %>%
+              select(iucn_sid, taxon) %>%
+              distinct(), by = 'iucn_sid') %>%
+  mutate(all_r_km2 = ifelse(is.na(bird_km2), marine_km2, bird_km2),
+         qtile = cut(all_r_km2, 
+                     breaks = quantile(all_r_km2, probs = (0:5) / 5),
+                     labels = 1:5, include.lowest = TRUE)) %>%
+  select(-marine_km2, -bird_km2)
+
+impacts_df <- parallel::mclapply(imp_files,
+    FUN = function(f) { ### f <- imp_files[1]
+      x <- read_csv(f) %>%
+        mutate(impacts = str_replace_all(basename(f), '.+[0-9]+_|.csv', ''))
+    }, mc.cores = 40) %>%
+  bind_rows() %>%
+  mutate(stressor = ifelse(stressor == 'cumulative', 
+                           paste0('cum_', impacts), stressor)) %>%
+  select(-impacts) %>%
+  filter(iucn_sid %in% spp_incl$iucn_sid)
+
+### join ranges
+imp_range_df <- impacts_df %>%
+  left_join(spp_ranges, by = 'iucn_sid')
+
+```
+
+## Summarize by stressor
+
+Note, trends are based only on the species with reported sensitivity - i.e. non-sensitive species are dropped.  More conservative perhaps would be to include these species as having constant zero-impact ranges.
+
+### Stressor on all impacted spp
+
+```{r}
+
+tr_by_stressor <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  group_by(stressor) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(intercept = mdl$coefficients['(Intercept)'],
+         slope = mdl$coefficients['year'],
+         e_slope = summary(mdl)$coefficients[2, 2],
+         t_slope = summary(mdl)$coefficients[2, 3],
+         p_slope = summary(mdl)$coefficients[2, 4],
+         adj_r2 = summary(mdl)$adj.r.squared) %>%
+  select(-mdl)
+
+DT::datatable(tr_by_stressor)
+```
+
+### Stressor on impacted spp by range quintile
+
+```{r}
+
+tr_by_stressorXrange <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  group_by(stressor, qtile) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(intercept = mdl$coefficients['(Intercept)'],
+         slope = mdl$coefficients['year'],
+         e_slope = summary(mdl)$coefficients[2, 2],
+         t_slope = summary(mdl)$coefficients[2, 3],
+         p_slope = summary(mdl)$coefficients[2, 4],
+         adj_r2 = summary(mdl)$adj.r.squared) %>%
+  select(-mdl)
+
+DT::datatable(tr_by_stressorXrange %>% mutate_if(is.double, round, digits = 5))
+```
+
+### Stressor on impacted spp by taxonomic group
+
+```{r}
+
+tr_by_stressorXtaxon <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  group_by(stressor, taxon) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(intercept = mdl$coefficients['(Intercept)'],
+         slope = mdl$coefficients['year'],
+         e_slope = summary(mdl)$coefficients[2, 2],
+         t_slope = summary(mdl)$coefficients[2, 3],
+         p_slope = summary(mdl)$coefficients[2, 4],
+         adj_r2 = summary(mdl)$adj.r.squared) %>%
+  select(-mdl)
+
+DT::datatable(tr_by_stressorXtaxon %>% mutate_if(is.double, round, digits = 5))
+```
+

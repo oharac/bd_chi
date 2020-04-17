@@ -115,10 +115,119 @@ if(!file.exists(str_thresh_file) | reload) {
   
   write_csv(thresh_df, str_thresh_file)
 } else {
-  message('File exists: ', str_thresh_file, '... reading from file')
-  thresh_df <- read_csv(str_thresh_file)
+  message('File exists: ', str_thresh_file, '... skipping')
 }
 ```
+
+### Plot stressor distributions
+
+```{r}
+
+thresh_df <- read_csv(str_thresh_file) %>%
+  filter(timescale == '2003-2013') %>%
+  select(stressor, thresh)
+
+str_vals_file <- file.path(dir_bd_anx, 'fig_data/str_thresh_vals.csv')
+# unlink(str_vals_file)
+if(!file.exists(str_vals_file) | reload) {
+  
+  stressors <- thresh_df$stressor %>% unique() %>% sort()
+  
+  str_vals_list <- parallel::mclapply(stressors, mc.cores = 4,
+    FUN = function(str) {
+      ### str <- stressors[1]
+      str_fs <- str_df %>%
+        filter(stressor == str) %>%
+        .$file
+      
+      str_stack <- raster::stack(str_fs)
+      vals_all <- values(str_stack)
+      vals_na_rm <- vals_all[!is.na(vals_all)]
+      val_vec <- vals_na_rm[vals_na_rm > 0]
+      
+      max_n <- 1e5
+      if(length(val_vec) > max_n) {
+        val_vec <- sample(val_vec, max_n)
+      }
+      
+      tmp_df <- data.frame(stressor = str,
+                           val = val_vec)
+      return(tmp_df)
+    })
+  
+  str_vals_df <- bind_rows(str_vals_list)
+  
+  write_csv(str_vals_df, str_vals_file)
+} else {
+  message('File exists: ', str_vals_file)
+}
+
+str_vals_df <- read_csv(str_vals_file)
+
+n_bins <- 500
+
+plot_df_1 <- str_vals_df %>%
+  sample_n(1e5) %>%
+  left_join(thresh_df, by = 'stressor') %>%
+  mutate(below_thresh = ifelse(val < thresh, TRUE, FALSE)) %>%
+  # group_by(stressor) %>%
+  # arrange(val) %>%
+  # mutate(cum_val_pct = cumsum(val) / sum(val)) %>%
+  ungroup() # %>%
+  # filter(stressor == 'art_fish')
+
+plot_df <- str_vals_df %>%
+  sample_n(1e6) %>%
+  mutate(sqrt_val = sqrt(val),
+         b = cut(sqrt_val, n_bins)) %>%
+  group_by(stressor, b) %>%
+  summarize(n = n()) %>%
+  ungroup() %>%
+  left_join(thresh_df, by = 'stressor') %>%
+  mutate(x = as.numeric(str_replace_all(b, '.+,|]', '')),
+         v = x^2,
+         below_thresh = ifelse(v < thresh, TRUE, FALSE))
+
+y_pos <- sqrt(max(plot_df$n)) / 4
+x_lbls <- c('.02', '.10', '.25', '.50', '1')
+x_brks <- as.numeric(x_lbls)
+
+  
+ggplot(plot_df) +
+  geom_linerange(aes(x = x, ymax = sqrt(n),
+                     color = below_thresh),
+                 ymin = 0,
+                 size = .5,
+                 show.legend = FALSE) +
+  geom_vline(xintercept = 0, color = 'black', size = .25) +
+  geom_hline(yintercept = 0, color = 'black', size = .25) +
+  geom_vline(aes(xintercept = sqrt(thresh)), color = 'red', size = .5) +
+  scale_color_manual(values = c('grey20', 'grey80')) +
+  geom_text(data = thresh_df,
+            aes(label = stressor,
+                x = sqrt(thresh)),
+            y = y_pos,
+            color = 'grey20', size = 3,
+            nudge_x = .02, nudge_y = -.02,
+            hjust = 0, vjust = 1) +
+  # geom_hline(yintercept = 0.05) +
+  coord_cartesian(ylim = c(0, y_pos)) +
+  scale_x_continuous(breaks = sqrt(x_brks),
+                     labels = x_lbls,
+                     expand = c(0, 0)) +
+  facet_wrap( ~ stressor, 
+              # scales = 'free_y', 
+              ncol = 2) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank()) +
+  labs(x = 'Scaled stressor intensity')
+```
+
 
 
 ### Clip individual stressor maps to 95% contour volume
@@ -127,6 +236,8 @@ Using the threshold across the range of years (2003-2013), clip each stressor ma
 
 ```{r}
 reload <- FALSE
+
+thresh_df <- read_csv(str_thresh_file)
 
 stressors <- str_df$stressor %>% unique() %>% sort()
 
@@ -164,52 +275,74 @@ tmp <- parallel::mclapply(stressors, mc.cores = 8,
   })
 ```
 
-## Map results for most recent year
+## Map results
 
-For each stressor, choose a mid year: 2010 (arbitrary).  Map the 95% contour volume map against the full map - setting values for the full map to one (normalized) value and the values for the 95% contour volume to another to show contrast.  Because all the 95% contour volume cells are within the full raster, we can simply plot it in a different color on top of the full raster.
+Map the 95% contour volume map against the full map - setting values for the full map to one (normalized) value and the values for the 95% contour volume to another to show contrast.  Because all the 95% contour volume cells are within the full raster, we can simply plot it in a different color on top of the full raster.
 
 Here, green is the raster condensed to the 95% contour volume while dark red is the full raster.
 
 ```{r}
+  
+library(animation)
+
+make_overlap_gifs <- function(stack_full, stack_95cv, filename, layer_names = NULL) {
+  capture.output({
+    saveGIF({
+      for(i in 1:nlayers(stack_full)){
+        plot(stack_full[[i]], 
+             col = 'darkred',
+             legend = FALSE,
+             axes = FALSE,
+             main = layer_names[i])
+        plot(stack_95cv[[i]], 
+             col = 'green', axes = FALSE, add = TRUE)
+      }}, 
+      interval = 0.5, movie.name = filename, 
+      ani.width = 700, ani.height = 420)
+  })
+  
+  return(invisible(NULL))
+}
+```
+
+``` {r, results = 'asis'}
 str_95cv_files <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km_95cv'),
                              full.names = TRUE)
-# slr_95cv_files <- str_95cv_files[str_detect(str_95cv_files, 'slr_')]
-# unlink(slr_95cv_files)
+str_full_files <- str_replace_all(str_95cv_files, '_95cv', '') %>%
+  str_replace_all('mol10km.tif', 'rescaled_mol10km.tif')
+years <- 2003:2013
 
-str_full_files <- str_df$file
-stressors <- str_df$stressor %>% unique() %>% sort()
-
-plot_year <- 2010
-
-str_file_df <- data.frame(str_95cv = str_95cv_files,
-                          str_full = str_full_files) %>%
-  mutate(str  = str_replace_all(basename(str_full), '_[0-9].*', ''),
-         year = str_extract(basename(str_full), '[0-9]{4}'),
-         year = as.integer(year)) %>%
+str_map_df <- data.frame(str_full_file = str_full_files,
+                         str_95cv_file = str_95cv_files) %>%
+  mutate(str  = str_replace(basename(str_full_file), '_[0-9].+', ''),
+         year = str_extract(basename(str_full_file), '[0-9]{4}') %>%
+           as.integer()) %>%
   group_by(str) %>%
-  filter(year == plot_year)
+  filter(min(year) <= 2003 & max(year) >= 2013) %>%
+  ungroup() %>%
+  filter(year %in% years)
 
-for(stressor in stressors) {
-  ### stressor <- str_file_df$str[1]
-  message('plotting map for ', stressor)
-  file_df <- str_file_df %>%
+stressors <- str_map_df$str %>% unique()
+
+for(stressor in stressors) { ### stressor <- stressors[1]
+  ### Animate the results
+  gif_file <- here('_setup', sprintf('figs/str_95cv_movie_%s.gif', stressor))
+
+  maps_df <- str_map_df %>%
     filter(str == stressor)
-  rast_full <- raster(file_df$str_full)
-  rast_full_norm <- rast_full / rast_full
-  rast_95cv <- raster(file_df$str_95cv)
-  rast_95cv_norm <- rast_95cv / rast_95cv
-
-  vec_full <- values(rast_full)
-  vec_95cv <- values(rast_95cv)
-  a_full <- vec_full[!is.na(vec_full) & vec_full > 0] %>% length()
-  a_95cv <- vec_95cv[!is.na(vec_95cv) & vec_95cv > 0] %>% length()
   
-  a_condensed <- round(a_95cv / a_full * 100, 2)
-  plot_title <- sprintf('%s: %s pct of full area', stressor, a_condensed)
-  plot(rast_full_norm, 
-       main = plot_title, col = 'darkred', legend = FALSE)
-  plot(rast_95cv_norm, 
-       col = 'green', add = TRUE, legend = FALSE)
+  if(!file.exists(gif_file)) {
+    message('creating ', gif_file)
+    stack_full <- stack(maps_df$str_full_file)
+    values(stack_full)[values(stack_full) == 0] <- NA
+    stack_95cv <- stack(maps_df$str_95cv_file)
+    
+    make_overlap_gifs(stack_full, stack_95cv, 
+              filename = gif_file,
+              layer_names = paste(stressor, years))
+  }
+  
+  cat(sprintf('![](%s)', gif_file))
 }
 ```
 
