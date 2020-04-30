@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Mon Apr 6 12:30:34 2020 by ohara" />
+<meta name="author" content="Compiled on Mon Apr 27 16:14:05 2020 by ohara" />
 
 
 <title>Generate IUCN spp map list</title>
@@ -1658,7 +1658,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Generate IUCN spp map list</h1>
-<h4 class="author"><em>Compiled on Mon Apr 6 12:30:34 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Mon Apr 27 16:14:05 2020 by ohara</em></h4>
 
 </div>
 
@@ -1669,10 +1669,12 @@ div.tocify {
 <a class="sourceLine" id="cb1-4" title="4"><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</a>
 <a class="sourceLine" id="cb1-5" title="5"><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;_setup/api_fxns.R&#39;</span>))</a>
 <a class="sourceLine" id="cb1-6" title="6"></a>
-<a class="sourceLine" id="cb1-7" title="7">dir_bli &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data/birdlife_intl/d2019&#39;</span>)</a>
-<a class="sourceLine" id="cb1-8" title="8">dir_shp &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data/iucn_spp/d2020-1&#39;</span>)</a>
-<a class="sourceLine" id="cb1-9" title="9">  <span class="co">### in this folder are shapefiles at a taxonomic level, from</span></a>
-<a class="sourceLine" id="cb1-10" title="10">  <span class="co">### IUCN spatial data download (version 2020-1).</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-7" title="7">dir_bli &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data&#39;</span>, </a>
+<a class="sourceLine" id="cb1-8" title="8">                     <span class="st">&#39;birdlife_intl/d2019&#39;</span>)</a>
+<a class="sourceLine" id="cb1-9" title="9">dir_shp &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data&#39;</span>, </a>
+<a class="sourceLine" id="cb1-10" title="10">                     <span class="st">&#39;iucn_spp/d2020-1&#39;</span>)</a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="co">### in this folder are shapefiles at a taxonomic level, from</span></a>
+<a class="sourceLine" id="cb1-12" title="12">  <span class="co">### IUCN spatial data download (version 2020-1).</span></a></code></pre></div>
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
 <ul>
@@ -1716,6 +1718,264 @@ div.tocify {
 <li>species extinction risk is threatened or near threatened (i.e. not Least Concern, Extinct, or Data Deficient)</li>
 </ul>
 <p>Note that when processing these down, we will focus on threatened marine species with sensitivity to the particular stressors; additionally, some species listed here may have maps that don’t overlap with ocean area, creating a degenerate range map.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">spp_gp</th>
+<th align="left">kingdom</th>
+<th align="left">phylum</th>
+<th align="left">class</th>
+<th align="left">order</th>
+<th align="right">species</th>
+<th align="right">subpops</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Anseriformes</td>
+<td align="right">7</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Charadriiformes</td>
+<td align="right">27</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Gaviiformes</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Pelecaniformes</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Podicipediformes</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Procellariiformes</td>
+<td align="right">86</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Sphenisciformes</td>
+<td align="right">13</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">bli_marine_v2018</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Aves</td>
+<td align="left">Suliformes</td>
+<td align="right">18</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">clupeiformes</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Actinopterygii</td>
+<td align="left">Clupeiformes</td>
+<td align="right">14</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">conus</td>
+<td align="left">Animalia</td>
+<td align="left">Mollusca</td>
+<td align="left">Gastropoda</td>
+<td align="left">NA</td>
+<td align="right">67</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">lobsters</td>
+<td align="left">Animalia</td>
+<td align="left">Arthropoda</td>
+<td align="left">Malacostraca</td>
+<td align="left">NA</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">mammals</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Mammalia</td>
+<td align="left">Carnivora</td>
+<td align="right">20</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">mammals</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Mammalia</td>
+<td align="left">Cetartiodactyla</td>
+<td align="right">33</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="left">mammals</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Mammalia</td>
+<td align="left">Sirenia</td>
+<td align="right">4</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">mangroves</td>
+<td align="left">Plantae</td>
+<td align="left">Tracheophyta</td>
+<td align="left">Liliopsida</td>
+<td align="left">NA</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">mangroves</td>
+<td align="left">Plantae</td>
+<td align="left">Tracheophyta</td>
+<td align="left">Magnoliopsida</td>
+<td align="left">NA</td>
+<td align="right">16</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">marinefish</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Actinopterygii</td>
+<td align="left">Perciformes</td>
+<td align="right">157</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">marinefish</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Actinopterygii</td>
+<td align="left">Tetraodontiformes</td>
+<td align="right">12</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">marinefish</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Myxini</td>
+<td align="left">NA</td>
+<td align="right">11</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">reef_forming_corals</td>
+<td align="left">Animalia</td>
+<td align="left">Cnidaria</td>
+<td align="left">Anthozoa</td>
+<td align="left">NA</td>
+<td align="right">401</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">reef_forming_corals</td>
+<td align="left">Animalia</td>
+<td align="left">Cnidaria</td>
+<td align="left">Hydrozoa</td>
+<td align="left">NA</td>
+<td align="right">6</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">reptiles</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Reptilia</td>
+<td align="left">Crocodylia</td>
+<td align="right">1</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">reptiles</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Reptilia</td>
+<td align="left">Squamata</td>
+<td align="right">8</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">reptiles</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Reptilia</td>
+<td align="left">Testudines</td>
+<td align="right">6</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="left">seagrasses</td>
+<td align="left">Plantae</td>
+<td align="left">Tracheophyta</td>
+<td align="left">Liliopsida</td>
+<td align="left">NA</td>
+<td align="right">15</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">sharks_rays_chimaeras</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Chondrichthyes</td>
+<td align="left">NA</td>
+<td align="right">312</td>
+<td align="right">9</td>
+</tr>
+<tr class="odd">
+<td align="left">syngathiform_fishes</td>
+<td align="left">Animalia</td>
+<td align="left">Chordata</td>
+<td align="left">Actinopterygii</td>
+<td align="left">Syngnathiformes</td>
+<td align="right">15</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 

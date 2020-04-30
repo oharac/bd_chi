@@ -29,7 +29,7 @@ source(here('common_fxns.R'))
 
 # Summary
 
-Here we plot species impact trends - how impacted range area is changing over time.  We can look at this on a stressor-by-stressor basis, and grouped by cumulative non-climate and climate stressors.  
+Here we plot species impact trends - how impacted range area is changing over time.  We can look at this on a stressor-by-stressor basis, and grouped by cumulative stressors by category.  
 
 ## Methods summary
 
@@ -83,11 +83,67 @@ imp_range_df <- impacts_df %>%
 
 ```
 
+
+
 ## Summarize by stressor
 
 Note, trends are based only on the species with reported sensitivity - i.e. non-sensitive species are dropped.  More conservative perhaps would be to include these species as having constant zero-impact ranges.
 
+### Stressor on individual species
+
+Prioritize species by stressor based on percent impact and range:
+
+$$\text{priority} = \frac{\text{% range impacted}}{\ln (\text{spp range, km}^2)}$$
+
+The $\ln (\text{spp range, km}^2)$ term reduces priority for large-ranged species and emphasizes small-ranged endemics, even for the same proportion of impacted range.
+
+Here we will not summarize by every stressor, but just the cumulative category levels.
+
+``` {r}
+priority_by_stressor <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  filter(str_detect(stressor, 'cum_')) %>%
+  group_by(stressor, iucn_sid, qtile) %>%
+  filter(year == max(year)) %>%
+  summarize(priority = pct_impact / log(range_km2),
+            impact_yr = year) %>%
+  ungroup()
+```
+
+```{r}
+
+tr_by_stressor <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  filter(str_detect(stressor, 'cum_')) %>%
+  group_by(stressor, iucn_sid) %>%
+  filter(n_distinct(pct_impact) > 1) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
+
+tr_by_priority <- tr_by_stressor %>%
+  left_join(priority_by_stressor, by = c('iucn_sid', 'stressor')) %>%
+  filter(term == 'year') %>%
+  mutate(sig = p.value <= .05)
+
+ggplot(tr_by_priority, aes(x = priority, y = estimate)) +
+  geom_point(aes(color = sig)) +
+  scale_x_log10() +
+  facet_wrap( ~ stressor)
+```
+
 ### Stressor on all impacted spp
+
+```{r}
+### utility function to trim a data frame of lm summaries to 
+### just those with a given p value.  Also rounds results for display.
+
+dt_clean <- function(df) {
+  DT::datatable(df %>% 
+                mutate_if(is.double, round, digits = 5))
+}
+
+```
 
 ```{r}
 
@@ -95,15 +151,10 @@ tr_by_stressor <- imp_range_df %>%
   filter(!is.na(year)) %>%
   group_by(stressor) %>%
   do(mdl = lm(pct_impact ~ year, data = .)) %>%
-  mutate(intercept = mdl$coefficients['(Intercept)'],
-         slope = mdl$coefficients['year'],
-         e_slope = summary(mdl)$coefficients[2, 2],
-         t_slope = summary(mdl)$coefficients[2, 3],
-         p_slope = summary(mdl)$coefficients[2, 4],
-         adj_r2 = summary(mdl)$adj.r.squared) %>%
-  select(-mdl)
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
 
-DT::datatable(tr_by_stressor)
+dt_clean(tr_by_stressor)
 ```
 
 ### Stressor on impacted spp by range quintile
@@ -112,17 +163,15 @@ DT::datatable(tr_by_stressor)
 
 tr_by_stressorXrange <- imp_range_df %>%
   filter(!is.na(year)) %>%
+  mutate(qtile = as.character(qtile)) %>%
+    ### broom::tidy doesn't like factors? 
+    ### https://github.com/tidymodels/broom/issues/796#issuecomment-613378714
   group_by(stressor, qtile) %>%
   do(mdl = lm(pct_impact ~ year, data = .)) %>%
-  mutate(intercept = mdl$coefficients['(Intercept)'],
-         slope = mdl$coefficients['year'],
-         e_slope = summary(mdl)$coefficients[2, 2],
-         t_slope = summary(mdl)$coefficients[2, 3],
-         p_slope = summary(mdl)$coefficients[2, 4],
-         adj_r2 = summary(mdl)$adj.r.squared) %>%
-  select(-mdl)
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
 
-DT::datatable(tr_by_stressorXrange %>% mutate_if(is.double, round, digits = 5))
+dt_clean(tr_by_stressorXrange)
 ```
 
 ### Stressor on impacted spp by taxonomic group
@@ -133,14 +182,9 @@ tr_by_stressorXtaxon <- imp_range_df %>%
   filter(!is.na(year)) %>%
   group_by(stressor, taxon) %>%
   do(mdl = lm(pct_impact ~ year, data = .)) %>%
-  mutate(intercept = mdl$coefficients['(Intercept)'],
-         slope = mdl$coefficients['year'],
-         e_slope = summary(mdl)$coefficients[2, 2],
-         t_slope = summary(mdl)$coefficients[2, 3],
-         p_slope = summary(mdl)$coefficients[2, 4],
-         adj_r2 = summary(mdl)$adj.r.squared) %>%
-  select(-mdl)
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
 
-DT::datatable(tr_by_stressorXtaxon %>% mutate_if(is.double, round, digits = 5))
+dt_clean(tr_by_stressorXtaxon)
 ```
 

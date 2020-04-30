@@ -1,5 +1,5 @@
 ---
-title: 'Calculate general stressor sensitivities from IUCN impact scores'
+title: 'Calculate land- and ocean-based stressor sensitivities from IUCN impact scores'
 author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
   html_document:
@@ -47,11 +47,18 @@ spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_versi
 
 spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
 
+```
+
+### Calc for land-based stressors
+
+Nutrient, chemical, direct human, and light
+
+``` {r summarize sensitivity to land stressors}
 chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
   mutate(stressor = str_split(stressor, ';')) %>%
   unnest(stressor) %>%
   filter(str_detect(stressor, '[a-z]')) %>%
-  filter(category == 'general')
+  filter(category == 'land-based')
 
 spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
                                sprintf('iucn_spp_threats_%s.csv', api_version))) %>%
@@ -93,10 +100,10 @@ threats_to_marine <- spp_marine %>%
 # [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
 
 write_csv(threats_to_marine %>% select(-cat_score),
-          here('_output', sprintf('spp_sens_general_%s.csv', api_version)))
+          here('int', sprintf('spp_sens_land_%s.csv', api_version)))
 ```
 
-``` {r calc comparisons}
+``` {r calc comparisons land}
 n_comp <- spp_marine %>% 
   filter(iucn_sid %in% spp_maps$iucn_sid) %>%
   filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
@@ -118,16 +125,99 @@ n_stressed <- threats_to_marine %>%
 
 Out of the list of `r n_comp` marine species with maps in comprehensively-assessed taxa, `r n_threatened` are not Least Concern, Extinct, nor Data Deficient.  
 
-The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one __general__ stressor is: `r n_stressed`.  General stressors comprise:
+The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one __land-based__ stressor is: `r n_stressed`.  Land-based stressors comprise:
 
 * `direct_human`
 * `nutrient`
 * `organic`
-* `shipping`
 * `light`
 
 NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
 <!-- 6957 comp-assessed mapped species  -->
 <!-- 1357 spp with category NC to CR  -->
-<!--  687 with sensitivity to general stressors -->
+<!--  631 with sensitivity to land-based stressors -->
 
+### Calc for ocean-based stressors
+
+Just shipping...
+
+``` {r summarize sensitivity to ocean stressors}
+chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
+  mutate(stressor = str_split(stressor, ';')) %>%
+  unnest(stressor) %>%
+  filter(str_detect(stressor, '[a-z]')) %>%
+  filter(category == 'ocean')
+
+spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
+                               sprintf('iucn_spp_threats_%s.csv', api_version))) %>%
+  left_join(chi_lookup, by = 'code') %>%
+  filter(!is.na(code))
+
+### Join the marine species list to the threats.
+### * recategorize sensitivities based on impact score
+### * if no impact score, categorize sensitivities based on severity
+### * rather than filtering, set NA and past scores to 0
+###   * this allows non-threatened species to remain in the mix
+threats_to_marine <- spp_marine %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  left_join(spp_threats, by = 'iucn_sid') %>%
+  ### code sensitivity based on impact:
+  mutate(sens = case_when(score_num %in% 0:2 ~ FALSE,   ### no/negligible impact
+                          score_num > 2      ~ TRUE,
+                          TRUE               ~ NA)) %>% ### set all else to NA
+  ### for NA impact, code sensitivity based on severity:
+  mutate(sev = tolower(severity),
+         sens = case_when(is.na(sens) & str_detect(sev, 'negligible|no decl') ~ FALSE,
+                          is.na(sens) & str_detect(sev, 'very rapid decl')    ~ TRUE,
+                          is.na(sens) & str_detect(sev, 'rapid decl')         ~ TRUE,
+                          is.na(sens) & str_detect(sev, 'causing|slow, significant') ~ TRUE,
+                          TRUE ~ sens)) %>%
+  ### set past impacts and unresolved sensitivies to 0:
+  mutate(sens = ifelse(timing == 'Past, Unlikely to Return', FALSE, sens),
+         sens = ifelse(is.na(sens), FALSE, sens)) %>%
+  filter(!is.na(code)) %>% ### drop code mismatches
+  filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
+  select(iucn_sid, cat_score,
+         sens, stressor, code) %>%
+  distinct()
+
+### sensitivity categories:
+# [1] "Unknown"                          "Negligible declines"             
+# [3] NA                                 "No decline"                      
+# [5] "Rapid Declines"                   "Slow, Significant Declines"      
+# [7] "Causing/Could cause fluctuations" "Very Rapid Declines"   
+
+write_csv(threats_to_marine %>% select(-cat_score),
+          here('int', sprintf('spp_sens_ocean_%s.csv', api_version)))
+```
+
+``` {r calc comparisons ocean}
+n_comp <- spp_marine %>% 
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
+  .$iucn_sid %>% unique() %>% length()
+n_threatened <- spp_risk %>% 
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  .$iucn_sid %>% unique() %>% length()
+
+n_stressed <- threats_to_marine %>%
+  filter(iucn_sid %in% spp_maps$iucn_sid) %>%
+  filter(iucn_sid %in% spp_comp$iucn_sid) %>% 
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
+  filter(sens) %>%
+  .$iucn_sid %>% unique() %>% length()
+
+```
+
+Out of the list of `r n_comp` marine species with maps in comprehensively-assessed taxa, `r n_threatened` are not Least Concern, Extinct, nor Data Deficient.  
+
+The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one __ocean-based__ stressor is: `r n_stressed`.  Ocean-based stressors comprise:
+
+* `shipping`
+
+NOTE: These numbers may include a small handful of spp with effectively zero ocean range, which will not show up in maps, will not affect calculations, etc.  These can be found from the impacted area dataframe.
+<!-- 6957 comp-assessed mapped species  -->
+<!-- 1357 spp with category NC to CR  -->
+<!--  438 with sensitivity to general stressors -->

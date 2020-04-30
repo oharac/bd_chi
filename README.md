@@ -1,7 +1,20 @@
 To do:
 
 * [X] Update species list and maps for IUCN API version 2020-1
-    * [ ] Add a marine birds filter into the habitats script early on.
+    * [X] Add a marine birds filter into the habitats script early on.
+* [X] Recategorize stressors into land-based, fishing, climate, and other
+    * [X] fix threat-to-stressor lookup categories
+        * Fishing: 
+            * commercial demersal destructive
+            * commercial demersal nondestructive high bycatch
+            * commercial demersal nondestructive low bycatch
+            * pelagic high bycatch
+            * pelagic low bycatch
+            * artisanal
+        * Climate change: sea surface temperature, ocean acidification, sea level rise
+        * Ocean: shipping
+        * Land-based: nutrient pollution, organic chemical pollution, direct human, light
+    * [X] recalc cumulative stressors by categories
 * [X] Check stressor maps for proper calculation of 95% contour volume
     * [X] Clip all stressor year ranges to 2002-2013
     * [X] Ocean acidification in particular!

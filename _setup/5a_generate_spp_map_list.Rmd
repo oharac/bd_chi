@@ -337,7 +337,8 @@ Note that when processing these down, we will focus on threatened marine species
 ``` {r generate table of species}
 
 marine_map_info <- read_csv(here('_data',
-    sprintf('spp_marine_maps_%s.csv', api_version))) %>%
+    sprintf('spp_marine_maps_%s.csv', api_version)),
+    col_types = cols('subpop' = 'c')) %>%
   filter(presence != 5) %>%
   select(-presence) %>%
   distinct()
@@ -391,13 +392,13 @@ fish_sum <- included_maps %>%
 
 all_sum <- bind_rows(fish_sum, nonfish_sum, basic_sum) %>%
   group_by(spp_gp, kingdom, phylum, class, order) %>%
-  summarize(family = paste(unique(family), collapse = ', '),
-            species = sum(species),
-            subpops = sum(subpops)) %>%
+  summarize(species = sum(species),
+            subpops = sum(subpops, na.rm = TRUE)) %>%
   ungroup() %>%
-  mutate(family = ifelse(family == 'NA', NA, family),
-         subpops = ifelse(subpops == 0, NA, subpops))
+  mutate(subpops = ifelse(subpops == 0, NA, subpops))
 
 write_csv(all_sum, here('_output', 'spp_included_summary.csv'))
 write_csv(all_in_the_fam, here('_output', 'spp_included_by_family.csv'))
+
+knitr::kable(all_sum)
 ```

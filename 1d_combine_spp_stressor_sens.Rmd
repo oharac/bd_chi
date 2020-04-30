@@ -34,14 +34,20 @@ Sensitivity will denote whether a species range overlapping a stressor range con
 Gather processed sensitivity dataframes and combine into a single one.
 ```{r}
 
-sens_gen <- read_csv(here('_output', sprintf('spp_sens_general_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i', 'code' = 'c'))
-sens_fis <- read_csv(here('_output', sprintf('spp_sens_fishing_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i', 'code' = 'c'))
-sens_cc  <- read_csv(here('_output', sprintf('spp_sens_climate_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i', 'code' = 'c'))
+sens_land <- read_csv(here('int', sprintf('spp_sens_land_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i', 'code' = 'c')) %>%
+  mutate(category = 'land-based')
+sens_ocean <- read_csv(here('int', sprintf('spp_sens_ocean_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i', 'code' = 'c')) %>%
+  mutate(category = 'ocean')
+sens_fis <- read_csv(here('int', sprintf('spp_sens_fishing_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i', 'code' = 'c')) %>%
+  mutate(category = 'fishing')
+sens_cc  <- read_csv(here('int', sprintf('spp_sens_climate_%s.csv', api_version)),
+                     col_types = cols('iucn_sid' = 'i', 'code' = 'c')) %>%
+  mutate(category = 'climate')
 
-sens_all_df <- bind_rows(sens_gen, sens_fis, sens_cc)
+sens_all_df <- bind_rows(sens_land, sens_ocean, sens_fis, sens_cc)
 
 sens_all_file <- here('_output', sprintf('spp_sensitivity_%s.csv', api_version))
 write_csv(sens_all_df, sens_all_file)
@@ -69,12 +75,14 @@ plot_df <- sens_all_df %>%
   select(-code, -sens) %>%
   distinct() %>%
   filter(iucn_sid %in% spp_incl$iucn_sid) %>%
-  group_by(stressor) %>%
+  group_by(stressor, category) %>%
   summarize(n_spp = n()) %>%
+  ungroup() %>%
   arrange(n_spp) %>%
-  mutate(stressor = fct_inorder(stressor))
+  mutate(category = fct_inorder(category),
+         stressor = fct_inorder(stressor))
 
-ggplot(plot_df, aes(x = stressor, y = n_spp)) +
+ggplot(plot_df, aes(x = stressor, y = n_spp, fill = category)) +
   ggtheme_plot() +
   geom_col() +
   coord_flip() +

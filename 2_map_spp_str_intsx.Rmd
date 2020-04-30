@@ -161,7 +161,7 @@ reload <- FALSE
 # unlink(x)
 
 for(str_name in str_names) {
-  ### str_name <- str_names[1]
+  ### str_name <- str_names[13]
   message('Processing ', str_name)
   
   dir_spp_str_rast <- file.path(dir_bd_anx, 'spp_str_rasts', str_name)

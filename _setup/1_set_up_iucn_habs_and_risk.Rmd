@@ -303,7 +303,7 @@ write_csv(hab_cats, hab_inclusion_file)
 
 ```
 
-#### Determine marine species and depth constraints
+#### Determine marine species by habitat and system
 
 Marine species depth classifications:
 
@@ -314,20 +314,21 @@ Marine species depth classifications:
 
 It appears that coastal species suffer from the extended buffers so clipping these to a 200 m bathymetry line is important.  Intertidal organisms may benefit from further clipping to shallower depths, depending on the quality of bathymetric layers.
 
-``` {r determine_marine_spp_from_api}
+``` {r combine hab and system}
 
 spp_habs_from_api <- read_csv(spp_habs_from_api_file,
                               col_types = cols(.default = 'c', iucn_sid = 'i'))
 ### 'code' is character since it is in the form x.xx.xxx
 
 spp_systems_from_api <- read_csv(spp_sys_from_api_file) %>%
-  select(iucn_sid, sciname, comname, marine_system, terrestrial_system, freshwater_system) %>%
+  select(iucn_sid, sciname, comname, 
+         marine_system, terrestrial_system, freshwater_system) %>%
   distinct()
-
-hab_marine <- read_csv(hab_inclusion_file)
 
 ### using inner_join, use marine hab lookup to attach to the full spp habitat
 ### list, adding more info and filtering to just marine habitats or marine systems
+hab_marine <- read_csv(hab_inclusion_file)
+
 spp_habs_and_systems <- spp_habs_from_api %>%
   left_join(spp_systems_from_api, by = 'iucn_sid') %>%
   left_join(hab_marine, by = c('habitat', 'code'))
@@ -376,11 +377,27 @@ spp_habs_and_systems <- spp_habs_from_api %>%
 ### 265 spp here.  This looks pretty solid - the remainders look like
 ### they are inland wetlands, coastal lakes, caves, etc.  Some may
 ### be misclassified by IUCN as to their habitats.
+```
+
+Filter the full set by marine habitats (`include == TRUE`), marine system (`marine_system == TRUE`), and seabird (cut all Aves not on seabird list)
+``` {r filter by hab system and seabird}
+
+### Get the BLI list of seabirds; include only these regardless of hab or system
+seabirds_from_bli <- read_csv(here('_raw/seabird_species_2019.csv')) %>%
+  rename(sciname = scientific)
+
+birds_marine <- read_csv(spp_info_from_api_file) %>%
+  filter(class == 'AVES') %>%
+  select(iucn_sid, sciname) %>%
+  left_join(seabirds_from_bli, by = 'sciname')
+birds_exclude <- birds_marine %>%
+  filter(is.na(seabird_all))
 
 spp_marine <- spp_habs_and_systems %>%
-  filter((include == TRUE | is.na(include)) & marine_system == TRUE)
+  filter((include == TRUE | is.na(include)) & marine_system == TRUE) %>%
+  filter(!iucn_sid %in% birds_exclude$iucn_sid)
 # length(spp_marine$iucn_sid %>% unique())
-### These 12934 spp either are positively coded hab or NA hab, and
+### These 15613 spp either are positively coded hab or NA hab, and
 ### ALSO classified as marine system.  This is a reasonably aggressive
 ### cut that seems to minimize false positives and false negatives.
 ### NOTE: This still includes hippos because of estuaries - see next cut.
@@ -403,9 +420,9 @@ marg_suit <- spp_marine %>%
   left_join(read_csv(spp_info_from_api_file), by = 'iucn_sid') %>%
   select(iucn_sid, sciname, suit_all, kingdom, phylum, class, order, family)
 
-### 20 spp
+### 4 spp; before bird filter, there were 20
 write_csv(marg_suit, 
-          file.path(dir_setup, 'int', sprintf('spp_marine_marginal_%s.csv', api_version)))
+          here('_setup/int', sprintf('spp_marine_marginal_%s.csv', api_version)))
   
 ### Trim down to just the species ID, a quick list of habitats, and whether
 ### the species should be considered to be OK for deeper waters (200 m +)
@@ -422,7 +439,9 @@ spp_habs_clean <- spp_marine %>%
 
 write_csv(spp_habs_clean, 
           file.path(dir_data, sprintf('spp_marine_from_api_%s.csv', api_version)))
-### 16019 total marine species
+
+spp_habs_clean$iucn_sid %>% n_distinct()
+### 15609 total marine species
 ```
   
 -----

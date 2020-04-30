@@ -511,7 +511,7 @@ gear_sens_summary <- gear_sens_df %>%
   ungroup()
 
 write_csv(gear_sens_summary, 
-          here('_output', sprintf('spp_sens_fishing_%s.csv', api_version)))
+          here('int', sprintf('spp_sens_fishing_%s.csv', api_version)))
 ```
 
 ## Check the number of spp sensitive to different types...

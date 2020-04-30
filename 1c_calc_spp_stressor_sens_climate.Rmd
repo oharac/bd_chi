@@ -414,7 +414,7 @@ cc_sens_summary <- cc_sens_df %>%
   ungroup()
 
 write_csv(cc_sens_summary, 
-          here('_output', sprintf('spp_sens_climate_%s.csv', api_version)))
+          here('int', sprintf('spp_sens_climate_%s.csv', api_version)))
 ```
 
 <!-- ### Why so few instances of sensitivity to ocean acidification? -->

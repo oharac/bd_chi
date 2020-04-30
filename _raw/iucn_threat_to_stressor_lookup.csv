@@ -1,8 +1,8 @@
 code,desc,stressor,category
 1,Residential & commercial development,NA,NA
-1.1,Residential & commercial development: Housing & urban areas,direct_human,general
-1.2,Residential & commercial development: Commercial & industrial areas,direct_human,general
-1.3,Residential & commercial development: Tourism & recreation areas,direct_human,general
+1.1,Residential & commercial development: Housing & urban areas,direct_human,land-based
+1.2,Residential & commercial development: Commercial & industrial areas,direct_human,land-based
+1.3,Residential & commercial development: Tourism & recreation areas,direct_human,land-based
 2,Agriculture & aquaculture,NA,NA
 2.1,Agriculture & aquaculture: Annual & perennial non-timber crops,NA,NA
 2.1.1,Agriculture & aquaculture: Annual & perennial non-timber crops: Shifting agriculture,NA,NA
@@ -19,9 +19,9 @@ code,desc,stressor,category
 2.3.3,"Agriculture & aquaculture: Livestock farming & ranching: Agro-industry grazing, ranching or farming",NA,NA
 2.3.4,Agriculture & aquaculture: Livestock farming & ranching: Scale Unknown/Unrecorded,NA,NA
 2.4,Agriculture & aquaculture: Marine & freshwater aquaculture,NA,NA
-2.4.1,Agriculture & aquaculture: Marine & freshwater aquaculture: Subsistence/artisanal aquaculture,nutrient,general
-2.4.2,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,general
-2.4.3,Agriculture & aquaculture: Marine & freshwater aquaculture: Scale Unknown/Unrecorded,nutrient,general
+2.4.1,Agriculture & aquaculture: Marine & freshwater aquaculture: Subsistence/artisanal aquaculture,nutrient,land-based
+2.4.2,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,land-based
+2.4.3,Agriculture & aquaculture: Marine & freshwater aquaculture: Scale Unknown/Unrecorded,nutrient,land-based
 3,Energy production & mining,NA,NA
 3.1,Energy production & mining: Oil & gas drilling,NA,NA
 3.2,Energy production & mining: Mining & quarrying,NA,NA
@@ -29,7 +29,7 @@ code,desc,stressor,category
 4,Transportation & service corridors,NA,NA
 4.1,Transportation & service corridors: Roads & railroads,NA,NA
 4.2,Transportation & service corridors: Utility & service lines,NA,NA
-4.3,Transportation & service corridors: Shipping lanes,shipping,general
+4.3,Transportation & service corridors: Shipping lanes,shipping,ocean
 4.4,Transportation & service corridors: Flight paths,NA,NA
 5,Biological resource use,NA,NA
 5.1,Biological resource use: Hunting & collecting terrestrial animals,NA,NA
@@ -56,9 +56,9 @@ code,desc,stressor,category
 5.4.5,Biological resource use: Fishing & harvesting aquatic resources: Persecution/control,NA,fishing
 5.4.6,Biological resource use: Fishing & harvesting aquatic resources: Motivation Unknown/Unrecorded,NA,fishing
 6,Human intrusions & disturbance,NA,NA
-6.1,Human intrusions & disturbance: Recreational activities,direct_human,general
+6.1,Human intrusions & disturbance: Recreational activities,direct_human,land-based
 6.2,"Human intrusions & disturbance: War, civil unrest & military exercises",NA,NA
-6.3,Human intrusions & disturbance: Work & other activities,direct_human,general
+6.3,Human intrusions & disturbance: Work & other activities,direct_human,land-based
 7,Natural system modifications,NA,NA
 7.1,Natural system modifications: Fire & fire suppression,NA,NA
 7.1.1,Natural system modifications: Fire & fire suppression: Increase in fire frequency/intensity,NA,NA
@@ -94,17 +94,17 @@ code,desc,stressor,category
 8.6,"Invasive & other problematic species, genes & diseases: Diseases of unknown cause",NA,NA
 9,Pollution,NA,NA
 9.1,Pollution: Domestic & urban waste water,NA,NA
-9.1.1,Pollution: Domestic & urban waste water: Sewage,nutrient,general
-9.1.2,Pollution: Domestic & urban waste water: Run-off,nutrient;organic,general
+9.1.1,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based
+9.1.2,Pollution: Domestic & urban waste water: Run-off,nutrient;organic,land-based
 9.1.3,Pollution: Domestic & urban waste water: Type Unknown/Unrecorded,NA,NA
 9.2,Pollution: Industrial & military effluents
-9.2.1,Pollution: Industrial & military effluents: Oil spills,organic,general
-9.2.2,Pollution: Industrial & military effluents: Seepage from mining,organic,general
+9.2.1,Pollution: Industrial & military effluents: Oil spills,organic,land-based
+9.2.2,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based
 9.2.3,Pollution: Industrial & military effluents: Type Unknown/Unrecorded,NA,NA
 9.3,Pollution: Agricultural & forestry effluents,NA,NA
-9.3.1,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,general
+9.3.1,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based
 9.3.2,"Pollution: Agricultural & forestry effluents: Soil erosion, sedimentation",NA,NA
-9.3.3,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,general
+9.3.3,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based
 9.3.4,Pollution: Agricultural & forestry effluents: Type Unknown/Unrecorded,NA,NA
 9.4,Pollution: Garbage & solid waste,NA,NA
 9.5,Pollution: Air-borne pollutants,NA,NA
@@ -112,7 +112,7 @@ code,desc,stressor,category
 9.5.3,Pollution: Air-borne pollutants: Ozone,NA,NA
 9.5.4,Pollution: Air-borne pollutants: Type Unknown/Unrecorded,NA,NA
 9.6,Pollution: Excess energy,NA,NA
-9.6.1,Pollution: Excess energy: Light pollution,light,general
+9.6.1,Pollution: Excess energy: Light pollution,light,land-based
 9.6.2,Pollution: Excess energy: Thermal pollution,NA,NA
 9.6.3,Pollution: Excess energy: Noise pollution,NA,NA
 10,Geological events,NA,NA

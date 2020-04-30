@@ -59,7 +59,7 @@ get_incl_spp <- function(api_V = api_version, include_all_risk = FALSE) {
   risk_file <- here('_data', sprintf('iucn_risk_current_%s.csv', api_V))
   maps_file <- here('_data', sprintf('spp_marine_maps_%s.csv', api_V))
   comp_file <- here('_data', sprintf('iucn_comp_assessed_%s.csv', api_V))
-  bird_file <- here('_raw', 'seabird_species_2019.csv')
+  # bird_file <- here('_raw', 'seabird_species_2019.csv')
   
   spp_maps <- read_csv(maps_file, col_types = cols('iucn_sid' = 'i',
                                                    'subpop'   = 'c')) %>%
@@ -82,8 +82,8 @@ get_incl_spp <- function(api_V = api_version, include_all_risk = FALSE) {
   spp_comp <- read_csv(comp_file, col_types = cols('iucn_sid' = 'i')) %>%
     select(-sciname)
   
-  seabirds <- read_csv(bird_file) %>%
-    select(sciname = scientific, comname = common, seabird = seabird_all)
+  # seabirds <- read_csv(bird_file) %>%
+  #   select(sciname = scientific, comname = common, seabird = seabird_all)
   
   spp_incl <- spp_maps %>%
     inner_join(spp_risk, by = 'iucn_sid') %>%
@@ -91,10 +91,10 @@ get_incl_spp <- function(api_V = api_version, include_all_risk = FALSE) {
     left_join(spp_comp, by = c('iucn_sid')) %>%
     filter(!is.na(taxon)) %>%
       ### drop non-comp-assessed
-    left_join(seabirds, by = c('sciname', 'comname')) %>%
-    filter(!(taxon == 'birds' & is.na(seabird))) %>%
-      ### drop birds that aren't seabirds
-    select(-seabird) %>%
+    # left_join(seabirds, by = c('sciname', 'comname')) %>%
+    # filter(!(taxon == 'birds' & is.na(seabird))) %>%
+    #   ### drop birds that aren't seabirds
+    # select(-seabird) %>%
     left_join(spp_sens, by = 'iucn_sid') %>%
       ### add stressor sensitivities; NA means not sensitive
     distinct()

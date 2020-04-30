@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Mon Apr 6 12:29:33 2020 by ohara" />
+<meta name="author" content="Compiled on Fri Apr 24 11:27:58 2020 by ohara" />
 
 
 <title>Set up IUCN marine species list and risk assessments</title>
@@ -1658,7 +1658,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Set up IUCN marine species list and risk assessments</h1>
-<h4 class="author"><em>Compiled on Mon Apr 6 12:29:33 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Fri Apr 24 11:27:58 2020 by ohara</em></h4>
 
 </div>
 
@@ -1695,8 +1695,8 @@ div.tocify {
 <h4><span class="header-section-number">3.1.2.2</span> Generate Habitat inclusion list</h4>
 <p>From the habitats gleaned in the previous chunk, generate an inclusion list based on those that are considered marine. “Included” habitats are determined from inspection of the habitat list; we are including habitats 9-12, plus 15.11, 15.12, 15.13. Note category 13 is Marine Coastal/Supratidal, but includes many species whose “marine” dependence is only incidental. If these species do not show up in category 12 (marine intertidal) then they are assumed to not actually depend on marine habitats.</p>
 </div>
-<div id="determine-marine-species-and-depth-constraints" class="section level4">
-<h4><span class="header-section-number">3.1.2.3</span> Determine marine species and depth constraints</h4>
+<div id="determine-marine-species-by-habitat-and-system" class="section level4">
+<h4><span class="header-section-number">3.1.2.3</span> Determine marine species by habitat and system</h4>
 <p>Marine species depth classifications:</p>
 <ul>
 <li>0-20? m: organisms classified as intertidal (category 12) and shallower</li>
@@ -1705,6 +1705,7 @@ div.tocify {
 <li>deep oceanic: organisms ONLY in 10.3, 10.4 (pelagic below 1000 m), or 11 (deep benthic).</li>
 </ul>
 <p>It appears that coastal species suffer from the extended buffers so clipping these to a 200 m bathymetry line is important. Intertidal organisms may benefit from further clipping to shallower depths, depending on the quality of bathymetric layers.</p>
+<p>Filter the full set by marine habitats (<code>include == TRUE</code>), marine system (<code>marine_system == TRUE</code>), and seabird (cut all Aves not on seabird list)</p>
 <hr />
 </div>
 </div>

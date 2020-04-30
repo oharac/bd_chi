@@ -65,21 +65,31 @@ For each species, create a dataframe summarizing cumulative impacts:
 ### set up list of all intersection files and an ID for indexing
 intsx_files_all <- list.files(dir_spp_intsx, recursive = TRUE, full.names = TRUE)
 intsx_id_vec    <- as.integer(str_extract(basename(intsx_files_all), '[0-9]{3,}'))
+str_cats   <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
+  filter(!is.na(stressor)) %>%
+  select(stressor, category) %>%
+  mutate(stressor = str_split(stressor, ';')) %>%
+  unnest(stressor) %>%
+  distinct()
 
-get_intsx_files <- function(spp_id, impacts) {
+get_intsx_files <- function(spp_id, impact_cat) {
+  ### To calc across all stressors, set impact_cat = 'all'
   ### NOTE: this uses global variables to avoid relisting all the intersection
   ### files each time...
   
+  # impact_cat <- 'fishing'
+  # spp_id <- spp_ids[1]
+  
   ### get all the intersection files for this spp in the intsx directory
   intsx_files <- intsx_files_all[intsx_id_vec == spp_id]
-  ### test to see which subset if any to include
-  cc_impacts <- c('oa', 'sst', 'slr')
-  intsx_dirs <- basename(dirname(intsx_files))
   
-  if(impacts == 'no climate') {
-    intsx_files <- intsx_files[!intsx_dirs %in% cc_impacts]
-  } else if(impacts == 'climate') {
-    intsx_files <- intsx_files[intsx_dirs %in% cc_impacts]
+  if(impact_cat != 'all') {
+    ### subset stressors by impact category
+    intsx_dirs <- basename(dirname(intsx_files))
+    strs <- str_cats %>% 
+      filter(category == impact_cat) %>%
+      .$stressor
+    intsx_files <- intsx_files[intsx_dirs %in% strs]
   }
   
   return(intsx_files)
@@ -152,8 +162,7 @@ calc_cum_impact <- function(spp_id,
 map_cum_impact <- function(spp_id, 
                            dir_spp_maps,
                            impacts = 'all') {
-  ### dir_spp_maps to point to location of range files;
-  ### dir_spp_intsx to point to location of intersection files
+  ### dir_spp_maps to point to location of range files
 
   ### assemble file name and read the range data
   spp_range_file <- file.path(dir_spp_maps,
@@ -200,71 +209,39 @@ map_cum_impact <- function(spp_id,
 
 ```
 
-### calculate species cumulative impacts, non-CC
+### calculate species cumulative impacts by stressor category
 
-``` {r calc species cumulative impacts nonclimate}
+``` {r calc species cumulative impacts}
 
 reload <- FALSE
 ### to clear old versions:
 # x <- list.files(file.path(dir_bd_anx, 'spp_impacts'), full.names = TRUE)
-# # x <- x[str_detect(x, 'no_cc')]
 # unlink(x)
 
-# for(spp_id in spp_ids) {
-tmp <- parallel::mclapply(spp_ids, mc.cores = 12,
-  FUN = function(spp_id) {
-    ### spp_id <- spp_ids[2]
-    ### spp_id <- y[1]
-    
-    spp_impact_file <- file.path(dir_bd_anx, 'spp_impacts',
-                                 sprintf('spp_impacts_%s_no_cc.csv', spp_id))
-    if(!file.exists(spp_impact_file) | reload) {
-      message('Processing spp ', spp_id, '; non-climate')
-      ### Calculate total species range, accounting for partial ocean cells
-      impact_df <- calc_cum_impact(spp_id, ocean_area_df,
-                                   dir_spp_maps,
-                                   impacts = 'no climate')
-      write_csv(impact_df, spp_impact_file)
-    } else {
-      # message('Impact df file exists: ', basename(spp_impact_file), '... skipping!')
+for(impact_cat in str_cats$category %>% unique()) {
+  # impact_cat <- str_cats$category %>% unique() %>% .[1]
+  # for(spp_id in spp_ids) {
+  tmp <- parallel::mclapply(spp_ids, mc.cores = 12,
+    FUN = function(spp_id) {
+      ### spp_id <- spp_ids[2]
+      ### spp_id <- y[1]
+      
+      spp_impact_file <- file.path(dir_bd_anx, 'spp_impacts',
+                                   sprintf('spp_impacts_%s_%s.csv', spp_id, impact_cat))
+      if(!file.exists(spp_impact_file) | reload) {
+        message('Processing spp ', spp_id, '; ', impact_cat)
+        ### Calculate total species range, accounting for partial ocean cells
+        impact_df <- calc_cum_impact(spp_id, ocean_area_df,
+                                     dir_spp_maps,
+                                     impacts = impact_cat)
+        write_csv(impact_df, spp_impact_file)
+      } else {
+        # message('Impact df file exists: ', basename(spp_impact_file), '... skipping!')
+      }
+      return(paste('success:', spp_id))
     }
-    return(paste('success:', spp_id))
-  }
-)
-
-```
-
-### calculate species cumulative impacts, CC only
-
-``` {r calc species cumulative impacts climate only}
-
-reload <- FALSE
-### to clear old versions:
-### x <- list.files(file.path(dir_bd_anx, 'spp_impacts'), full.names = TRUE)
-### x <- x[str_detect(x, 'cc_only')]
-### unlink(x)
-
-# for(spp_id in spp_ids) {
-tmp <- parallel::mclapply(spp_ids, mc.cores = 12,
-  FUN = function(spp_id) {
-    ### spp_id <- spp_ids[2]
-    ### spp_id <- y[1]
-    
-    spp_impact_file <- file.path(dir_bd_anx, 'spp_impacts',
-                                 sprintf('spp_impacts_%s_cc_only.csv', spp_id))
-    if(!file.exists(spp_impact_file) | reload) {
-      message('Processing spp ', spp_id, '; climate only')
-      ### Calculate total species range, accounting for partial ocean cells
-      impact_df <- calc_cum_impact(spp_id, ocean_area_df,
-                                   dir_spp_maps,
-                                   impacts = 'climate')
-      write_csv(impact_df, spp_impact_file)
-    } else {
-      # message('Impact df file exists: ', basename(spp_impact_file), '... skipping!')
-    }
-    return(paste('success:', spp_id))
-  }
-)
+  )
+}
 
 ```
 
@@ -276,144 +253,39 @@ For each species, create a map of cumulative impacts:
 * summarize number of stressors in each cell
 * write out as .csv to annex, `spp_impact_rasts`
 
-Each of these will be performed for non-climate stressors, and then separately for climate stressors.  Full cumulative can be found from simply adding 'em up.
+Each of these will be performed for each stressor category.  Full cumulative can be found from simply adding 'em up.
 
-### map species cumulative impacts, non-CC
+### map species cumulative impacts by stressor category
 
-``` {r map species cumulative impacts nonclimate, eval = TRUE}
-
-reload <- FALSE
-### to clear old versions:
-### x <- list.files(file.path(dir_bd_anx, 'spp_impact_rasts'), full.names = TRUE)
-### x <- x[str_detect(x, 'no_cc')]
-### unlink(x)
-
-for(spp_id in spp_ids) {
-# tmp <- parallel::mclapply(spp_ids, mc.cores = 4, 
-#   FUN = function(spp_id) {
-    ### spp_id <- spp_ids[2]
-    ### spp_id <- y[1]
-    impact_rast_file <- file.path(dir_bd_anx, 'spp_impact_rasts',
-                                 sprintf('spp_impact_map_%s_no_cc.csv', spp_id))
-    if(!file.exists(impact_rast_file) | reload) {
-      message('Mapping spp ', spp_id, '; non-climate change')
-      ### Calculate total species range, accounting for partial ocean cells
-      impact_rast <- map_cum_impact(spp_id,
-                                    dir_spp_maps,
-                                    impacts = 'no climate')
-      write_csv(impact_rast, impact_rast_file)
-    } else {
-      # message('Impact map file exists: ', basename(impact_rast_file), '... skipping!')
-    }
-    # return(paste('success:', spp_id))
-  }
-# )
-
-```
-
-### map species cumulative impacts, climate only
-
-``` {r map species cumulative impacts climate only, eval = TRUE}
+``` {r map species cumulative impacts, eval = TRUE}
 
 reload <- FALSE
 ### to clear old versions:
 ### x <- list.files(file.path(dir_bd_anx, 'spp_impact_rasts'), full.names = TRUE)
-### x <- x[str_detect(x, 'cc_only')]
 ### unlink(x)
 
-# for(spp_id in spp_ids) {
-tmp <- parallel::mclapply(spp_ids, mc.cores = 8, 
-  FUN = function(spp_id) {
-    ### spp_id <- spp_ids[2]
-    ### spp_id <- y[1]
-    impact_rast_file <- file.path(dir_bd_anx, 'spp_impact_rasts',
-                                 sprintf('spp_impact_map_%s_cc_only.csv', spp_id))
-    if(!file.exists(impact_rast_file) | reload) {
-      message('Mapping spp ', spp_id, '; climate only')
-      ### Calculate total species range, accounting for partial ocean cells
-      impact_rast <- map_cum_impact(spp_id,
-                                    dir_spp_maps,
-                                    impacts = 'climate')
-      write_csv(impact_rast, impact_rast_file)
-    } else {
-      # message('Impact map file exists: ', basename(impact_rast_file), '... skipping!')
+for(impact_cat in str_cats$category %>% unique()) {
+  # impact_cat <- str_cats$category %>% unique() %>% .[1]
+  # for(spp_id in spp_ids) {
+  tmp <- parallel::mclapply(spp_ids, mc.cores = 4,
+    FUN = function(spp_id) {
+      ### spp_id <- spp_ids[2]
+      ### spp_id <- y[1]
+      impact_rast_file <- file.path(dir_bd_anx, 'spp_impact_rasts',
+                                   sprintf('spp_impact_map_%s_%s.csv', spp_id, impact_cat))
+      if(!file.exists(impact_rast_file) | reload) {
+        message('Mapping spp ', spp_id, '; ', impact_cat)
+        ### Calculate total species range, accounting for partial ocean cells
+        impact_rast <- map_cum_impact(spp_id,
+                                      dir_spp_maps,
+                                      impacts = impact_cat)
+        write_csv(impact_rast, impact_rast_file)
+      } else {
+        # message('Impact map file exists: ', basename(impact_rast_file), '... skipping!')
+      }
+      # return(paste('success:', spp_id))
     }
-    return(paste('success:', spp_id))
-  })
-
-```
-
-
-```{r, eval = FALSE}
-x <- list.files(file.path(dir_bd_anx, 'spp_impacts'))
-iucn_sid_done <- str_extract(x, '[0-9]+') %>% as.integer() %>% sort()
-y <- spp_ids[!spp_ids %in% iucn_sid_done]
-
-```
-
-## Check species affected by sea level rise
-
-The SLR maps cover the entire ocean, not just coastal zones, but SLR should not affect any pelagic species.  Here, check the species that are impacted by sea level rise and map them to make sure none extend oceanward.
-
-```{r}
-cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
-
-map_to_rast <- function(map_df, cell_val = 'n_spp') {
-  # map_rast <- raster::subs(cell_id_rast, as.data.frame(map_df), 
-  #                          by = 'cell_id', which = val)
-  map_rast <- raster(cell_id_rast)
-  values(map_rast)[map_df$cell_id] <- map_df[[cell_val]]
-  return(map_rast)
-}
-```
-
-```{r, eval = TRUE}
-### examine sea level rise species impacts: do they extend into
-### pelagic waters?
-
-x <- read_csv('_output/spp_sens_climate_2020-1.csv') %>%
-  filter(stressor == 'slr' & sens == TRUE)
-### 74 here
-y <- read_csv(file.path(dir_bd_anx, 'iucn', 'spp_info_from_api_2020-1.csv')) %>%
-  filter(iucn_sid %in% x$iucn_sid)
-
-### to delete the species impact maps with SLR impacts
-# spp_impact_files <- list.files(file.path(dir_bd_anx, 'spp_impact_rasts'),
-#                                full.names = TRUE)
-# slr_spp_df <- data.frame(f = spp_impact_files) %>%
-#   mutate(iucn_sid = str_extract(basename(f), '[0-9]{3,}') %>% as.integer()) %>%
-#   filter(iucn_sid %in% x$iucn_sid)
-# unlink(slr_spp_df$f)
-
-slr_spp_files <- list.files(file.path(dir_spp_intsx, 'slr'),
-                            full.names = TRUE)
-
-slr_spp_maps <- parallel::mclapply(slr_spp_files, 
-                         FUN = function(f) {
-                           id <- str_extract(basename(f), '[0-9]{3,}') %>% as.integer()
-                           x <- read_csv(f, col_types = 'ii') %>%
-                             mutate(iucn_sid = id)
-                         }, mc.cores = 40) %>%
-  bind_rows() %>%
-  filter(!is.na(cell_id))
-
-yrs <- 2013# c(2003,2013)
-map_list <- vector('list', length = length(yrs))
-for(i in seq_along(yrs)) {
-  ### i <- 2
-  yr <- yrs[i]
-  slr_spp_yr <- slr_spp_maps %>%
-    filter(year == yr) 
-  # slr_spp <- slr_spp_yr$iucn_sid %>% unique()
-  ### 71 here
-  slr_all_yr <- slr_spp_yr %>%
-    group_by(cell_id) %>%
-    summarize(n_spp = n_distinct(iucn_sid))
-  map_list[[i]] <- map_to_rast(slr_all_yr)
+  )
 }
 
-map_stack <- stack(map_list)
-
-plot(map_stack, main = paste0('SLR spp ', yrs))
 ```
-
