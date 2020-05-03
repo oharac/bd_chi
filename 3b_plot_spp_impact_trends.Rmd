@@ -97,22 +97,29 @@ $$\text{priority} = \frac{\text{% range impacted}}{\ln (\text{spp range, km}^2)}
 
 The $\ln (\text{spp range, km}^2)$ term reduces priority for large-ranged species and emphasizes small-ranged endemics, even for the same proportion of impacted range.
 
-Here we will not summarize by every stressor, but just the cumulative category levels.
+Here we will not summarize by every stressor, but just the cumulative category levels.  The priority will be based on the average impact over the most recent three years of impacts.
 
 ``` {r}
 priority_by_stressor <- imp_range_df %>%
   filter(!is.na(year)) %>%
   filter(str_detect(stressor, 'cum_')) %>%
-  group_by(stressor, iucn_sid, qtile) %>%
-  filter(year == max(year)) %>%
-  summarize(priority = pct_impact / log(range_km2),
-            impact_yr = year) %>%
+  mutate(priority = pct_impact / log(range_km2)) %>%
+  group_by(stressor, iucn_sid, taxon) %>%
+  arrange(desc(year)) %>%
+  mutate(yearnum = 1:n()) %>%
+  filter(yearnum <= 3) %>%
+  summarize(var_priority = var(priority),
+            priority = mean(priority)) %>%
   ungroup()
+
+write_csv(priority_by_stressor, here('_output/spp_priority_by_stressor.csv'))
 ```
 
-```{r}
+Note that not all included species are represented in the `priority_by_stressor` dataframe - some species listed as threatened by a stressor may not overlap areas where that stressor is significantly occurring according to our data.
 
-tr_by_stressor <- imp_range_df %>%
+```{r trend by species}
+
+tr_by_stressor_spp <- imp_range_df %>%
   filter(!is.na(year)) %>%
   filter(str_detect(stressor, 'cum_')) %>%
   group_by(stressor, iucn_sid) %>%
@@ -121,7 +128,7 @@ tr_by_stressor <- imp_range_df %>%
   mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
   broom::tidy(mdl)
 
-tr_by_priority <- tr_by_stressor %>%
+tr_by_priority <- tr_by_stressor_spp %>%
   left_join(priority_by_stressor, by = c('iucn_sid', 'stressor')) %>%
   filter(term == 'year') %>%
   mutate(sig = p.value <= .05)
@@ -145,21 +152,21 @@ dt_clean <- function(df) {
 
 ```
 
-```{r}
+```{r trend all spp combined}
 
-tr_by_stressor <- imp_range_df %>%
+tr_by_stressor_all <- imp_range_df %>%
   filter(!is.na(year)) %>%
   group_by(stressor) %>%
   do(mdl = lm(pct_impact ~ year, data = .)) %>%
   mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
   broom::tidy(mdl)
 
-dt_clean(tr_by_stressor)
+dt_clean(tr_by_stressor_all)
 ```
 
 ### Stressor on impacted spp by range quintile
 
-```{r}
+```{r trend by range}
 
 tr_by_stressorXrange <- imp_range_df %>%
   filter(!is.na(year)) %>%
@@ -176,7 +183,7 @@ dt_clean(tr_by_stressorXrange)
 
 ### Stressor on impacted spp by taxonomic group
 
-```{r}
+```{r trend by taxon}
 
 tr_by_stressorXtaxon <- imp_range_df %>%
   filter(!is.na(year)) %>%

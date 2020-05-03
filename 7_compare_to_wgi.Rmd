@@ -1,0 +1,360 @@
+---
+title: 'Compare impacts and trends to WGI a: set up WGI data'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(sf)
+library(WDI) # install.packages('WDI')
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+This script downloads WGI data and prepares it in the same manner as used for the Ocean Health Index, then compares the country-level values across indicators to impacts and impact trends on threatened biodiversity.
+
+The WGI indicator preparation is largely adapted from [this script](https://github.com/OHI-Science/ohiprep/blob/master/globalprep/prs_res_wgi/v2017/WGI_dataprep.Rmd)
+
+# Methods
+
+## Prepare WGI indicators
+
+**Reference**:  http://info.worldbank.org/governance/wgi/index.aspx#home    
+
+The Worldwide Governance Indicators (WGI) project reports aggregate and individual governance indicators for 215 economies over the period 1996–2015, for six dimensions of governance:
+
+* Voice and Accountability
+* Political Stability and Absence of Violence
+* Government Effectiveness
+* Regulatory Quality
+* Rule of Law
+* Control of Corruption
+
+Access each of the 6 WGI indicators using the `WDI` package.  The `series` matrix describes a huge range of variables from different databases.  We will use the indicators from the World Governance Indicators database.  
+
+For each indicator, data are available for estimate, number of sources, standard error, percentile rank, and upper- and lower-bound of 90% confidence interval for percentile rank.  We will focus on the estimate.
+
+### Access the data
+
+```{r}
+### Structure of WDI_data object:
+### matrix 'series', matrix 'country'
+# str(WDI_data)
+# List of 2
+#  $ series : chr [1:16638, 1:5] "DT.INT.DLTT.CD.GG.AR.1218.US" "DT.INT.DLTT.CD.GG.AR.0912.US" ...
+#   ..- attr(*, "dimnames")=List of 2
+#   .. ..$ : NULL
+#   .. ..$ : chr [1:5] "indicator" "name" "description" "sourceDatabase" ...
+#  $ country: chr [1:304, 1:9] "ABW" "AFG" "AFR" "AGO" ...
+#   ..- attr(*, "dimnames")=List of 2
+#   .. ..$ : NULL
+#   .. ..$ : chr [1:9] "iso3c" "iso2c" "country" "region" ...
+
+### get description of series:
+wgi_var_df <-  data.frame(WDI_data$series) %>%
+  janitor::clean_names() %>%
+  filter(source_database == 'Worldwide Governance Indicators') %>%
+  filter(str_detect(indicator, '\\.EST$')) %>%
+  select(indicator, name, description) %>%
+  mutate(description = str_replace_all(description, '\\n', ' '))
+
+knitr::kable(wgi_var_df)
+```
+
+Pull data for each of the WGI variables and bind into a dataframe.  Using long format.
+
+``` {r}
+
+wgi_data_list <- lapply(1:nrow(wgi_var_df), FUN = function(i) {
+  # i <- 1
+  x <- wgi_var_df$indicator[i]
+  tmp <- WDI(x, country = 'all') %>%
+    rename_(value = x) %>%
+    mutate(indicator = x,
+           ind_desc  = wgi_var_df$name[i])
+})
+
+wgi_data_df <- wgi_data_list %>% bind_rows()
+
+```
+
+### Gap filling level 1: fill NA country/indicator/year/ combos
+
+There are six WGI indicators.  Our goal is to have all six indicators for all years for all countries.  Some countries are lacking data for some indicators in some years.  If data not available for a year/country/indicator combination, give mean of country/indicator value over rest of time span.
+
+For each country/year/indicator combination:
+
+* Filter to years 2003:2013.
+    * Because our study covers 2003-2013, we will drop WGI observations outside this range.  
+    * This will affect gapfilling calculations, as values outside this range will not be included in indicator means for this step.
+* identify the number of NAs.
+    * an observation is available for all combinations, even if NA, so no `complete()` is necessary.
+* calculate the mean value for each country/indicator across all years, dropping NAs.
+* For NA observations where it is possible to calculate a mean, use that mean to replace NAs.
+
+``` {r}
+
+wgi_data_gapfill1  <- wgi_data_df %>%
+  filter(year %in% 2003:2013) %>%
+  group_by(country, year) %>%
+  mutate(NA_count_c_y = sum(is.na(value))) %>%  
+    ### get count of NA values for the indicators prior to gapfilling, max value is 6
+  ungroup() %>%
+  group_by(country, indicator) %>%              
+  mutate(ind_mean_c_i = mean(value, na.rm=TRUE)) %>%
+    ### calc the mean value across years within the same region/indicator
+  ungroup() %>%
+  mutate(value = ifelse(is.na(value) & !is.na(ind_mean_c_i), 
+                        ind_mean_c_i, value)) %>%
+    ### fill the NAs where possible
+  group_by(country, year) %>%
+  mutate(NA_count_post_gf1 = sum(is.na(value))) %>%     
+    ### count NA values for the num of indicators after last gap-fill 
+    ### (some values will be gapfilled by other years of data)
+  ungroup()
+
+### cut regions with three or fewer indicators to calculate score 
+### i.e. NA_count_post_gf1 is three or more
+countries_no_data <- wgi_data_gapfill1 %>%
+  filter(NA_count_post_gf1 >= 3)
+
+countries_no_data <- unique(countries_no_data$country)
+# countries_no_data
+### just Monaco and San Marino
+
+# In this case, the countries with minimal data (< 4 indicators ever calculated) are deleted.  
+# These will be gap-filled later on if they are deleted now.
+wgi_data_gapfill1 <- wgi_data_gapfill1 %>%
+  filter(!(country %in% countries_no_data))
+```
+
+### Calculate overall WGI score for each country in the dataset
+
+Overall WGI score will be calculated as the mean of the available indicators (6 for most countries, minimum of 4).  WGI scores are organized around a normal distribution, $\sim N(\mu = 0, \sigma = 1)$
+
+```{r}
+
+wgi_means <- wgi_data_gapfill1 %>%
+  group_by(country, year) %>%
+  summarize(score_wgi_scale = mean(value, na.rm = TRUE),
+            NA_start = mean(NA_count_c_y),
+            NA_post_gf_1 = mean(NA_count_post_gf1)) %>%
+  ungroup() %>%
+  mutate(score = (score_wgi_scale - mean(score_wgi_scale)) / sd(score_wgi_scale)) %>%
+  mutate(gapfill = NA_start - NA_post_gf_1,   
+           ### if values in NA_post_gf_1, it means these weren't gapfilled
+         gapfill = ifelse(is.na(score), 0, gapfill)) %>%
+  select(-NA_start, -NA_post_gf_1)
+# wgi_means$score_wgi_scale %>% mean()
+# wgi_means$score_wgi_scale %>% sd()
+### ~ N(0, .92)
+# wgi_means$score %>% mean()
+# wgi_means$score %>% sd()
+### ~ N(0, 1)
+
+# wgi_means %>%
+#   filter(gapfill > 0)
+```
+
+#### Exploring distributions of the six indicators
+
+Unlike OHI, here we will keep the WGI mean scores on their original scale.  For those familiar with WGI, it may be easier to interpret this.  
+
+Let's check independence of the various variables.
+
+```{r}
+test_df <- wgi_data_df %>%
+  select(country, year, indicator, value) %>%
+  filter(!is.na(value)) %>%
+  spread(indicator, value)
+
+psych::pairs.panels(test_df[ , 3:8],           
+                    method = "pearson", # correlation method
+                    hist.col = "#00AFBB",
+                    density = TRUE,  # show density plots
+                    ellipses = TRUE) # show correlation ellipses
+  
+```
+
+### Convert country names to ohi regions
+
+This code relies on the `name_2_rgn` function from `ohicore` package.
+
+```{r}
+library(ohicore)
+## We report these regions at a greater spatial resolution:
+
+## Aruba is part of the Netherlands Antilles, but it is reported separately
+split_1 <- data.frame(country = "Netherlands Antilles", 
+                      region = c('Bonaire', 'Curacao', 'Saba', 
+                                 'Sint Maarten', 'Sint Eustatius'))
+split_2 <- data.frame(country = "Jersey, Channel Islands", 
+                      region = c('Jersey', 'Guernsey'))
+country_split <- rbind(split_1, split_2)
+
+country_split_data <- country_split %>%
+  left_join(wgi_means) %>%
+  select(-country) %>%
+  rename(country = region)
+
+wgi_countries <- wgi_means %>%
+  filter(!(country %in% c("Netherlands Antilles", "Jersey, Channel Islands"))) %>%
+  rbind(country_split_data)  %>%
+  mutate(country = as.character(country)) %>%
+  mutate(country = ifelse(str_detect(country, 'Korea, Dem.'), 'North Korea', country))
+
+### Function to convert to OHI region ID
+wgi_rgns <- name_2_rgn(df_in = wgi_countries, 
+                       fld_name='country', 
+                       flds_unique=c('year'))
+
+### Combine the duplicate regions (we report these at lower resolution)
+### In this case, we take the weighted average
+pop_wts <- data.frame(country = c("Virgin Islands (U.S.)", "Puerto Rico",
+                                  "China", "Hong Kong SAR, China", "Macao SAR, China"),
+                      pop     = c(106405, 3725789, 1339724852, 7071576, 636200))
+
+wgi_rgns <- wgi_rgns %>%
+  left_join(pop_wts, by = "country") %>%
+  mutate(pop = ifelse(is.na(pop), 1, pop)) %>%
+  group_by(rgn_id, year) %>%
+  summarize(score = weighted.mean(score, pop),
+            gapfill_within_rgn = weighted.mean(gapfill, pop)) %>%
+  ungroup() %>%
+  filter(rgn_id <= 250)
+
+summary(wgi_rgns)
+
+```
+
+
+### Gapfill missing data (part 2)
+
+This gapfilling occurs when we use assign a territorial region the value of their parent country.  This also relies on code from `ohicore`.
+
+```{r}
+
+### data that describes territories of countries
+territory <- rgn_master %>% 
+  select(rgn_id = rgn_id_2013,
+         sov_id) %>%               
+  group_by(rgn_id) %>%                  
+    ### remove duplicated countries from this rgn_id list                    
+  summarize(sov_id = mean(sov_id, na.rm = TRUE)) %>% 
+    ### duplicates always have the same sov_id (r2 value)
+  filter(rgn_id <= 250, rgn_id != 213)
+
+### expand to include all years of data
+territory <- data.frame(year = 2003:2013) %>% 
+  merge(territory, by = NULL) 
+
+
+### assign territories the values of their sovereign country
+wgi_rgn_sovs <- wgi_rgns %>% 
+  full_join(territory, by = c('rgn_id', 'year')) %>%
+  group_by(sov_id, year) %>%
+  mutate(score_gf_territory = mean(score, na.rm=TRUE),
+         gapfill_within_rgn = mean(gapfill_within_rgn, na.rm=TRUE))%>%
+  filter(!is.na(gapfill_within_rgn)) %>%
+  ungroup()
+
+# head(wgi_rgn_sovs)
+# summary(wgi_rgn_sovs)
+
+### format these data
+wgi_rgn_gf2 <- wgi_rgn_sovs %>%
+  mutate(gapfill_territory = ifelse(is.na(score) & !is.na(score_gf_territory), 
+                                    "territory", "NA")) %>%
+  mutate(score = ifelse(is.na(score), score_gf_territory, score)) %>%
+  select(rgn_id, year, score, gapfill_within_rgn, gapfill_territory)
+
+### make sure that all regions have a score
+regions <- rgn_master %>%
+  filter(rgn_typ == "eez") %>%
+  filter(rgn_id_2013 <= 250) %>%
+  filter(rgn_id_2013 != 213) %>%
+  select(rgn_id = rgn_id_2013,
+         rgn_name = rgn_nam_2013) %>%
+  unique() %>%
+  arrange(rgn_id)
+
+wgi_rgn_gf2 <- regions %>%
+  left_join(wgi_rgn_gf2)
+
+### check for NA values within "score" variable
+### if so, need to gapfill using UN geopolitical regions
+# summary(wgi_rgn_gf2)
+
+### note region 185 still scoreless: Monaco.
+
+write_csv(wgi_rgn_gf2 %>% select(-starts_with('gap')), 
+          here('_output/wgi_rgn_means.csv'))
+```
+
+Note in the wgi calcs from the ohi-science/globalprep repo, it states:
+
+> These regions will receive an NA for their score (when established population is < 100 people).  We decided it would be better to give uninhabited regions the scores of their administrative countries.
+
+The `NA` code is commented out, however, so it appears that the scores are left unmodified.
+
+
+## Compare impact and trend to WGI indicators
+
+### Load impact and trend values
+
+Calculated in script 6.
+
+``` {r impact_by_eez}
+impact_count_by_eez <- read_csv(here('_output/impact_count_by_eez.csv'))
+impact_pct_by_eez   <- read_csv(here('_output/impact_pct_by_eez.csv')) %>%
+  select(rgn_id = eez, year, impact_pct = val_mean, impact) %>%
+  distinct()
+trend_pct_by_eez    <- read_csv(here('_output/trend_pct_by_eez.csv')) %>%
+  select(rgn_id = eez, trend = estimate, impact) %>%
+  distinct()
+
+eez_sf <- read_sf(file.path(dir_bd_anx, 'spatial/ohi_rgns/rgns_mol_1k.gpkg')) %>%
+  filter(!str_detect(rgn_type, 'land')) %>%
+  select(rgn_id, rgn_name, rgn_key, area_km2, geom)
+
+wgi_df <- read_csv(here('_output/wgi_rgn_means.csv')) %>%
+  rename(wgi = score)
+```
+
+Let's look at impact percent and trend, by WGI score.
+```{r}
+impact_by_wgi <- wgi_df %>%
+  full_join(impact_pct_by_eez, by = c('rgn_id', 'year')) %>%
+  full_join(trend_pct_by_eez, by = c('rgn_id', 'impact')) %>%
+  filter(year == 2013)
+  
+ggplot(impact_by_wgi, aes(x = wgi, y = impact_pct)) +
+  geom_point() +
+  geom_smooth(method = 'lm', color = 'red') +
+  facet_wrap( ~ impact, scales = 'free_y')
+
+ggplot(impact_by_wgi, aes(x = wgi, y = trend)) +
+  geom_point() +
+  geom_smooth(method = 'lm', color = 'red') +
+  facet_wrap( ~ impact, scales = 'free_y')
+```
+OK, maybe a slight signal here and there: impacts from fishing lower in high WGI countries?

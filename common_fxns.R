@@ -106,3 +106,12 @@ get_incl_spp <- function(api_V = api_version, include_all_risk = FALSE) {
   return(spp_incl)
   
 }
+
+dt_join <- function(df1, df2, by, all = FALSE) {
+  ### if all = FALSE, behaves like left join; if all = TRUE,
+  ### behaves like full join.
+  dt1 <- data.table::data.table(df1, key = by)
+  dt2 <- data.table::data.table(df2, key = by)
+  dt_full <- merge(dt1, dt2, all = all)
+  return(as.data.frame(dt_full))
+}

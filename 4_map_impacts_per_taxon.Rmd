@@ -87,6 +87,10 @@ taxon_impact_map_dir <- file.path(dir_bd_anx, 'taxon_impact_rasts')
 
 These maps ignore the number of impacts occurring on each species, and count up the number of species impacted by the aggregated stressor group (land-based, ocean, climate, and fishing).
 
+We will also map species impacts using the priority weights from script 3b, i.e.
+$$\text{priority} = \frac{\text{% range impacted}}{\ln (\text{spp range, km}^2)}$$
+Note that priority is based on mean impact over last three impacted years.
+
 For a given taxon:
 
 * identify full list of impacted species
@@ -94,8 +98,9 @@ For a given taxon:
     * read in all spp in group
     * flatten all spp impact maps (for impacts > 0, set "impacted" = TRUE)
         * no need to worry about refugia cells at this stage.
-    * add all maps for this group: by cell and year
-* for all subgroups in a taxa, add them up
+    * add all maps for this group: by cell/year per stressor
+    * also add priority values for each cell/year per stressor
+* for all subgroups in a taxa, add them up.
     
 ```{r set up functions}
 
@@ -114,34 +119,9 @@ get_spp_impact <- function(spp_id, imp_file) {
   return(impact_map)
 }
 
-calc_spp_refugia <- function(spp_id, rng_file, imp_file) {
-  rng_map <- read_csv(rng_file, col_types = 'ii')
-  imp_map <- read_csv(imp_file, col_types = 'iii') %>%
-    filter(n_impacts > 0 & !is.na(cell_id) & !is.na(year))
-  
-  rng_map_yrs <- rng_map %>%
-    crossing(year = 2003:2013)
-  
-  refugia_map <- rng_map_yrs %>%
-    anti_join(imp_map, by = c('cell_id', 'year')) %>%
-    filter(!is.na(presence) & presence != 5) %>%
-    mutate(iucn_sid = spp_id)
-  
-  return(refugia_map)
-}
-
-combine_maps <- function(map_list) {
-  combined_map_df <- bind_rows(map_list) %>%
-    group_by(cell_id, year) %>%
-    summarize(n_spp = sum(n_spp, na.rm = TRUE)) %>%
-    ungroup()
-  
-  return(combined_map_df)
-}
-
 cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
 
-map_to_rast <- function(map_df, cell_val = 'n_spp') {
+map_to_rast <- function(map_df, cell_val) {
   # map_rast <- raster::subs(cell_id_rast, as.data.frame(map_df), 
   #                          by = 'cell_id', which = val)
   map_rast <- raster(cell_id_rast)
@@ -159,16 +139,28 @@ reload <- FALSE
 ```{r create taxa maps}
 str_cats <- c('land-based', 'ocean', 'fishing', 'climate')
 
+### load priorities; normalize so max priority = 1.
+priority_df <- read_csv(here('_output/spp_priority_by_stressor.csv')) %>%
+  mutate(priority = priority / max(priority)) %>%
+  select(iucn_sid, stressor, priority)
+
 for(str_cat in str_cats) {
-  # str_cat <- str_cats[4]
+  # str_cat <- str_cats[1]
+  
+  pr_str_df <- priority_df %>%
+    filter(stressor == paste0('cum_', str_cat))
+  
   for(taxon_gp in taxon_gps) {
-    ### taxon_gp <- taxon_gps[2]
+    ### taxon_gp <- taxon_gps[1]
     
     taxon_map_files <- file.path(taxon_impact_map_dir, 
                                 sprintf('taxon_impact_%s_%s_%s.tif',
                                         taxon_gp, year_span, str_cat))
+    taxon_priority_map_files <- file.path(taxon_impact_map_dir, 
+                                sprintf('taxon_priority_impact_%s_%s_%s.tif',
+                                        taxon_gp, year_span, str_cat))
     
-    if(any(!file.exists(taxon_map_files)) | reload) {
+    if(any(!file.exists(taxon_map_files, taxon_priority_map_files)) | reload) {
       spp_ids_taxa <- spp_sens %>%
         filter(taxon == taxon_gp) %>%
         filter(category == str_cat) %>%
@@ -180,49 +172,73 @@ for(str_cat in str_cats) {
               ': ', length(spp_ids_taxa), 
               ' species broken into ', n_subgps, ' groups.')
       
-      ### initialize a list to store 
-      taxon_impacts_list <- vector('list', length = n_subgps)
-      for(i in 1:n_subgps) {
-        # i <- 1
-        message('  processing group ', i)
-        spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
-        
-        impact_maps <- parallel::mclapply(spp_id_vec,
-            FUN = function(spp_id) {
-              ### spp_id <- spp_id_vec[1]
-              imp_file <- file.path(spp_impact_map_dir, 
-                                 sprintf('spp_impact_map_%s_%s.csv', spp_id, str_cat))
-              imp_map <- get_spp_impact(spp_id, imp_file)
-            }, mc.cores = subgp_size) %>%
-          bind_rows()
-        impacts_gp <- impact_maps %>%
-          group_by(cell_id, year) %>%
-          summarize(n_spp = n_distinct(iucn_sid)) %>%
-          ungroup()
-        
-        taxon_impacts_list[[i]] <- impacts_gp
-      }
+      if(length(spp_ids_taxa) == 0) {
+        ### uh oh, no species in this taxon affected by this stressor.
+        taxon_impacts_df <- data.frame()
+      } else {
+        ### loop over all spp in this taxon affected by this stressor
+        ### initialize a list to store 
+        taxon_impacts_list <- vector('list', length = n_subgps)
+        for(i in 1:n_subgps) {
+          # i <- 1
+          message('  processing group ', i)
+          spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
+          
+          impact_maps <- parallel::mclapply(spp_id_vec,
+              FUN = function(spp_id) {
+                ### spp_id <- spp_id_vec[1]
+                imp_file <- file.path(spp_impact_map_dir, 
+                                   sprintf('spp_impact_map_%s_%s.csv', spp_id, str_cat))
+                imp_map <- get_spp_impact(spp_id, imp_file)
+              }, mc.cores = subgp_size) %>%
+            bind_rows()
+          impacts_gp <- impact_maps %>%
+            dt_join(pr_str_df, by = 'iucn_sid', all = FALSE) %>%
+            group_by(cell_id, year) %>%
+            summarize(priority_sum_spp = sum(priority),
+                      n_spp = n_distinct(iucn_sid)) %>%
+            ungroup()
+          
+          taxon_impacts_list[[i]] <- impacts_gp
+        } ### end of for loop
       
-      taxon_impacts_df <- combine_maps(taxon_impacts_list) %>%
+      taxon_impacts_df <- bind_rows(taxon_impacts_list) %>%
+        group_by(cell_id, year) %>%
+        summarize(n_spp = sum(n_spp, na.rm = TRUE),
+                  priority_sum_spp = sum(priority_sum_spp, na.rm = TRUE)) %>%
+        ungroup() %>%
         mutate(taxon = taxon_gp)
       
+      } ### end of if statement for zero-length species vector
+      
       if(nrow(taxon_impacts_df) == 0) {
+        ### either no species in the list, or no impacts for any of the spp
         taxon_impacts_df <- data.frame(cell_id = NA,
                                        year    = NA,
                                        n_spp   = NA,
+                                       priority_sum_spp = NA,
                                        taxon   = taxon_gp)
       }
       
-      ### write out as rasters by year
+      ### write out as count and priority rasters by year
       for(i in seq_along(year_span)) {
         # i <- 1
-        taxon_map_file <- taxon_map_files[i]
+        taxon_nspp_map_file <- taxon_map_files[i]
+        taxon_pr_map_file   <- taxon_priority_map_files[i]
+        
         taxon_impact_yr_df <- taxon_impacts_df %>%
           filter(year == year_span[i])
-        taxon_impact_yr_rast <- map_to_rast(taxon_impact_yr_df)
-        writeRaster(taxon_impact_yr_rast, taxon_map_file, overwrite = TRUE)
+        
+        nspp_yr_rast <- map_to_rast(taxon_impact_yr_df, 
+                                    cell_val = 'n_spp')
+        writeRaster(nspp_yr_rast, taxon_nspp_map_file, overwrite = TRUE)
+        
+        pr_sum_yr_rast <- map_to_rast(taxon_impact_yr_df,
+                                      cell_val = 'priority_sum_spp')
+        writeRaster(pr_sum_yr_rast, taxon_pr_map_file, overwrite = TRUE)
+        
       }
-  
+      
     } else {
       message('Files exist... skipping!')
     }
@@ -299,9 +315,10 @@ ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
 mapfiles <- list.files(taxon_impact_map_dir, full.names = TRUE)
 
 all_taxa_maps <- data.frame(f = mapfiles) %>%
-  mutate(type = str_replace_all(basename(f), 'taxon.+_[0-9]{4}_|.tif', ''),
+  mutate(impact = str_replace_all(basename(f), 'taxon.+_[0-9]{4}_|.tif', ''),
+         type = ifelse(str_detect(basename(f), 'priority'), 'priority', 'sum'),
          year = str_extract(basename(f), '[0-9]{4}') %>% as.integer(),
-         taxon = str_replace_all(basename(f), 'taxon_impact_|_[0-9].+', ''))
+         taxon = str_replace_all(basename(f), 'taxon.+impact_|_[0-9].+', ''))
 
 str_cats <- c('fishing', 'land-based', 'ocean', 'climate')
 taxa <- c('sea_turtles', 'mammals', 'birds', 'sharks_and_rays')
@@ -314,13 +331,14 @@ taxa <- c('sea_turtles', 'mammals', 'birds', 'sharks_and_rays')
 for(str_cat in str_cats) {
   # str_cat <- str_cats[3]
   for(t in taxa) {
-    # t <- taxa[4]
+    # t <- taxa[2]
     gif_file <- here(sprintf('figs/impact_%s_%s.gif', t, str_cat))
     
     if(!file.exists(gif_file) | reload) {
       taxon_map_df <- all_taxa_maps %>%
         filter(taxon == t) %>%
-        filter(type == str_cat)
+        filter(impact == str_cat) %>%
+        filter(type == 'sum')
       rast_files <- taxon_map_df$f
       map_stack <- stack(rast_files)
       
@@ -334,3 +352,48 @@ for(str_cat in str_cats) {
 }
 ```
 ![](/home/ohara/github/bd_chi/figs/impact_mammals_land-based.gif)
+
+## Animate count vs. priority maps
+
+Just for the most recent year of each, back and forth to highlight diffs.  To highlight the differences in _pattern_ not _magnitude_, I'll stretch the priority scale to have the same range as the count scale (i.e. 1 to the max number of critters).
+
+``` {r animate impacts v priorities, results = 'asis', eval = TRUE}
+### Animate the results
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[3]
+  for(t in taxa) {
+    # t <- taxa[4]
+    gif_file <- here(sprintf('figs/impact_priorities_%s_%s.gif', t, str_cat))
+    
+    if(!file.exists(gif_file) | reload) {
+      taxon_map_df <- all_taxa_maps %>%
+        filter(taxon == t) %>%
+        filter(impact == str_cat) %>%
+        filter(year == 2013)
+      rast_files <- taxon_map_df$f
+      priority_file <- str_detect(rast_files, 'priority')
+      count_rast <- raster(rast_files[!priority_file])
+      priority_rast <- raster(rast_files[priority_file])
+      ### define rescaling factors
+      c_r <- range(values(count_rast), na.rm = TRUE)
+      p_r <- range(values(priority_rast), na.rm = TRUE)
+      
+      if(p_r[2] - p_r[1] == 0) {
+        ### just one value; avoid div by zero
+        p_rescale <- priority_rast * c_r[1] / p_r[1]
+      } else {
+        p_rescale <- (priority_rast - p_r[1]) / (p_r[2] - p_r[1])
+        p_rescale <- p_rescale * (c_r[2] - c_r[1]) + c_r[1]
+      }
+
+      map_stack <- stack(count_rast, p_rescale)
+      make_gifs(map_stack, 
+                filename = gif_file,
+                layer_names = str_replace_all(names(map_stack), 'taxon_|.tif', ''))
+    }
+    
+    cat(sprintf('![](%s)', gif_file))
+  }
+}
+```

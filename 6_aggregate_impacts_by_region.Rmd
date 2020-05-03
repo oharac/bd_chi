@@ -51,7 +51,7 @@ meow_rast  <- raster(here('_spatial/meow_mol.tif'))
 ocean_rast <- raster(here('_spatial/ocean_area_mol.tif'))
 nspp_rast  <- raster(here('_output/rasters/n_spp_map.tif'))
 
-eez_sf <- read_sf(here('_spatial/rgns_mol_1k.gpkg')) %>%
+eez_sf <- read_sf(file.path(dir_bd_anx, 'spatial/ohi_rgns/rgns_mol_1k.gpkg')) %>%
   filter(!str_detect(rgn_type, 'land')) %>%
   select(rgn_id, rgn_name, rgn_key, area_km2, geom)
 meow_sf <- read_sf(file.path(dir_bd_anx, 'spatial/meow/meow_ecos.shp')) %>%
@@ -76,15 +76,6 @@ rast_as_df <- function(r, rm_zero = FALSE) {
     filter(!is.na(val))
   
   return(r_df)
-}
-
-dt_join <- function(df1, df2, by, all = FALSE) {
-  ### if all = FALSE, behaves like left join; if all = TRUE,
-  ### behaves like full join.
-  dt1 <- data.table::data.table(df1, key = by)
-  dt2 <- data.table::data.table(df2, key = by)
-  dt_full <- merge(dt1, dt2, all = all)
-  return(as.data.frame(dt_full))
 }
 
 weighted.var <- function(x, w, na.rm = FALSE) {
@@ -183,6 +174,8 @@ tr_by_eez <- impacts_by_eez_df %>%
   broom::tidy(mdl) %>%
   filter(term == 'year') %>%
   mutate(sig = p.value <= 0.05)
+
+write_csv(tr_by_eez, here('_output/trend_pct_by_eez.csv'))
 ```
 
 ```{r plot impacts by eez}
@@ -198,7 +191,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'fishing impacts')
+  labs(title = 'fishing impacts, pct')
   
 ggplot() +
   geom_sf(data = impacts_sf_2013 %>% filter(impact == 'land-based'), 
@@ -206,7 +199,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'land-based impacts')
+  labs(title = 'land-based impacts, pct')
   
 ggplot() +
   geom_sf(data = impacts_sf_2013 %>% filter(impact == 'ocean'), 
@@ -214,7 +207,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'ocean impacts')
+  labs(title = 'ocean impacts, pct')
   
 ggplot() +
   geom_sf(data = impacts_sf_2013 %>% filter(impact == 'climate'), 
@@ -222,7 +215,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'climate impacts')
+  labs(title = 'climate impacts, pct')
   
 ```
 
@@ -243,7 +236,7 @@ ggplot() +
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'fishing trend',
+  labs(title = 'fishing trend, pct/yr',
        color = 'trend')
   
 ggplot() +
@@ -254,7 +247,7 @@ ggplot() +
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'land-based trend',
+  labs(title = 'land-based trend, pct/yr',
        color = 'trend')
 
 ggplot() +
@@ -265,7 +258,7 @@ ggplot() +
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'ocean trend',
+  labs(title = 'ocean trend, pct/yr',
        color = 'trend')
 
 ggplot() +
@@ -276,7 +269,7 @@ ggplot() +
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'climate trend',
+  labs(title = 'climate trend, pct/yr',
        color = 'trend')
 
 ```
@@ -323,6 +316,8 @@ tr_by_meow <- impacts_by_meow_df %>%
   broom::tidy(mdl) %>%
   filter(term == 'year') %>%
   mutate(sig = p.value <= 0.05)
+
+write_csv(tr_by_meow, here('_output/trend_pct_by_meow.csv'))
 ```
 
 Plot the results based on the _percent_ of local threatened species impacted by each impact category.
@@ -340,7 +335,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'fishing impacts')
+  labs(title = 'fishing impacts, pct')
   
 ggplot() +
   geom_sf(data = impacts_sf_2013 %>% filter(impact == 'land-based'), 
@@ -348,7 +343,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'land-based impacts')
+  labs(title = 'land-based impacts, pct')
   
 ggplot() +
   geom_sf(data = impacts_sf_2013 %>% filter(impact == 'ocean'), 
@@ -356,7 +351,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'ocean impacts')
+  labs(title = 'ocean impacts, pct')
   
 ggplot() +
   geom_sf(data = impacts_sf_2013 %>% filter(impact == 'climate'), 
@@ -364,7 +359,7 @@ ggplot() +
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
-  labs(title = 'climate impacts')
+  labs(title = 'climate impacts, pct')
   
 ```
 
@@ -381,33 +376,33 @@ ggplot() +
   geom_sf(data = trends_sf %>% filter(impact == 'fishing'), 
           aes(fill = estimate), 
           alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'climate'),
+  geom_sf(data = trend_centroids_sf %>% filter(impact == 'fishing'),
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'fishing trend',
+  labs(title = 'fishing trend, pct/yr',
        color = 'trend')
   
 ggplot() +
   geom_sf(data = trends_sf %>% filter(impact == 'land-based'), 
           aes(fill = estimate), 
           alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'climate'),
+  geom_sf(data = trend_centroids_sf %>% filter(impact == 'land-based'),
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'land-based trend',
+  labs(title = 'land-based trend, pct/yr',
        color = 'trend')
 
 ggplot() +
   geom_sf(data = trends_sf %>% filter(impact == 'ocean'), 
           aes(fill = estimate), 
           alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'climate'),
+  geom_sf(data = trend_centroids_sf %>% filter(impact == 'ocean'),
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'ocean trend',
+  labs(title = 'ocean trend, pct/yr',
        color = 'trend')
 
 ggplot() +
@@ -418,7 +413,7 @@ ggplot() +
           aes(color = sig_dot), size = .5) +
   scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
   scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'climate trend',
+  labs(title = 'climate trend, pct/yr',
        color = 'trend')
 
 ```
