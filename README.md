@@ -20,16 +20,18 @@ To do:
     * [X] Ocean acidification in particular!
     * [X] While you're at it, crop the SLR raster to just coastal areas!
     * [X] Check the shipping - horizontal routes are artifacts? nope, they're in there
+* [X] Clip out arctic (sea ice) areas for SST due to satellite effects
+    * this is done in `_setup/6_aggregate_stressors_to_10km.Rmd`
 * [X] Update threat listings based on narrative text and habitat info
     * [X] Critical for fisheries! differentiate pel_hb, pel_lb, dem_dest, dem_nondest_hb, dem_nondest_lb
     * [X] Critical for climate stressors - OA, SST, SLR (UV not included)
 * [x] Update species-stressor intersections based on updated species and threats
     * [x] Use just cell ID, not stressor value, for more nimble read/write
-* [X] From intersections, calculate impacts for all spp
-    * [ ] Impacted range, and pct range, per threat
-    * [ ] Impacted range, and pct range, cumulative over all threats
-    * [ ] Refugia range as (whole range - impacted range)
-    * [ ] Account for ocean cell area in calculations!
+* [X] From intersections, calculate impact summaries for all spp
+    * [X] Impact footprint per threat
+    * [X] Impact footprint, cumulative over all threats (for 1+, 2+, and more than 2 stressors cooccurring)
+    * [ ] Intensifying impact footprint over range
+    * [X] Account for ocean cell area in calculations!
 * From intersections, map cumulative impacts on threatened and near-threatened spp
     * [X] per cell: number of species impacted; proportion of species impacted
     * [X] per cell: number of species in refugia; proportion of species in refugia

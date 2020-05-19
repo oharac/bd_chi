@@ -82,12 +82,13 @@ if(!file.exists(str_thresh_file) | reload) {
   
   thresh_list <- parallel::mclapply(stressors, mc.cores = 4,
     FUN = function(str) {
-      ### str <- stressors[1]
+      ### str <- stressors[14]
       str_fs <- str_df %>%
         filter(stressor == str) %>%
         .$file
       
       str_stack <- raster::stack(str_fs)
+ 
       thresh <- calc_cv_thresh(str_stack, pct = 0.95)
       tmp_df <- data.frame(
         stressor = str,
@@ -243,6 +244,7 @@ stressors <- str_df$stressor %>% unique() %>% sort()
 
 outfile_dir <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
 # unlink(file.path(outfile_dir, '*.*'))
+# unlink(file.path(outfile_dir, 'sst*.*'))
 
 tmp <- parallel::mclapply(stressors, mc.cores = 8,
   FUN = function(str) { ### str <- stressors[1]

@@ -1,0 +1,201 @@
+---
+title: 'Plot species impact expansion'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+library(sf)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+```
+
+
+# Summary
+
+Here we plot species impact expansion - how impacted range area is changing over time.  We can look at this on a stressor-by-stressor basis, and grouped by cumulative stressors by category.  
+
+## Methods summary
+
+Read in all the impact summaries.  Attach taxonomic information and range information.
+
+For each stressor, calculate impact expansion by taxon, by range size, and overall.  
+
+* Impact expansion will be change in percent impacted range? 
+* or absolute?  This devalues small-ranged species.  Perhaps in the range size calculations.
+
+# Methods
+
+## Get impact summaries
+
+Load the impact summaries, attach info on taxonomic groupings and range quintiles.
+
+```{r assemble data frame}
+
+spp_incl <- get_incl_spp() %>%
+  select(-code) %>%
+  distinct()
+
+spp_impact_dir <- file.path(dir_bd_anx, 'spp_impacts')
+imp_files <- list.files(spp_impact_dir, full.names = TRUE)
+
+spp_range_file <- here('int/spp_ranges_incl_birds.csv')
+spp_ranges <- read_csv(spp_range_file) %>%
+  left_join(spp_incl %>%
+              select(iucn_sid, taxon) %>%
+              distinct(), by = 'iucn_sid') %>%
+  mutate(all_r_km2 = ifelse(is.na(bird_km2), marine_km2, bird_km2),
+         qtile = cut(all_r_km2, 
+                     breaks = quantile(all_r_km2, probs = (0:5) / 5),
+                     labels = 1:5, include.lowest = TRUE)) %>%
+  select(-marine_km2, -bird_km2)
+
+impacts_df <- parallel::mclapply(imp_files,
+    FUN = function(f) { ### f <- imp_files[1]
+      x <- read_csv(f) %>%
+        mutate(impacts = str_replace_all(basename(f), '.+[0-9]+_|.csv', ''))
+    }, mc.cores = 40) %>%
+  bind_rows() %>%
+  mutate(stressor = ifelse(stressor == 'cumulative', 
+                           paste0('cum_', impacts), stressor)) %>%
+  select(-impacts) %>%
+  filter(iucn_sid %in% spp_incl$iucn_sid) %>%
+  distinct() ### remove duplicates in the 'all' category
+
+### join ranges
+imp_range_df <- impacts_df %>%
+  left_join(spp_ranges, by = 'iucn_sid') %>%
+  mutate(pct_impact = impact_km2 / range_km2)
+  
+
+```
+
+
+
+## Summarize by stressor
+
+Note, expansion is based only on the species with reported sensitivity - i.e. non-sensitive species are dropped.  More conservative perhaps would be to include these species as having constant zero-impact ranges.
+
+### Stressor on individual species
+
+Prioritize species by stressor based on percent impact and range:
+
+$$\text{priority} = \frac{\text{% range impacted}}{\ln (\text{spp range, km}^2)}$$
+
+The $\ln (\text{spp range, km}^2)$ term reduces priority for large-ranged species and emphasizes small-ranged endemics, even for the same proportion of impacted range.
+
+Here we will not summarize by every stressor, but just the cumulative category levels.  The priority will be based on the cumulative impact across all categories, averaged over the most recent three years of impacts.
+
+``` {r}
+spp_priority <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  filter(str_detect(stressor, 'cum_all')) %>%
+  mutate(priority = pct_impact / log(range_km2)) %>%
+  group_by(iucn_sid, taxon) %>%
+  arrange(desc(year)) %>%
+  mutate(yearnum = 1:n()) %>%
+  filter(yearnum <= 3) %>%
+  summarize(var_priority = var(priority),
+            priority = mean(priority)) %>%
+  ungroup()
+
+write_csv(spp_priority, here('_output/spp_priority.csv'))
+```
+
+Note that not all included species are represented in the `priority_by_stressor` dataframe - some species listed as threatened by a stressor may not overlap areas where that stressor is significantly occurring according to our data.
+
+```{r expansion by species}
+message('starting linear model')
+tr_by_stressor_spp <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  filter(str_detect(stressor, 'cum_')) %>%
+  group_by(stressor, iucn_sid) %>%
+  filter(n_distinct(pct_impact) > 1) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
+message('wrapping up linear model')
+
+tr_by_priority <- tr_by_stressor_spp %>%
+  left_join(spp_priority, by = c('iucn_sid')) %>%
+  filter(term == 'year') %>%
+  mutate(sig = p.value <= .05)
+
+ggplot(tr_by_priority, aes(x = priority, y = estimate)) +
+  geom_point(aes(color = sig)) +
+  scale_x_log10() +
+  facet_wrap( ~ stressor)
+```
+
+### Stressor on all impacted spp
+
+```{r}
+### utility function to trim a data frame of lm summaries to 
+### just those with a given p value.  Also rounds results for display.
+
+dt_clean <- function(df) {
+  DT::datatable(df %>% 
+                mutate_if(is.double, round, digits = 5))
+}
+
+```
+
+```{r expansion all spp combined}
+
+tr_by_stressor_all <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  group_by(stressor) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
+
+dt_clean(tr_by_stressor_all)
+```
+
+### Stressor on impacted spp by range quintile
+
+```{r expansion by range}
+
+tr_by_stressorXrange <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  mutate(qtile = as.character(qtile)) %>%
+    ### broom::tidy doesn't like factors? 
+    ### https://github.com/tidymodels/broom/issues/796#issuecomment-613378714
+  group_by(stressor, qtile) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
+
+dt_clean(tr_by_stressorXrange)
+```
+
+### Stressor on impacted spp by taxonomic group
+
+```{r expansion by taxon}
+
+tr_by_stressorXtaxon <- imp_range_df %>%
+  filter(!is.na(year)) %>%
+  group_by(stressor, taxon) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+  broom::tidy(mdl)
+
+dt_clean(tr_by_stressorXtaxon)
+```
+

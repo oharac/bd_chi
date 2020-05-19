@@ -97,7 +97,7 @@ code,desc,stressor,category
 9.1.1,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based
 9.1.2,Pollution: Domestic & urban waste water: Run-off,nutrient;organic,land-based
 9.1.3,Pollution: Domestic & urban waste water: Type Unknown/Unrecorded,NA,NA
-9.2,Pollution: Industrial & military effluents
+9.2,Pollution: Industrial & military effluents,,
 9.2.1,Pollution: Industrial & military effluents: Oil spills,organic,land-based
 9.2.2,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based
 9.2.3,Pollution: Industrial & military effluents: Type Unknown/Unrecorded,NA,NA
@@ -120,10 +120,10 @@ code,desc,stressor,category
 10.2,Geological events: Earthquakes/tsunamis,NA,NA
 10.3,Geological events: Avalanches/landslides,NA,NA
 11,Climate change & severe weather,NA,NA
-11.1,Climate change & severe weather: Habitat shifting & alteration,sst;slr;oa;uv,climate
+11.1,Climate change & severe weather: Habitat shifting & alteration,sst;slr;oa,climate
 11.2,Climate change & severe weather: Droughts,NA,NA
 11.3,Climate change & severe weather: Temperature extremes,sst;oa,climate
 11.4,Climate change & severe weather: Storms & flooding,NA,NA
-11.5,Climate change & severe weather: Other impacts,oa;uv;slr;sst,climate
+11.5,Climate change & severe weather: Other impacts,oa;slr;sst,climate
 12,Other options,NA,NA
 12.1,Other options: Other threat,NA,NA

@@ -1,0 +1,170 @@
+---
+title: 'Map trends for all impacted species'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Create a species richness map for threatened marine species.
+
+Combine taxa-level trend maps to create maps of number of threatened species overlapping intensifying or deintensifying stressors, per cell.
+
+Plot both by absolute numbers of species impacted in a location and by proportion of species (impact counts / species richness).
+
+This is all done at the level of cumulative impact category, not individual stressors.
+
+# Methods
+
+## Create species richness map for this assessment
+
+Set up the dataframe of species to include.  By taxon, load all species range maps, smash down to taxon-level species richness; then combine these for a total species richness.
+
+```{r Identify species in this assessment}
+
+spp_incl <- get_incl_spp()
+
+spp_sens <- spp_incl %>%
+  filter(!is.na(stressor))
+
+```
+
+
+``` {r load id-ocean-species richness-priority maps}
+
+cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+
+spp_rich_rast <- raster(here('_output/rasters/n_spp_map.tif'))
+values(spp_rich_rast)[values(spp_rich_rast) == 0] <- NA
+
+priority_sum_rast <- raster(here('_output/rasters/priority_sum_map.tif'))
+values(priority_sum_rast)[values(priority_sum_rast) == 0] <- NA
+
+```
+
+See the impact map script for comparisons of summed priority to summed species count...
+
+## Setup for mapping across all taxa
+
+For each impact category, sum increasing and decreasing stressor locations for both count and priority:
+
+* gather all taxa-level map files for increasing or decreasing stressors into a raster stack
+* collapse the stack using `calc(fun = sum, na.rm = TRUE)`
+
+### Calculate intensification trends by count
+
+Pull the taxon-level maps for each impact category, for both intensifying and de-intensifying impacts.
+
+```{r trend all species by stressor category}
+
+str_cats <- c('fishing', 'ocean', 'land-based', 'climate', 'all')
+
+taxon_tr_dir <- file.path(dir_bd_anx, 'taxon_trend_rasts')
+
+### Set up filename stems for this run (non-priority)
+tr_map_stem <- 'taxon_trend_.+_%s_%s.tif'
+  ### .+ is taxon, sprintf args are stressor category, incr/decr
+outfile_stem <- here('_output/rasters/intensification_map_%s_%s.tif')
+  ### stressor category, incr/decr
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[1]
+  
+  for(trend_direction in c('incr', 'decr')) {
+    # trend_direction <- 'incr'
+    
+    outfile <- sprintf(outfile_stem, str_cat, trend_direction)
+    
+    if(!file.exists(outfile) | reload) {
+      trend_map_pattern <- sprintf(tr_map_stem, str_cat, trend_direction)
+      trend_map_files <- list.files(taxon_tr_dir,
+                                    pattern = trend_map_pattern,
+                                    full.names = TRUE)
+      trend_stack <- stack(trend_map_files)
+      trend_rast <- raster::calc(trend_stack, fun = sum, na.rm = TRUE) %>%
+        mask(ocean_a_rast)
+      
+      writeRaster(trend_rast, outfile, overwrite = TRUE)
+      
+    } else {
+      message('File exists: ', outfile, '... skipping!')
+    }
+    
+    trend_rast <- raster(outfile)
+    trend_pct_rast <- trend_rast / spp_rich_rast
+    plot(trend_pct_rast,
+         col = c('grey40', hcl.colors(20, palette = 'viridis')),
+         main = sprintf('Pct species with %s %s stressors', trend_direction, str_cat))
+  }
+}
+
+```
+
+### Calculate intensification trends by priority-weighted count
+
+
+```{r priority-weighted trend all species by stressor category}
+
+### Set up filename stems for this run (non-priority)
+tr_map_stem <- 'taxon_priority_trend_.+_%s_%s.tif'
+  ### .+ is taxon, sprintf args are stressor category, incr/decr
+outfile_stem <- here('_output/rasters/intensification_priority_map_%s_%s.tif')
+  ### stressor category, incr/decr
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[1]
+
+  for(trend_direction in c('incr', 'decr')) {
+    # trend_direction <- 'incr'
+    
+    outfile <- sprintf(outfile_stem, trend_direction, str_cat)
+    
+    if(!file.exists(outfile) | reload) {
+      trend_map_pattern <- sprintf(tr_map_stem, str_cat, trend_direction)
+      trend_map_files <- list.files(taxon_tr_dir,
+                                    pattern = trend_map_pattern,
+                                    full.names = TRUE)
+      trend_stack <- stack(trend_map_files)
+      trend_rast <- raster::calc(trend_stack, fun = sum, na.rm = TRUE) %>%
+        mask(ocean_a_rast)
+      
+      writeRaster(trend_rast, outfile, overwrite = TRUE)
+      
+    } else {
+      message('File exists: ', outfile, '... skipping!')
+    }
+    trend_rast <- raster(outfile)
+    trend_pct_rast <- trend_rast / spp_rich_rast
+    plot(trend_pct_rast,
+         col = c('grey40', hcl.colors(20, palette = 'viridis')),
+         main = sprintf('Pct priority-wt spp with %s %s stressors', 
+                        trend_direction, str_cat))
+  }
+}
+
+```
+

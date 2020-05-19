@@ -1,0 +1,239 @@
+---
+title: 'Map stressor trends'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+# library(rgeos)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
+  ### includes library(tidyverse); library(stringr); dir_M points to ohi directory
+
+source(here('common_fxns.R'))
+source(here('_setup/rasterize_fxns.R'))
+
+```
+
+# Summary
+
+Using the stressor maps, aggregated to 10 km Mollweide, determine the pixel-by-pixel trend of stressors across the 2003-2013 time span.  This will be used to identify regions of stressor intensification (high rates of increase) or deintensification (decrease).  
+
+# Data sources
+
+Halpern et al. 2019
+
+# Methods
+
+## Loop over all stressors, process trend
+
+For each stressor, across the limited time series series, use `lm()` to determine a per-pixel trend in stressor intensity.  Empty cells will be given an intensity of zero for purposes of linear model determination.
+
+### Determine slope and p.value per stressor per pixel
+
+Using the threshold across the range of years (2003-2013), fill `NA`s and process trend using `lm()`.  Per stressor, save to temp files, gather temp files into a big dataframe per stressor, then save out as rasters of trend and p value.
+
+```{r define functions}
+
+cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+
+get_stressor_df <- function(map_files) {
+  stressor_stack <- stack(map_files)
+    
+  stressor_df <- data.frame(values(stressor_stack)) %>%
+    mutate(cell_id = values(cell_id_rast),
+           ocean_a = values(ocean_a_rast)) %>%
+    filter(!is.na(ocean_a)) %>%
+    gather(year, value, -cell_id, -ocean_a) %>%
+    mutate(year = as.integer(str_extract(year, '[0-9]{4}')),
+           value = ifelse(is.na(value), 0, value)) %>%
+    select(-ocean_a)
+  
+  return(stressor_df)
+}
+
+calc_trend_chunk <- function(df) {
+  trend_df <- df %>%
+    group_by(cell_id) %>%
+    do(mdl = lm(value ~ year, data = .)) %>%
+    mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
+    broom::tidy(mdl)
+}
+
+calc_trends <- function(stressor_df, 
+                        tmpfile_stem,
+                        chunk_size = 50000) {
+  
+  cell_id_vec <- stressor_df$cell_id %>%
+    unique()
+  n_chunks <- ceiling(length(cell_id_vec) / chunk_size)
+  cell_index <- rep(1:n_chunks, each = chunk_size, 
+                    length.out = length(cell_id_vec))
+  
+  # system.time({
+  x <- parallel::mclapply(1:n_chunks,
+      FUN = function(i) {
+      # i <- 30
+      tmp_file <- sprintf(tmpfile_stem, i)
+      
+      if(!file.exists(tmp_file)) {
+        ids <- cell_id_vec[cell_index == i]
+        tmp_df <- stressor_df %>%
+          filter(cell_id %in% ids) %>%
+          calc_trend_chunk()
+        
+        write_csv(tmp_df, tmp_file)
+
+      }
+    return(NULL)
+    }, mc.cores = 35)
+  # })  
+}
+
+gather_tmp_files <- function(tmpfile_stem) {
+  pattern <- basename(tmpfile_stem) %>%
+    str_replace('%s', '.+')
+  tmp_files <- list.files(dirname(tmpfile_stem),
+                          pattern = pattern,
+                          full.names = TRUE)
+  tmp_df <- parallel::mclapply(tmp_files,
+                               FUN = read_csv,
+                               col_types = cols(.default = 'd', 'term' = 'c'),
+                               mc.cores = 20) %>%
+    bind_rows() %>%
+    filter(!is.na(p.value)) %>% 
+      ### drop instances where all years are zero (degenerate model)
+    filter(term == 'year') %>%
+    select(cell_id, trend = estimate, p.value)
+  
+  return(tmp_df)
+}
+```
+
+
+## Map results
+
+Combine temp files into a dataframe of trends per pixel per stressor.  Rasterize and save as a map of trend and p.value.
+
+```{r create rasters}
+
+reload <- FALSE
+
+strmap_dir <- file.path(dir_bd_anx, 'layers/stressors_10km')
+
+stressors <- c("art_fish", "dem_dest", 
+               "dem_nondest_hb", "dem_nondest_lb",
+               "direct_human", "light", 
+               "nutrient", "oa", 
+               "organic", "pel_hb", 
+               "pel_lb", "shipping", 
+               "slr", "sst")
+years <- 2003:2013
+
+in_filestem <- file.path(strmap_dir, '%s_%s_rescaled_mol10km.tif')
+
+out_file_dir <- file.path(dir_bd_anx, 'layers/stressor_trends')
+# unlink(file.path(out_file_dir, '*.*'))
+# unlink(file.path(out_file_dir, 'stressor_trend_sst_*.*'))
+out_filestem <- file.path(out_file_dir, 'stressor_trend_%s_%s.tif')
+
+tmp_dir <- file.path(dir_bd_anx, 'tmp')
+# unlink(file.path(tmp_dir, '*.*'))
+
+for(str in stressors) {
+  # str <- stressors[14]
+
+  trend_rast_file <- sprintf(out_filestem, str, 'value')
+  p_val_rast_file <- sprintf(out_filestem, str, 'p_val')
+  
+  if(!all(file.exists(trend_rast_file, p_val_rast_file))) {
+    
+    ### Create temporary files to process trends in chunks
+    message('Processing trends for ', str)
+  
+    map_files <- sprintf(in_filestem, str, years)
+    stressor_df <- get_stressor_df(map_files)
+    
+    tmp_filestem <- file.path(tmp_dir, paste0('stressor_trend_', str, '_chunk_%s.csv'))
+    
+    x <- calc_trends(stressor_df, tmp_filestem, chunk_size = 50000)
+  
+    ### Gather temp files into dataframe
+    message('Creating rasters for ', str)
+    
+    tmpfile_stem <- file.path(tmp_dir, paste0('stressor_trend_', str, '_chunk_%s.csv'))
+    trend_df <- gather_tmp_files(tmp_filestem)
+    
+    ### Convert dataframe into rasters of trend and p.value
+    trend_rast <- map_to_rast(trend_df, cell_val = 'trend')
+    
+    p_val_rast <- map_to_rast(trend_df, cell_val = 'p.value')
+    
+    writeRaster(trend_rast, trend_rast_file, overwrite = TRUE)
+    writeRaster(p_val_rast, p_val_rast_file, overwrite = TRUE)
+    
+  } else {
+    p_val_rast <- raster(p_val_rast_file)
+    trend_rast <- raster(trend_rast_file)
+  }
+}
+```
+
+``` {r map significant trends}
+
+for(str in stressors) {
+  # str <- stressors[1]
+
+  message('Mapping significant trends for ', str)
+  sig_rast <- p_val_rast
+  values(sig_rast)[values(sig_rast) > 0.05] <- NA
+
+  sig_trend_rast <- mask(trend_rast, sig_rast)
+  plot(sig_trend_rast, 
+       col = hcl.colors(n = 100, palette = 'RdYlGn', rev = TRUE),
+       main = paste0('Trend (significant): ', str))
+}
+```
+
+Here we plot areas of intensification and deintensification.  Maroons are trends above 80th quantile; darker pinks are positive trends below the 80th; lighter pinks are positive trends that are not statistically significant.  Greens are trends below zero (decreasing intensity); pale green is not statistically significant.
+
+```{r map intensification}
+for(str in stressors) {
+  # str <- stressors[1]
+  message('Plotting intensification for ', str)
+  trend_rast <- raster(sprintf(out_filestem, str, 'value'))
+  p_val_rast <- raster(sprintf(out_filestem, str, 'p_val'))
+  cutoff <- quantile(values(trend_rast), 0.8, na.rm = TRUE)
+  x_rast <- trend_rast
+  values(x_rast) <- case_when(values(trend_rast) > cutoff ~ 1,
+                              values(trend_rast) > 0 & values(p_val_rast) > .05 ~ +.5,
+                              values(trend_rast) > 0      ~ 0,
+                              values(trend_rast) < 0 & values(p_val_rast) > .05 ~ -.5,
+                              values(trend_rast) < 0      ~ -1,
+                              TRUE                        ~ NA_real_)
+  plot(x_rast, col = c('green4', 'darkseagreen1', 
+                       'lavenderblush1', 'bisque2', 'maroon4'),
+       main = sprintf('Stressor intensification: %s', str),
+       legend = FALSE)
+}
+
+```
+
+

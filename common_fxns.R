@@ -16,7 +16,6 @@ dir_spatial <- file.path(dir_git, '_spatial')
 dir_output  <- file.path(dir_git, '_output')
 dir_bd_anx   <- file.path(dir_O, 'git-annex/bd_chi')
 
-
 ### rewrite message: cat if not knitting; message if knitting
 
 message <- function(x, ...) {
@@ -50,6 +49,18 @@ if(api_version_current != api_version) {
 ### * Mapped
 ### * Comprehensively assessed taxa
 ### * threatened by one or more stressors (flag)
+
+get_str_cats <- function() {
+  x <- read_csv(here('_raw', 'iucn_threat_to_stressor_lookup.csv'),
+                col_types = cols(.default = 'c')) %>%
+    select(stressor, category) %>%
+    filter(!is.na(stressor)) %>%
+    mutate(stressor = str_split(stressor, ';')) %>%
+    unnest(stressor) %>%
+    distinct()
+  
+  return(x)
+}
 
 get_incl_spp <- function(api_V = api_version, include_all_risk = FALSE) {
   ### Load spp info for sensitivity, risk, comprehensive status, and maps.
@@ -107,11 +118,42 @@ get_incl_spp <- function(api_V = api_version, include_all_risk = FALSE) {
   
 }
 
-dt_join <- function(df1, df2, by, all = FALSE) {
-  ### if all = FALSE, behaves like left join; if all = TRUE,
-  ### behaves like full join.
+### a keyed datatable join for speed
+dt_join <- function(df1, df2, by, type) {
+  a <- case_when(type == 'left' ~ c(FALSE, TRUE, FALSE), ### all, all.x, all.y
+                 type == 'full' ~ c(TRUE, TRUE, TRUE),
+                 type == 'inner' ~ c(FALSE, FALSE, FALSE))
+  
+  ### if all = FFF, behaves like inner join; if all = TTT,
+  ### behaves like full join; if all = FTF, behaves like left_join?
   dt1 <- data.table::data.table(df1, key = by)
   dt2 <- data.table::data.table(df2, key = by)
-  dt_full <- merge(dt1, dt2, all = all)
+  dt_full <- merge(dt1, dt2, all = a[1], all.x = a[2], all.y = a[3])
   return(as.data.frame(dt_full))
+}
+
+map_to_rast <- function(map_df, cell_val) {
+  # map_rast <- raster::subs(cell_id_rast, as.data.frame(map_df), 
+  #                          by = 'cell_id', which = val)
+  map_df <- map_df %>%
+    select(cell_id, val = cell_val) %>%
+    filter(!is.na(val))
+  map_rast <- raster(cell_id_rast) ### creates NA raster
+  cell_vec <- map_df$cell_id
+  
+  if(length(cell_vec) > 0) { 
+    ### if any non-NA cells, replace values
+    values(map_rast)[map_df$cell_id] <- map_df$val
+  }
+  return(map_rast)
+}
+
+rast_to_map <- function(rast, cell_val = NULL) {
+  df <- data.frame(val = values(rast),
+                   cell_id = 1:ncell(rast)) %>%
+    filter(!is.na(val))
+  if(!is.null(cell_val)) {
+    names(df)[names(df) == 'val'] <- cell_val
+  }
+  return(df)
 }

@@ -1,0 +1,413 @@
+---
+title: 'Calculate species stressor impacts'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+dir_str_95cv  <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
+dir_str_trend <- file.path(dir_bd_anx, 'layers/stressor_trends')
+dir_spp_maps  <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+dir_spp_intsx <- file.path(dir_bd_anx, 'spp_str_rasts')
+```
+
+
+# Summary
+
+For each species, pull in all associated stressor intersections and stressor trends, as well as species range.
+
+For individual stressors, for each year:
+
+* Range impacted (km^2^) 
+* Impacted range that is intensifying or deintensifying (km^2^)
+
+For cumulative stressor groups (and across all stressors):
+
+* Total range impacted (km^2^) by count of stressors
+* Total impacted range intensifying (km^2^) by count of stressors
+
+For each year, also calculate the number of impacts per cell and save as a map of species cumulative impact.
+
+
+
+# Methods
+
+## Create list of species for mapping cumulative impacts
+
+Here we will identify all species with sensitivity to one or more stressor, and a range map.
+
+```{r setup file names and species ids for processing}
+spp_incl <- get_incl_spp() %>%
+  filter(!is.na(stressor))
+
+spp_ids <- spp_incl$iucn_sid %>%
+  unique() %>% sort()
+
+ocean_area_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+ocean_area_df <- data.frame(ocean_prop = values(ocean_area_rast),
+                            cell_id = 1:ncell(ocean_area_rast))
+
+str_cats <- get_str_cats()
+```
+
+## Create stressor "pace" dataframe
+
+To represent significantly intensifying/increasing and deintensifying/decreasing trends of stressors in a location, we can consider the "pace" (from pace of change paper), focusing on significant high and low paces of change at the stressor level.
+
+### Examine stressor trend/significance to test thresholds of intensification
+
+This table checks the trends across each stressor map, calculates a high threshold (at the 80th percentile) and low threshold (zero).  For "high" trends and "low" trends, what proportion of these cells show a statistically significant trend?
+
+```{r}
+stressors <- str_cats$stressor
+
+check_list <- vector('list', length = length(stressors))
+for(i in seq_along(stressors)) {
+  str <- stressors[i]
+  message('Calculating pace summary for ', str)
+  
+  trend_r_file <- file.path(dir_str_trend,
+                            'stressor_trend_%s_value.tif')
+  p_val_r_file <- file.path(dir_str_trend,
+                            'stressor_trend_%s_p_val.tif')
+  trend_r <- raster(sprintf(trend_r_file, str))
+  p_val_r <- raster(sprintf(p_val_r_file, str))
+  df <- rast_to_map(trend_r, cell_val = 'trend') %>%
+    full_join(rast_to_map(p_val_r, cell_val = 'p'), by = 'cell_id')
+  cutoff <- quantile(df$trend, .8)
+  df2 <- df %>%
+    mutate(range = case_when(trend > cutoff ~ 'high', 
+                             trend < 0 ~ 'low',
+                             TRUE ~ 'mid'),
+           sig = p < 0.05) %>%
+    group_by(range) %>%
+    summarize(pct_sig = sum(sig) / n()) %>%
+    mutate(stressor = str,
+           cutoff = cutoff)
+  check_list[[i]] <- df2
+}
+check_df <- bind_rows(check_list) %>% 
+  filter(range != 'mid') %>%
+  spread(range, pct_sig)
+knitr::kable(check_df)
+
+```
+
+Reclassify trend values into pace
+
+* For per-cell trend value $T$ for each stressor, determine the threshold $T_{80th}$ from 80th percentile across all cells.
+* For each cell, reclassify $T$ (linear model slope) into $P$ (categorical):
+
+\begin{align*}
+  P = \begin{cases} 
+    +1 &\text{if } (T \geq T_{80th}) * (T > 0) * p < 0.05\\
+    -1 &\text{if } (T < 0) * (p < 0.05)\\
+    NA &\text{else}
+  \end{cases}
+\end{align*}
+
+Cells that are neither intensifying nor deintensifying will be dropped here, for a smaller and more nimble .csv.
+
+``` {r}
+### Trend files are rasters of value (trend slope) and p_val.
+pace_file <- file.path(dir_bd_anx, 'layers/stressor_pace.csv')
+# unlink(pace_file)
+
+if(!file.exists(pace_file)) {
+  trend_fstem <- file.path(dir_str_trend,
+                           'stressor_trend_%s_value.tif')
+  p_val_fstem <- file.path(dir_str_trend,
+                           'stressor_trend_%s_p_val.tif')
+  pace_df <- parallel::mclapply(stressors,
+      FUN = function(str) { ### str <- stressors[1]
+        t_r <- raster(sprintf(trend_fstem, str))
+        p_r <- raster(sprintf(p_val_fstem, str))
+        ### calculate high cutoff as 80%ile value.
+        cutoff <- quantile(values(t_r), 0.8, na.rm = TRUE)
+        
+        df <- rast_to_map(t_r, cell_val = 'trend') %>%
+          full_join(rast_to_map(p_r, cell_val = 'p')) %>%
+          mutate(pace = case_when(trend >= cutoff & p < 0.05 ~ 1,
+                                  trend < 0       & p < 0.05 ~ -1,
+                                  TRUE                      ~ NA_real_),
+                 stressor = str) %>%
+          filter(!is.na(pace))
+      }) %>%
+    bind_rows()
+  
+  write_csv(pace_df, pace_file)
+}
+  
+```
+
+## loop over species by ID
+
+For each species, create a dataframe summarizing cumulative impacts:
+
+* calculate individual stressor impacts range and pct
+* calculate cumulative impact
+* bind 'em together and save it as .csv to annex, `spp_impacts` folder.
+
+### set up functions
+
+```{r cumulative impact functions}
+
+get_intsx_files <- function(spp_id, impact_cat) {
+  ### To calc across all stressors, set impact_cat = 'all'
+  ### NOTE: this uses global variables to avoid relisting all the intersection
+  ### files each time...
+  
+  # impact_cat <- 'fishing'
+  # spp_id <- spp_ids[1]
+  
+  ### get all the intersection files for this spp in the intsx directory
+  intsx_files <- intsx_files_all[intsx_id_vec == spp_id]
+  
+  if(impact_cat != 'all') {
+    ### subset stressors by impact category
+    intsx_dirs <- basename(dirname(intsx_files))
+    strs <- str_cats %>% 
+      filter(category == impact_cat) %>%
+      .$stressor
+    intsx_files <- intsx_files[intsx_dirs %in% strs]
+  }
+  
+  return(intsx_files)
+}
+
+calc_cum_impact <- function(spp_id, impacts, pace_df) {
+  ### dir_spp_maps to point to location of range files;
+  ### dir_spp_intsx to point to location of intersection files
+  ### ocean_area_df to calc range including coastal (i.e. not 100% ocean) cells
+  ### impacts allows to select subsets of impacts
+  cell_area_km2 <- 105.6633 ### from ocean raster
+
+  ### assemble file name and read the range data
+  spp_range_file <- file.path(dir_spp_maps,
+                              sprintf('iucn_sid_%s.csv', spp_id))
+  spp_range_df <- read_csv(spp_range_file, 
+                           col_types = cols('cell_id' = 'i', 'presence' = 'i')) %>%
+    left_join(ocean_area_df, by = 'cell_id')
+  
+  spp_range_km2 <- spp_range_df %>%
+    filter(presence > 0 & !is.na(presence) & presence != 5) %>%
+    summarize(range_km2 = sum(ocean_prop) * cell_area_km2) %>%
+    .$range_km2
+  
+  intsx_files <- get_intsx_files(spp_id, impacts)
+  
+  spp_intsx_df <- lapply(intsx_files,
+      FUN = function(x) { # x <- intsx_files[1]
+        str_name <- basename(x) %>%
+          str_replace_all('spp_intsx_|_[0-9].*', '')
+        
+        read_csv(x, col_types = cols('cell_id' = 'i',
+                                     'year' = 'i')) %>%
+          mutate(stressor = str_name)
+      }) %>%
+    bind_rows() %>%
+    filter(!is.na(cell_id)) %>%
+    left_join(ocean_area_df, by = 'cell_id') %>%
+    left_join(pace_df, by = c('cell_id', 'stressor'))
+      ### left joining here will drop any cells with paces that
+      ### do not fall within the footprint for the stressor/year - 
+      ### accounts for footprint/trend overlap, no need to crop trends
+  
+  spp_impact_by_stressor <- spp_intsx_df %>%
+    group_by(stressor, year) %>%
+    summarize(impact_km2 = sum(ocean_prop) * cell_area_km2,
+              incr_km2   = sum((pace == 1) * ocean_prop, na.rm = TRUE) * cell_area_km2, 
+              decr_km2   = sum((pace == -1) * ocean_prop, na.rm = TRUE) * cell_area_km2) %>%
+    ungroup()
+  
+  spp_cum_impact <- spp_intsx_df %>%
+    # select(cell_id, year, ocean_prop, stressor) %>%
+    distinct() %>%
+    group_by(cell_id, year, ocean_prop) %>%
+    summarize(incr = any(pace == 1, na.rm = TRUE) & !any(pace == -1, na.rm = TRUE),
+              decr = any(pace == -1, na.rm = TRUE) & !any(pace == 1, na.rm = TRUE),
+              n_impact = n()) %>%
+    group_by(year) %>%
+    summarize(impact_km2 = sum(ocean_prop) * cell_area_km2,
+              impact_2plus_km2 = sum((n_impact > 1) * ocean_prop) * cell_area_km2,
+              impact_3plus_km2 = sum((n_impact > 2) * ocean_prop) * cell_area_km2,
+              incr_km2   = sum(incr * ocean_prop, na.rm = TRUE) * cell_area_km2, 
+              decr_km2   = sum(decr * ocean_prop, na.rm = TRUE) * cell_area_km2,
+              stressor = 'cumulative')
+  
+  if(nrow(spp_cum_impact) == 0) {
+    spp_cum_impact <- data.frame(
+      stressor = 'cumulative',
+      year = NA,
+      impact_km2 = 0, incr_km2 = 0, decr_km2 = 0)
+  }
+  
+  impact_df <- bind_rows(spp_impact_by_stressor, spp_cum_impact) %>%
+    mutate(range_km2 = spp_range_km2,
+           iucn_sid = spp_id)
+  
+  return(impact_df)
+}
+```
+
+### calculate species cumulative impacts by stressor category
+
+``` {r calc species cumulative impacts by category}
+
+### set up list of all intersection files and an ID for indexing
+intsx_files_all <- list.files(dir_spp_intsx, recursive = TRUE, full.names = TRUE)
+intsx_id_vec    <- as.integer(str_extract(basename(intsx_files_all), '[0-9]{3,}'))
+
+### get pace of change maps dataframe
+pace_df <- read_csv(pace_file) 
+
+### set up categories to loop over
+categories <- c(str_cats$category %>% unique(), 'all')
+
+reload <- FALSE
+### to clear old versions:
+# x <- list.files(file.path(dir_bd_anx, 'spp_impacts'), full.names = TRUE)
+# unlink(x)
+
+for(impact_cat in categories) {
+  # impact_cat <- categories[5]
+  # for(spp_id in spp_ids) {
+  tmp <- parallel::mclapply(spp_ids, mc.cores = 12,
+    FUN = function(spp_id) {
+      ### spp_id <- spp_ids[20]
+      ### spp_id <- y[1]
+      ### spp_id <- 15419
+      
+      spp_impact_file <- file.path(dir_bd_anx, 'spp_impacts',
+                                   sprintf('spp_impacts_%s_%s.csv', spp_id, impact_cat))
+      if(!file.exists(spp_impact_file) | reload) {
+        message('Processing spp ', spp_id, '; ', impact_cat)
+        ### Calculate total species range, accounting for partial ocean cells
+        impact_df <- calc_cum_impact(spp_id, 
+                                     impacts = impact_cat,
+                                     pace_df = pace_df)
+        write_csv(impact_df, spp_impact_file)
+      } else {
+        # message('Impact df file exists: ', basename(spp_impact_file), '... skipping!')
+      }
+      return(paste('success:', spp_id))
+    }
+  )
+}
+
+```
+
+## Calculate maps of cumulative impacts
+
+For each species, create a map of cumulative impacts:
+
+* `left_join` each stressor intersection to the species range by `cell_id`
+* summarize number of stressors in each cell
+* write out as .csv to annex, `spp_impact_rasts`
+
+Each of these will be performed for each stressor category.  Full cumulative can be found from simply adding 'em up.
+
+### map species cumulative impacts by stressor category
+
+``` {r setup functions}
+map_cum_impact <- function(spp_id, 
+                           dir_spp_maps,
+                           impacts = 'all') {
+  ### dir_spp_maps to point to location of range files
+
+  ### assemble file name and read the range data
+  spp_range_file <- file.path(dir_spp_maps,
+                              sprintf('iucn_sid_%s.csv', spp_id))
+  spp_range_df <- read_csv(spp_range_file, 
+                           col_types = cols('cell_id' = 'i', 'presence' = 'i'))
+  
+  intsx_files <- get_intsx_files(spp_id, impacts)
+  
+  spp_intsx_df <- lapply(intsx_files,
+      FUN = function(x) { # x <- intsx_files[1]
+        str_name <- basename(x) %>%
+          str_replace_all('spp_intsx_|_[0-9].*', '')
+        
+        read_csv(x, col_types = cols('cell_id' = 'i',
+                                     'year' = 'i')) %>%
+          mutate(stressor = str_name)
+      }) %>%
+    bind_rows() %>%
+    filter(!is.na(cell_id)) 
+
+  spp_cum_impact_map <- spp_range_df %>%
+    left_join(spp_intsx_df, by = 'cell_id') %>%
+      ### left_join keeps totally unimpacted cells
+    group_by(cell_id, year) %>%
+    summarize(n_impacts = sum(!is.na(stressor))) %>%
+    ungroup() %>%
+    filter(!is.na(year))
+    ### Note: totally unimpacted cells will have an NA for year and
+    ### zero for n_impacts; cells with impacts some years and not others
+    ### will only have data for impact years...
+    ### dropping these observations will make for smaller files; unimpacted
+    ### ranges can be added back in later from the range map files.
+  
+  if(nrow(spp_cum_impact_map) == 0) {
+    ### for spp with no impacts in current impact group
+    spp_cum_impact_map <- data.frame(cell_id = NA, 
+                                     n_impacts = 0, 
+                                     year = 2003:2013)
+  }
+  
+  return(spp_cum_impact_map)
+}
+```
+
+``` {r map species cumulative impacts, eval = TRUE}
+
+reload <- FALSE
+### to clear old versions:
+### x <- list.files(file.path(dir_bd_anx, 'spp_impact_rasts'), full.names = TRUE)
+### unlink(x)
+
+categories <- c(str_cats$category %>% unique(), 'all')
+
+for(impact_cat in categories) {
+  # impact_cat <- categories[1]
+  # for(spp_id in spp_ids) {
+  tmp <- parallel::mclapply(spp_ids, mc.cores = 4,
+    FUN = function(spp_id) {
+      ### spp_id <- spp_ids[2]
+      ### spp_id <- y[1]
+      impact_rast_file <- file.path(dir_bd_anx, 'spp_impact_rasts',
+                                   sprintf('spp_impact_map_%s_%s.csv', spp_id, impact_cat))
+      if(!file.exists(impact_rast_file) | reload) {
+        message('Mapping spp ', spp_id, '; ', impact_cat)
+        ### Calculate total species range, accounting for partial ocean cells
+        impact_rast <- map_cum_impact(spp_id,
+                                      dir_spp_maps,
+                                      impacts = impact_cat)
+        write_csv(impact_rast, impact_rast_file)
+      } else {
+        # message('Impact map file exists: ', basename(impact_rast_file), '... skipping!')
+      }
+      # return(paste('success:', spp_id))
+    }
+  )
+}
+
+```

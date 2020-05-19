@@ -76,7 +76,6 @@ for(dir in str_dirs) {
                                            fact = 11, fun = mean,
                                            filename = str_10km_file,
                                            overwrite = TRUE)
-        
         ### check to make sure results match spp rasts
         # ocean_area_rast <- raster(here('_spatial/ocean_area_mol.tif'))
         # raster::compareRaster(str_rast_10km, ocean_area_rast,
@@ -108,6 +107,38 @@ for(f in slr_rast_files) {
   r <- raster(f)
   r_shallow <- mask(r, bathy_rast)
   writeRaster(r_shallow, f, overwrite = TRUE)
+}
+
+```
+
+## Mask SST rasters to exclude sea ice
+
+SST data is problematic in the presence of sea ice, not least because the ocean water is not on the surface!  
+
+```{r}
+
+sst_rast_files <- list.files(dir_str_10km, pattern = '^sst_', full.names = TRUE)
+
+seaice_rast_file <- file.path(dir_bd_anx, 'spatial/sea_ice_mask.tif')
+if(!file.exists(seaice_rast_file)) {
+  seaice_orig <- file.path(dir_M, 'git-annex/Global', 
+                            'NCEAS-Pressures-Summaries_frazier2013/ice_mask_resampled')
+  ice_mask_1km <- raster(seaice_orig)
+  ice_mask_agg <- raster::aggregate(ice_mask_resampled, 
+                                    fact = 11, fun = mean, na.rm = FALSE)
+    ### na.rm = FALSE drops cells (converts to NA) with sea ice.  This
+    ### is a conservative estimate of SST impacts, dropping SST impacts
+    ### wherever partial sea ice is indicated.
+  writeRaster(ice_mask_agg, seaice_rast_file, overwrite = TRUE)
+}
+seaice_rast <- raster(seaice_rast_file)
+
+for(f in sst_rast_files) {
+  ### f <- sst_rast_files[1]
+  message('De-icing SST stressor layer: ', f)
+  r <- raster(f)
+  r_icefree <- mask(r, seaice_rast)
+  writeRaster(r_icefree, f, overwrite = TRUE)
 }
 
 ```
@@ -166,7 +197,7 @@ str_map_df <- data.frame(str_file = str_10km_files) %>%
 
 stressors <- str_map_df$str %>% unique()
 
-for(stressor in stressors) { ### stressor <- stressors[8]
+for(stressor in stressors) { ### stressor <- stressors[14]
   ### Animate the results
   gif_file <- here('_setup', sprintf('figs/str_movie_%s.gif', stressor))
   
