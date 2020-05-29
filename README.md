@@ -16,6 +16,7 @@ To do:
         * Land-based: nutrient pollution, organic chemical pollution, direct human, light
     * [X] recalc cumulative stressors by categories
 * [X] Check stressor maps for proper calculation of 95% contour volume
+    * [X] Check that the aggregation step counts NAs for land and zeros for ocean cells with no stressor
     * [X] Clip all stressor year ranges to 2002-2013
     * [X] Ocean acidification in particular!
     * [X] While you're at it, crop the SLR raster to just coastal areas!

@@ -411,50 +411,24 @@ for(str_cat in str_cats) {
 ```
 
 
-<!-- ### Compare prioritized count vs simple count -->
+### Plot 2013 layers
 
-<!-- Just showing year 2013. -->
-
-``` {r animate impacts v priorities, results = 'asis', eval = FALSE}
-### Animate the results
+``` {r plot just 2013 layers}
 
 for(str_cat in str_cats) {
   # str_cat <- str_cats[2]
-  gif_file <- here(sprintf('figs/impact_priorities_all_spp_%s.gif', str_cat))
+  r <- raster(here('_output/rasters',
+                   sprintf('impact_map_2013_%s.tif', str_cat)))
   
-  count_stem <- here('_output/rasters/impact_map_2013_%s.tif')
-  count_rast <- raster(sprintf(count_stem, str_cat))
-  values(count_rast)[values(count_rast) == 0] <- NA
-  
-  priority_stem <- here('_output/rasters/impact_priority_map_2013_%s.tif')
-  priority_rast <- raster(sprintf(priority_stem, str_cat))
-  values(priority_rast)[values(priority_rast) == 0] <- NA
-
-  ### define rescaling factors
-  c_r <- range(values(count_rast), na.rm = TRUE)
-  p_r <- range(values(priority_rast), na.rm = TRUE)
-  
-  if(p_r[2] - p_r[1] == 0) {
-    ### just one value; avoid div by zero
-    p_rescale <- priority_rast * c_r[1] / p_r[1]
-  } else {
-    p_rescale <- (priority_rast - p_r[1]) / (p_r[2] - p_r[1])
-    p_rescale <- p_rescale * (c_r[2] - c_r[1]) + c_r[1]
-  }
-
-  if(!file.exists(gif_file) | reload) {
-
-    map_stack <- stack(count_rast, p_rescale)
-    make_gifs(map_stack, 
-              filename = gif_file,
-              layer_names = names(map_stack))
-  }
+  r_norm <- r / nspp_rast
     
-  cat(sprintf('![](%s)', gif_file))
+  plot(r, col = hcl.colors(n = 20),
+       axes = FALSE,
+       main = paste('count spp impacted:', str_cat, 'stressors'))
+  plot(r_norm, col = hcl.colors(n = 20),
+       axes = FALSE,
+       main = paste('pct spp impacted:', str_cat, 'stressors'))
   
-  ### compare count vs. prioritized count
-  tmp <- p_rescale / count_rast
-  plot(tmp, main = paste(str_cat, 'prioritized count / simple count'))
 }
 ```
 

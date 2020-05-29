@@ -1,19 +1,22 @@
 ---
-title: 'Combine stressor sensitivities'
+title: "Combine stressor sensitivities"
 author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
-output: 
+output:
+  word_document:
+    toc: yes
+    toc_depth: 3
+  pdf_document:
+    toc: yes
   html_document:
     code_folding: hide
-    toc: true
+    highlight: haddock
+    includes:
+      in_header: ~/github/src/templates/ohara_hdr.html
+    number_sections: yes
+    theme: cerulean
+    toc: yes
     toc_depth: 3
     toc_float: yes
-    number_sections: true
-    theme: cerulean
-    highlight: haddock
-    includes: 
-      in_header: '~/github/src/templates/ohara_hdr.html'
-  pdf_document:
-    toc: true
 ---
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
@@ -36,26 +39,7 @@ Gather processed sensitivity dataframe.
 
 ```{r}
 
-spp_sens <- read_csv(here('_output', sprintf('spp_sensitivity_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i'))
-spp_risk <- read_csv(here('_data', sprintf('iucn_risk_current_%s.csv', api_version)),
-                     col_types = cols('iucn_sid' = 'i'))
-spp_maps <- read_csv(here('_data', sprintf('spp_marine_maps_%s.csv', api_version))) %>%
-  filter(presence != 5)
-spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version))) %>%
-  select(-sciname)
-
-### Combine to make a species list that includes species that are:
-### * sensitive to one or more stressors
-### * threatened or near threatened
-### * included in a comprehensively-assessed taxon
-### * mapped
-spp_incl <- spp_sens %>%
-  left_join(spp_risk, by = 'iucn_sid') %>%
-  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
-  left_join(spp_comp, by = c('iucn_sid')) %>%
-  filter(!is.na(taxon)) %>%
-  filter(iucn_sid %in% spp_maps$iucn_sid)
+spp_incl <- get_incl_spp()
 
 ```
 
@@ -71,11 +55,11 @@ threat_to_stressor <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) 
            sep = ': ', remove = FALSE)
 
 thr_to_spp <- spp_incl %>%
-  left_join(threat_to_stressor, by = c('code', 'stressor')) %>%
-  filter(sens) %>%
+  left_join(threat_to_stressor, by = c('code', 'stressor', 'category')) %>%
   mutate(desc_main = sprintf('%s. %s', code_main, desc_main),
          desc_sub = sprintf('%s. %s', code_short, desc_sub)) %>%
   select(code_main, desc_main, desc_sub, stressor, iucn_sid, category) %>%
+  filter(!is.na(stressor)) %>%
   distinct()
 
 threat_table <- thr_to_spp %>%

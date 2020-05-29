@@ -134,13 +134,30 @@ message('wrapping up linear model')
 
 tr_by_priority <- tr_by_stressor_spp %>%
   left_join(spp_priority, by = c('iucn_sid')) %>%
+  left_join(imp_range_df %>%
+              filter(year == 2013 & stressor == 'cum_all') %>%
+              select(iucn_sid, pct_impact, all_r_km2),
+            by = 'iucn_sid') %>%
   filter(term == 'year') %>%
   mutate(sig = p.value <= .05)
 
 ggplot(tr_by_priority, aes(x = priority, y = estimate)) +
   geom_point(aes(color = sig)) +
   scale_x_log10() +
-  facet_wrap( ~ stressor)
+  facet_wrap( ~ stressor) +
+  labs(title = 'expansion by priority')
+
+ggplot(tr_by_priority, aes(x = 1/log(all_r_km2), y = estimate)) +
+  geom_point(aes(color = sig)) +
+  scale_x_log10() +
+  facet_wrap( ~ stressor) +
+  labs(title = 'expansion by total range')
+
+ggplot(tr_by_priority, aes(x = pct_impact, y = estimate)) +
+  geom_point(aes(color = sig)) +
+  scale_x_log10() +
+  facet_wrap( ~ stressor) +
+  labs(title = 'expansion by pct impacted range')
 ```
 
 ### Stressor on all impacted spp
@@ -156,7 +173,7 @@ dt_clean <- function(df) {
 
 ```
 
-```{r expansion all spp combined}
+```{r expansion all spp combined, eval = FALSE}
 
 tr_by_stressor_all <- imp_range_df %>%
   filter(!is.na(year)) %>%
@@ -170,7 +187,7 @@ dt_clean(tr_by_stressor_all)
 
 ### Stressor on impacted spp by range quintile
 
-```{r expansion by range}
+```{r expansion by range, eval = FALSE}
 
 tr_by_stressorXrange <- imp_range_df %>%
   filter(!is.na(year)) %>%
@@ -187,7 +204,8 @@ dt_clean(tr_by_stressorXrange)
 
 ### Stressor on impacted spp by taxonomic group
 
-```{r expansion by taxon}
+```{r expansion by taxon, eval = TRUE}
+message('calculating expansion by taxon')
 
 tr_by_stressorXtaxon <- imp_range_df %>%
   filter(!is.na(year)) %>%

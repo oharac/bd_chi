@@ -1,0 +1,241 @@
+---
+title: 'Plot map of impact and intensification quadrants'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+library(sf)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Using impact maps and intensification maps, create a map dividing the ocean into four categories:
+
+* High impact, intensifying
+* Low impact, intensifying
+* High impact, deintensifying
+* Low impact, deintensifying
+
+For now this will be done at the stressor group level and cumulative level.
+
+# Methods
+
+## Gather the necessary maps and reclassify
+
+High and low impact will be represented by the cells with the top 20% and bottom 20% of proportional species impact.  High and low intensification will be the top 20% (?) of each.
+
+```{r}
+str_cats <- c('all', 'fishing', 'land-based', 'ocean', 'climate')
+
+nspp_rast <- raster(here('_output/rasters/n_spp_map.tif'))
+                    
+impact_hilo_qtile <- c(0.2, 0.8)
+intens_qtile   <- 0.5
+deintens_qtile <- 0.5
+```
+
+Here we reclassify the impact map (2013 cumulative for stressor groups and overall) to two values (and zero for neutral):
+
+\begin{align*}
+  impact_{reclass} = \begin{cases}
+    +1 &\text{when high impact}\\
+    -1 &\text{when low impact}\\
+    0 &else
+  \end{cases}
+\end{align*}
+``` {r process impact high-low maps}
+impact_hilo_stem <- file.path(here('int', 'impact_hilo_%s.tif'))
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[2]
+  # if(!file.exists(sprintf(impact_hilo_stem, str_cat))) {
+    impact_map <- raster(here('_output', 'rasters',
+                           sprintf('impact_map_2013_%s.tif', str_cat)))
+    impact_pct_map <- impact_map / nspp_rast
+    impact_thresh <- quantile(values(impact_pct_map), 
+                              impact_hilo_qtile, na.rm = TRUE)
+    
+    impact_hilo_map <- raster(impact_map) ### create blank
+    values(impact_hilo_map) <- 0 ### set to zero as default
+    values(impact_hilo_map)[values(impact_pct_map) > impact_thresh[2]] <- 1
+    values(impact_hilo_map)[values(impact_pct_map) < impact_thresh[1]] <- -1
+    
+    impact_hilo_map <- mask(impact_hilo_map, nspp_rast)
+    
+    writeRaster(impact_hilo_map, sprintf(impact_hilo_stem, str_cat),
+                overwrite = TRUE)
+  # }
+  impact_hilo_map <- raster(sprintf(impact_hilo_stem, str_cat))
+  plot(impact_hilo_map, 
+       col = c('green3', 'grey90', 'red4'),
+       breaks = c(-1, -.5, +.5, 1),
+       axes = FALSE,
+       main = sprintf('impact reclass: %s', str_cat))
+}
+```
+
+Here we reclassify the intensification maps (cumulative for stressor groups and overall) to two values (and zero for neutral):
+
+\begin{align*}
+  intensification_{reclass} = \begin{cases}
+    +1 &\text{when high intensification}\\
+    -1 &\text{when high deintensification}\\
+    0 &else
+  \end{cases}
+\end{align*}
+
+``` {r process intensification maps}
+intens_hilo_stem <- file.path(here('int', 'intens_hilo_%s.tif'))
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[1]
+  outfile <- sprintf(intens_hilo_stem, str_cat)
+  # if(!file.exists(outfile)) {
+    fstem <- here('_output', 'rasters',
+                  'intensification_map_%s_%s.tif')
+    intens_map <- raster(sprintf(fstem, str_cat, 'incr'))
+    deintens_map <- raster(sprintf(fstem, str_cat, 'decr'))
+    
+    intens_pct_map <- intens_map / nspp_rast
+    deintens_pct_map <- deintens_map / nspp_rast
+    
+    intens_thresh <- quantile(values(intens_pct_map), intens_qtile, na.rm = TRUE)
+    deintens_thresh <- quantile(values(deintens_pct_map), deintens_qtile, na.rm = TRUE)
+    
+    intens_hilo_map <- raster(intens_map) ### create blank
+    values(intens_hilo_map) <- 0 ### set to zero as default
+    values(intens_hilo_map)[values(intens_pct_map) > intens_thresh] <- 1
+    values(intens_hilo_map)[values(deintens_pct_map) > deintens_thresh] <- -1
+    
+    intens_hilo_map <- mask(intens_hilo_map, nspp_rast)
+    
+    writeRaster(intens_hilo_map, outfile,
+                overwrite = TRUE)
+  # }
+  intens_hilo_map <- raster(outfile)
+  plot(intens_hilo_map, 
+       col = c('green3', 'grey90', 'red4'),
+       breaks = c(-1, -.5, +.5, 1),
+       axes = FALSE,
+       main = sprintf('intensification reclass: %s', str_cat))
+}
+```
+
+### Alternative for intens/deintensification map
+
+Instead of taking the top X% of each map separately, find the difference between the two?  i.e. intensifying - deintensifying; where negative, more spp are benefiting from decreasing impacts, where positive more spp are suffering from intensifying impacts.  This can then be normalized as well.
+
+```{r}
+intens_diff_stem <- file.path(here('int', 'intens_diff_%s.tif'))
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[1]
+  outfile <- sprintf(intens_diff_stem, str_cat)
+  # if(!file.exists(outfile)) {
+    fstem <- here('_output', 'rasters',
+                  'intensification_map_%s_%s.tif')
+    intens_map <- raster(sprintf(fstem, str_cat, 'incr'))
+    deintens_map <- raster(sprintf(fstem, str_cat, 'decr'))
+    
+    diff_map <- intens_map - deintens_map
+    diff_pct <- diff_map / nspp_rast
+    hist(diff_pct)
+    quantile(values(diff_pct), 
+             c(0.1, .2, .25, .3, .5, .7, .75, .8, .9), na.rm = TRUE)
+    
+    hi_thr <- max(0, quantile(values(diff_pct), 0.8, na.rm = TRUE))
+    lo_thr <- min(0, quantile(values(diff_pct), 0.2, na.rm = TRUE))
+    
+    diff_rcl <- raster(diff_pct) ### create blank
+
+    values(diff_rcl) <- 0 ### set to zero as default
+    values(diff_rcl)[values(diff_pct) > hi_thr] <- 1
+    values(diff_rcl)[values(diff_pct) < lo_thr] <- -1
+    
+    diff_rcl <- mask(diff_rcl, nspp_rast)
+    
+    writeRaster(diff_rcl, outfile,
+                overwrite = TRUE)
+  # }
+  diff_rcl <- raster(outfile)
+  plot(diff_rcl, 
+       col = c('green3', 'grey90', 'red4'),
+       breaks = c(-1, -.5, +.5, 1),
+       axes = FALSE,
+       main = sprintf('intensification difference reclass: %s', str_cat))
+}
+
+```
+
+
+## Combine the maps
+
+Here we reclassify to four values (and zero for neutral):
+
+\begin{align*}
+  value = \begin{cases}
+    +2 &\text{when high impact and intensifying}\\
+    +1 &\text{when high impact and de-intensifying}\\
+    -1 &\text{when low impact and intensifying}\\
+    -2 &\text{when low impact and de-intensifying}\\
+    0 &else
+  \end{cases}
+\end{align*}
+
+``` {r combine impact and intensification maps}
+impact_hilo_stem <- file.path(here('int', 'impact_hilo_%s.tif'))
+intens_hilo_stem <- file.path(here('int', 'intens_hilo_%s.tif'))
+
+out_fstem <- here('_output/rasters/impact_intens_map_%s.tif')
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[1]
+  outfile <- sprintf(out_fstem, str_cat)
+  
+  # if(!file.exists(outfile)) {
+    imp <- raster(sprintf(impact_hilo_stem, str_cat))
+    int <- raster(sprintf(intens_hilo_stem, str_cat))
+
+    imp_int_map <- raster(imp)
+    values(imp_int_map) <- 0
+    
+    values(imp_int_map)[values(imp) == +1 & values(int) == +1] <- +2
+    values(imp_int_map)[values(imp) == +1 & values(int) == -1] <- +1
+    values(imp_int_map)[values(imp) == -1 & values(int) == +1] <- -1
+    values(imp_int_map)[values(imp) == -1 & values(int) == -1] <- -2
+    
+    imp_int_map <- mask(imp_int_map, nspp_rast)
+    writeRaster(imp_int_map, 
+                sprintf(out_fstem, str_cat),
+                overwrite = TRUE)
+  # }
+  imp_int_map <- raster(outfile)
+  plot(imp_int_map, col = c('blue3', 'green3', 'grey90', 'orange', 'red4'),
+       breaks = c(-2, -1.5, -.5, +.5, 1.5, 2),
+       axes = FALSE,
+       main = sprintf('impact + intens reclass: %s', str_cat))
+}
+```
+
+

@@ -117,7 +117,8 @@ for(str_cat in str_cats) {
     trend_rast <- raster(outfile)
     trend_pct_rast <- trend_rast / spp_rich_rast
     plot(trend_pct_rast,
-         col = c('grey40', hcl.colors(20, palette = 'viridis')),
+         col = c('grey80', hcl.colors(20, palette = 'viridis')),
+         axes = FALSE,
          main = sprintf('Pct species with %s %s stressors', trend_direction, str_cat))
   }
 }
@@ -160,7 +161,7 @@ for(str_cat in str_cats) {
     trend_rast <- raster(outfile)
     trend_pct_rast <- trend_rast / spp_rich_rast
     plot(trend_pct_rast,
-         col = c('grey40', hcl.colors(20, palette = 'viridis')),
+         col = c('grey80', hcl.colors(20, palette = 'viridis')),
          main = sprintf('Pct priority-wt spp with %s %s stressors', 
                         trend_direction, str_cat))
   }
