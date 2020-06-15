@@ -24,18 +24,13 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
-library(animation)
-
 reload <- FALSE
 ```
 
 
 # Summary
 
-Using the impact category level global maps, aggregate species impacts to country level.  We also aggregate to marine ecoregion level.
-
-* by count (mean, variance by year; trend over all years)
-* by percent of threatened species (mean, variance by year; trend over all years)
+Using the impact category level global maps, aggregate species impacts (for 2011-2013) and intensification (across 2003-2013) to country level.  We also aggregate to marine ecoregion level.  Values are by count and by proportion of threatened species.
 
 # Methods
 
@@ -50,7 +45,7 @@ eez_rast   <- raster(here('_spatial/eez_mol.tif'))
 meow_rast  <- raster(here('_spatial/meow_mol.tif'))
 ocean_rast <- raster(here('_spatial/ocean_area_mol.tif'))
 nspp_rast  <- raster(here('_output/rasters/n_spp_map.tif'))
-priority_rast <- raster(here('_output/rasters/priority_sum_map.tif'))
+# priority_rast <- raster(here('_output/rasters/priority_sum_map.tif'))
 
 eez_sf <- read_sf(file.path(dir_bd_anx, 'spatial/ohi_rgns/rgns_mol_1k.gpkg')) %>%
   filter(!str_detect(rgn_type, 'land')) %>%
@@ -61,8 +56,9 @@ meow_sf <- read_sf(file.path(dir_bd_anx, 'spatial/meow/meow_ecos.shp')) %>%
 rgn_df <- data.frame(cell_id = 1:ncell(eez_rast),
                      eez     = values(eez_rast),
                      meow    = values(meow_rast),
+                     nspp    = values(nspp_rast),
                      a_prop  = values(ocean_rast)) %>%
-  filter(!is.na(eez) | !is.na(meow) | !is.na(a_prop))
+  filter(!is.na(a_prop))
 ```
 
 ### Define helper functions
@@ -93,7 +89,7 @@ summarize_rast_rgn <- function(r, rgn_df, rgn = 'eez') {
   ### summarize by rgn (or meow) to calc area-weighted mean and var
   cell_a_km2 <- res(r)[1]^2 / 1e6
   r_df <- rast_as_df(r) %>%
-    dt_join(rgn_df, by = 'cell_id', all = TRUE) %>%
+    dt_join(rgn_df, by = 'cell_id', type = 'full') %>%
     mutate(val = ifelse(is.na(val), 0, val)) %>%
     group_by_(rgn) %>%
     summarize(val_mean = weighted.mean(val, a_prop),
@@ -103,47 +99,75 @@ summarize_rast_rgn <- function(r, rgn_df, rgn = 'eez') {
   return(r_df)
 }
 
-get_impact_summary <- function(f, rgn_df, rgn = 'eez') {
-  ### Means will be (e.g.) sum()
-  r <- raster(f)
+get_map <- function(str_cat, y = 2013, type = 'impact'){
+  map_stem <- case_when(
+    type == 'impact' ~
+      here('_output', 'rasters/impact_maps', 'impact_%s_%s.tif'),
+    type == 'stressor' ~
+      here('_output/rasters/stressor_ftprints', 'footprint_%s_%s.tif'),
+    TRUE ~ NA_character_)
+  
+  map_f <- sprintf(map_stem, str_cat, y)
+  
+  if(length(y) > 1) {
+    rast <- stack(map_f) %>%
+      calc(mean, na.rm = TRUE)  
+  } else {
+    rast <- raster(map_f)
+  }
+  if(type == 'stressor') { ### cut out cells with zero stressors
+    rast[rast == 0] <- NA
+  }
+  return(rast)
+}
 
-  y <- str_extract(basename(f), '[0-9]{4}') %>% as.integer()
-  impact <- str_replace_all(basename(f), '.+[0-9]+_|.tif', '')
+get_impact_summary <- function(str_cat, type = 'impact', rgn_df, rgn = 'eez') {
+  ### Means will be (e.g.) sum()
+  r <- get_map(str_cat, y = 2011:2013, type)
+
   x <- summarize_rast_rgn(r, rgn_df, rgn) %>%
-    mutate(year = y,
-           impact = impact)
+    mutate(impact = str_cat)
   
   return(x)
 }
 
-impact_cats <- c('fishing', 'land-based', 'ocean', 'climate', 'all')
-rast_files <- list.files(here('_output/rasters'), pattern = '.tif$', 
-                         full.names = TRUE)
-### filter to those in the impact categories
-rast_files <- rast_files[str_detect(rast_files, paste0(impact_cats, collapse = '|'))]
+get_intens_summary <- function(str_cat, type = 'diff', rgn_df, rgn = 'eez') {
+  ### Means will be (e.g.) sum()
+  intens_stem <- here('_output/rasters/intens_maps/intens_%s_%s.tif')
+  if(type == 'diff') {
+    r <- raster(sprintf(intens_stem, str_cat, 'incr')) -
+      raster(sprintf(intens_stem, str_cat, 'decr'))
+  } else {
+    r <- raster(sprintf(intens_stem, str_cat, type))
+  }
 
-count_rasts    <- rast_files[str_detect(rast_files, 'impact_map')]
-priority_rasts <- rast_files[str_detect(rast_files, 'impact_priority_map')]
-### for trend rasts, get the value (not the p_val) raster
-trend_rasts    <- rast_files[str_detect(rast_files, 'trend_.+_value.tif')]
+  x <- summarize_rast_rgn(r, rgn_df, rgn) %>%
+    mutate(impact = str_cat)
+  
+  return(x)
+}
+
+str_cats <- c('fishing', 'land-based', 'ocean', 'climate', 'all')
+
 ```
 
-## Calculate impact and trend by count and percent
+## Calculate impact by count and percent
 
 ### Calculate impacts by Exclusive Economic Zone
 
-Plot the results based on the _percent_ of local threatened species impacted by each impact category.
+Plot the results based on the _count_ and _percent_ of local threatened species impacted by each impact category.
 
 ``` {r impact_count_by_eez}
 impact_count_by_eez_file <- here('_output/impact_count_by_eez.csv')
 if(!file.exists(impact_count_by_eez_file)) {
   
-  impacts_by_eez_list <- parallel::mclapply(count_rasts,
+  impacts_by_eez_list <- parallel::mclapply(str_cats,
       FUN = get_impact_summary, rgn_df = rgn_df, rgn = 'eez',
-      mc.cores = 24)
+      mc.cores = 5)
 
   impacts_by_eez_df <- bind_rows(impacts_by_eez_list) %>%
-    rename(impact_mean = val_mean, impact_var = val_var)
+    rename(impact_mean = val_mean, impact_var = val_var) %>%
+    filter(!is.na(eez))
   
   write_csv(impacts_by_eez_df, impact_count_by_eez_file)
 }
@@ -159,15 +183,15 @@ if(!file.exists(impact_pct_by_eez_file)) {
   
   impacts_by_eez_df <- read_csv(impact_count_by_eez_file)
   
-  nspp_rastfile <- here('_output/rasters/n_spp_map.tif')
-  spp_by_eez_df <- get_impact_summary(f = nspp_rastfile,
-                                      rgn_df = rgn_df, rgn = 'eez') %>%
-    select(eez, nspp_mean = val_mean, nspp_var = val_var)
+  mean_spp_per_eez <- rgn_df %>%
+    group_by(eez) %>%
+    summarize(nspp_mean = weighted.mean(nspp, a_prop),
+              nspp_var  = weighted.var(nspp, a_prop))
 
   imp_nspp_df <- impacts_by_eez_df %>%
-    full_join(spp_by_eez_df, by = 'eez') %>%
+    full_join(mean_spp_per_eez, by = 'eez') %>%
     mutate(pct_impact_mean = impact_mean / nspp_mean * 100) %>%
-    select(eez, pct_impact_mean, a_km2, year, impact)
+    select(eez, pct_impact_mean, a_km2, impact)
   
   write_csv(imp_nspp_df, impact_pct_by_eez_file)
 }
@@ -175,116 +199,58 @@ if(!file.exists(impact_pct_by_eez_file)) {
 ### area_km2 of eez 163 = 8.586399e+06
 ```
 
-```{r calc trends by eez old, eval = FALSE}
-impacts_by_eez_df <- read_csv(impact_pct_by_eez_file)
-
-tr_by_eez <- impacts_by_eez_df %>%
-  group_by(eez, impact) %>%
-  # mutate(n = n_distinct(val_mean))
-  do(mdl = lm(pct_impact_mean ~ year, data = .)) %>%
-  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
-  broom::tidy(mdl) %>%
-  filter(term == 'year') %>%
-  mutate(sig = p.value <= 0.05)
-
-write_csv(tr_by_eez, here('_output/trend_pct_by_eez-OLD.csv'))
-```
-
 
 ```{r plot impacts by eez}
-impacts_sf <- eez_sf %>%
-  left_join(impacts_by_eez_df, by = c('rgn_id' = 'eez'))
 
-impacts_sf_2013 <- impacts_sf %>%
-  filter(year == 2013)
+impact_pct_by_eez_df <- read_csv(impact_pct_by_eez_file)
+impact_sf <- eez_sf %>%
+  left_join(impact_pct_by_eez_df, by = c('rgn_id' = 'eez'))
 
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'fishing'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'all'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_viridis_c() +
+  scale_color_viridis_c() +
+  labs(title = 'all impacts, pct')
+
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'fishing'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
   labs(title = 'fishing impacts, pct')
   
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'land-based'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'land-based'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
   labs(title = 'land-based impacts, pct')
   
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'ocean'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'ocean'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
   labs(title = 'ocean impacts, pct')
   
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'climate'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'climate'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
   labs(title = 'climate impacts, pct')
   
-```
-
-```{r}
-trends_sf <- eez_sf %>%
-  left_join(tr_by_eez, by = c('rgn_id' = 'eez'))
-trend_centroids_sf <- st_centroid(trends_sf) %>%
-  filter(sig) %>%
-  mutate(sig_dot = case_when(estimate > 0 ~ '+',
-                             estimate < 0 ~ '-',
-                             TRUE         ~ NA_character_))
-
-ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'fishing'), 
-          aes(fill = estimate), 
-          alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'fishing'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'fishing trend, pct/yr',
-       color = 'trend')
-  
-ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'land-based'), 
-          aes(fill = estimate), 
-          alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'land-based'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'land-based trend, pct/yr',
-       color = 'trend')
-
-ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'ocean'), 
-          aes(fill = estimate),
-          alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'ocean'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'ocean trend, pct/yr',
-       color = 'trend')
-
-ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'climate'), 
-          aes(fill = estimate),
-          alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'climate'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'climate trend, pct/yr',
-       color = 'trend')
-
 ```
 
 ### Calculate impacts by Marine Ecoregion
@@ -293,11 +259,13 @@ ggplot() +
 impact_count_by_meow_file <- here('_output/impact_count_by_meow.csv')
 if(!file.exists(impact_count_by_meow_file)) {
 
-  impacts_by_meow_list <- parallel::mclapply(rast_files,
-      FUN = get_impact_sum, rgn_df = rgn_df, rgn = 'meow',
-      mc.cores = 12)
+  impacts_by_meow_list <- parallel::mclapply(str_cats,
+      FUN = get_impact_summary, rgn_df = rgn_df, rgn = 'meow',
+      mc.cores = 5)
 
-  impacts_by_meow_df <- bind_rows(impacts_by_meow_list)
+  impacts_by_meow_df <- bind_rows(impacts_by_meow_list) %>%
+    rename(impact_mean = val_mean, impact_var = val_var) %>%
+    filter(!is.na(meow))
   
   write_csv(impacts_by_meow_df, impact_count_by_meow_file)
 }
@@ -307,68 +275,69 @@ if(!file.exists(impact_count_by_meow_file)) {
 impact_pct_by_meow_file <- here('_output/impact_pct_by_meow.csv')
 if(!file.exists(impact_pct_by_meow_file)) {
 
-  impacts_by_meow_list <- parallel::mclapply(rast_files,
-      FUN = get_impact_sum, 
-      rgn_df = rgn_df, rgn = 'meow', agg = 'percent',
-      mc.cores = 12)
-
-  impacts_by_meow_df <- bind_rows(impacts_by_meow_list)
+  impacts_by_meow_df <- read_csv(impact_count_by_meow_file)
   
-  write_csv(impacts_by_meow_df, impact_pct_by_meow_file)
+  mean_spp_per_meow <- rgn_df %>%
+    group_by(meow) %>%
+    summarize(nspp_mean = weighted.mean(nspp, a_prop),
+              nspp_var  = weighted.var(nspp, a_prop))
+
+  imp_nspp_df <- impacts_by_meow_df %>%
+    full_join(mean_spp_per_meow, by = 'meow') %>%
+    mutate(pct_impact_mean = impact_mean / nspp_mean * 100) %>%
+    select(meow, pct_impact_mean, a_km2, impact)
+  
+  write_csv(imp_nspp_df, impact_pct_by_meow_file)
 }
-```
-
-```{r calc trends by meow}
-impacts_by_meow_df <- read_csv(impact_pct_by_meow_file)
-
-tr_by_meow <- impacts_by_meow_df %>%
-  group_by(meow, impact) %>%
-  # mutate(n = n_distinct(val_mean))
-  do(mdl = lm(val_mean ~ year, data = .)) %>%
-  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
-  broom::tidy(mdl) %>%
-  filter(term == 'year') %>%
-  mutate(sig = p.value <= 0.05)
-
-write_csv(tr_by_meow, here('_output/trend_pct_by_meow.csv'))
 ```
 
 Plot the results based on the _percent_ of local threatened species impacted by each impact category.
 
 ```{r plot impacts by meow}
-impacts_sf <- meow_sf %>%
-  left_join(impacts_by_meow_df, by = c('eco_code_x' = 'meow'))
-
-impacts_sf_2013 <- impacts_sf %>%
-  filter(year == 2013)
+impact_pct_by_meow_df <- read_csv(impact_pct_by_meow_file)
+impact_sf <- meow_sf %>%
+  left_join(impact_pct_by_meow_df, by = c('eco_code_x' = 'meow'))
 
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'fishing'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'all'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_viridis_c() +
+  scale_color_viridis_c() +
+  labs(title = 'all impacts, pct')
+
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'fishing'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
   labs(title = 'fishing impacts, pct')
   
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'land-based'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'land-based'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
   labs(title = 'land-based impacts, pct')
   
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'ocean'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'ocean'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
   labs(title = 'ocean impacts, pct')
   
 ggplot() +
-  geom_sf(data = impacts_sf_2013 %>% filter(impact == 'climate'), 
-          aes(fill = val_mean, color = val_mean), 
+  ggtheme_map() +
+  geom_sf(data = impact_sf %>% filter(impact == 'climate'), 
+          aes(fill = pct_impact_mean, color = pct_impact_mean), 
           alpha = .8, size = .25) +
   scale_fill_viridis_c() +
   scale_color_viridis_c() +
@@ -376,57 +345,221 @@ ggplot() +
   
 ```
 
-```{r}
-trends_sf <- meow_sf %>%
-  left_join(tr_by_meow, by = c('eco_code_x' = 'meow'))
-trend_centroids_sf <- st_centroid(trends_sf) %>%
-  filter(sig) %>%
-  mutate(sig_dot = case_when(estimate > 0 ~ '+',
-                             estimate < 0 ~ '-',
-                             TRUE         ~ NA_character_))
+
+## Calculate intensification by count and percent
+
+### Calculate intensification by Exclusive Economic Zone
+
+Plot the results based on the _count_ and _percent_ of local threatened species under intensification by each impact category.
+
+``` {r intens_count_by_eez}
+intens_count_by_eez_file <- here('_output/intens_count_by_eez.csv')
+if(!file.exists(intens_count_by_eez_file)) {
+  
+  intens_by_eez_list <- parallel::mclapply(str_cats,
+      FUN = get_intens_summary, 
+        rgn_df = rgn_df, type = 'diff', rgn = 'eez',
+      mc.cores = 5)
+
+  intens_by_eez_df <- bind_rows(intens_by_eez_list) %>%
+    rename(intens_mean = val_mean, intens_var = val_var) %>%
+    filter(!is.na(eez))
+  
+  write_csv(intens_by_eez_df, intens_count_by_eez_file)
+}
+### US EEZ should be 11,351,000 km2
+### area_km2 of eez 163 = 8.586399e+06
+```
+
+To get the percent by region, divide the mean intensifying species by the mean species present.  Note that the means can be divided, but the variance of the ratio is not calculated.
+
+``` {r intens_pct_by_eez}
+intens_pct_by_eez_file <- here('_output/intens_pct_by_eez.csv')
+if(!file.exists(intens_pct_by_eez_file)) {
+  
+  intens_by_eez_df <- read_csv(intens_count_by_eez_file)
+  
+  mean_spp_per_eez <- rgn_df %>%
+    group_by(eez) %>%
+    summarize(nspp_mean = weighted.mean(nspp, a_prop),
+              nspp_var  = weighted.var(nspp, a_prop))
+
+  int_nspp_df <- intens_by_eez_df %>%
+    full_join(mean_spp_per_eez, by = 'eez') %>%
+    mutate(pct_intens_mean = intens_mean / nspp_mean * 100) %>%
+    select(eez, pct_intens_mean, a_km2, impact)
+  
+  write_csv(int_nspp_df, intens_pct_by_eez_file)
+}
+### US EEZ should be 11,351,000 km2
+### area_km2 of eez 163 = 8.586399e+06
+```
+
+
+```{r plot intensification by eez}
+
+intens_pct_by_eez_df <- read_csv(intens_pct_by_eez_file)
+intens_sf <- eez_sf %>%
+  left_join(intens_pct_by_eez_df, by = c('rgn_id' = 'eez'))
 
 ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'fishing'), 
-          aes(fill = estimate), 
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'all'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
           alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'fishing'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'fishing trend, pct/yr',
-       color = 'trend')
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification all impacts, pct')
+
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'fishing'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification fishing impacts, pct')
   
 ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'land-based'), 
-          aes(fill = estimate), 
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'land-based'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
           alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'land-based'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'land-based trend, pct/yr',
-       color = 'trend')
-
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification land-based impacts, pct')
+  
 ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'ocean'), 
-          aes(fill = estimate), 
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'ocean'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
           alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'ocean'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'ocean trend, pct/yr',
-       color = 'trend')
-
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification ocean impacts, pct')
+  
 ggplot() +
-  geom_sf(data = trends_sf %>% filter(impact == 'climate'), 
-          aes(fill = estimate), 
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'climate'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
           alpha = .8, size = .25) +
-  geom_sf(data = trend_centroids_sf %>% filter(impact == 'climate'),
-          aes(color = sig_dot), size = .5) +
-  scale_fill_gradient2(low = 'darkgreen', mid = 'white', high = 'darkred') +
-  scale_color_manual(values = c('green4', 'red')) +
-  labs(title = 'climate trend, pct/yr',
-       color = 'trend')
-
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification climate impacts, pct')
+  
 ```
+
+### Calculate intensification by Marine Ecoregion
+
+``` {r}
+intens_count_by_meow_file <- here('_output/intens_count_by_meow.csv')
+if(!file.exists(intens_count_by_meow_file)) {
+
+  intens_by_meow_list <- parallel::mclapply(str_cats,
+      FUN = get_intens_summary, 
+        rgn_df = rgn_df, type = 'diff', rgn = 'meow',
+      mc.cores = 5)
+
+  intens_by_meow_df <- bind_rows(intens_by_meow_list) %>%
+    rename(intens_mean = val_mean, intens_var = val_var) %>%
+    filter(!is.na(meow))
+  
+  write_csv(intens_by_meow_df, intens_count_by_meow_file)
+}
+```
+
+``` {r}
+intens_pct_by_meow_file <- here('_output/intens_pct_by_meow.csv')
+if(!file.exists(intens_pct_by_meow_file)) {
+
+  intens_by_meow_df <- read_csv(intens_count_by_meow_file)
+  
+  mean_spp_per_meow <- rgn_df %>%
+    group_by(meow) %>%
+    summarize(nspp_mean = weighted.mean(nspp, a_prop),
+              nspp_var  = weighted.var(nspp, a_prop))
+
+  imp_nspp_df <- intens_by_meow_df %>%
+    full_join(mean_spp_per_meow, by = 'meow') %>%
+    mutate(pct_intens_mean = intens_mean / nspp_mean * 100) %>%
+    select(meow, pct_intens_mean, a_km2, impact)
+  
+  write_csv(imp_nspp_df, intens_pct_by_meow_file)
+}
+```
+
+Plot the results based on the _percent_ of local threatened species impacted by each impact category.
+
+```{r plot intensification by meow}
+intens_pct_by_meow_df <- read_csv(intens_pct_by_meow_file)
+intens_sf <- meow_sf %>%
+  left_join(intens_pct_by_meow_df, by = c('eco_code_x' = 'meow'))
+
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'all'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification all impacts, pct')
+
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'fishing'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification fishing impacts, pct')
+  
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'land-based'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification land-based impacts, pct')
+  
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'ocean'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification ocean impacts, pct')
+  
+ggplot() +
+  ggtheme_map() +
+  geom_sf(data = intens_sf %>% filter(impact == 'climate'), 
+          aes(fill = pct_intens_mean, color = pct_intens_mean), 
+          alpha = .8, size = .25) +
+  scale_fill_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  scale_color_gradient2(high = 'red4', mid = 'lightyellow', low = 'green3', 
+                       midpoint = 0) +
+  labs(title = 'net intensification climate impacts, pct')
+  
+```
+
+

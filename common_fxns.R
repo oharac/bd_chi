@@ -1,7 +1,7 @@
 ### Support functions for this project
 
 knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
-                      echo = FALSE, message = FALSE, warning = FALSE)
+                      echo = TRUE, message = FALSE, warning = FALSE)
 
 ### * IUCN API functions
 ### * Simple Features and Raster common functions
@@ -156,4 +156,20 @@ rast_to_map <- function(rast, cell_val = NULL) {
     names(df)[names(df) == 'val'] <- cell_val
   }
   return(df)
+}
+
+get_spp_range <- function(id = NULL) {
+  ### read the range file created in setup script 5c.  If ids are
+  ### supplied, filter to just those ids, otherwise return the whole
+  ### dataframe.
+  range_f <- here('int/ranges_from_rasts.csv')
+  if(!file.exists(range_f)) {
+    stop('No range file found.  Please run setup script 5c_determine_spp_range.Rmd')
+  }
+  ranges <- read_csv(range_f, col_types = 'id')
+  if(!is.null(id)) {
+    ranges <- ranges %>%
+      filter(iucn_sid %in% id)
+  }
+  return(ranges)
 }

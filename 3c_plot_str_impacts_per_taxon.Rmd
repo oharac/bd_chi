@@ -1,0 +1,135 @@
+---
+title: 'Plot species stressor impacts'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+library(widyr)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+dir_spp_intsx <- file.path(dir_bd_anx, 'spp_str_rasts')
+```
+
+
+# Summary
+
+For each species and then taxon, count co-occurrence of impacts by pairwise comparison.  Do this only for 2013: this will tell us the impacts in the most recent year.
+
+# Methods
+
+* Read in data of impacts per cell per spp
+* For each spp, count the pairwise cooccurrences of pairs of stressors
+* For each spp, divide by the spp range to get % impacted in each pair
+* Combine to taxon and then find mean/sd of each cooccurrence.
+
+```{r}
+read_intsx <- function(f) {
+  str <- dirname(f) %>% basename()
+  z <- read_csv(f, col_types = 'ii') %>%
+    filter(year == 2013) %>%
+    select(-year)
+  ### Check for no-impact results
+  if(nrow(z) == 0) z <- data.frame(cell_id = NA)
+  
+  ### append stressor name
+  z <- z %>%
+    mutate(stressor = str)
+  
+  return(z)
+}
+```
+
+```{r}
+
+spp_incl <- get_incl_spp()
+
+all_intsx_files <- data.frame(
+  f = list.files(dir_spp_intsx,
+                 recursive = TRUE, full.names = TRUE)) %>%
+  mutate(iucn_sid = str_extract(basename(f), '[0-9]+') %>%
+           as.integer())
+
+spp_ids <- spp_incl$iucn_sid %>% 
+  unique() %>% sort()
+
+df <- data.frame()
+for(id in spp_ids[1:20]) {
+  # id <- spp_ids[100]
+  message('Processing ', id)
+  
+  spp_range <- 
+  spp_intsx_files <- all_intsx_files %>%
+    filter(iucn_sid == id) %>%
+    .$f
+  
+  spp_intsx <- lapply(spp_intsx_files, # f <- spp_intsx_files[2]
+                      FUN = read_intsx) %>%
+    bind_rows() %>%
+    mutate(iucn_sid = id) %>%
+    filter(!is.na(cell_id))
+  
+  spp_pairwise <- pairwise_count(spp_intsx, 
+                                 item = stressor, 
+                                 feature = cell_id,
+                                 diag = TRUE) %>%
+    rename(str1 = item1, str2 = item2)
+  
+  result_mtx <- spp_pairwise %>%
+    spread(key = str2, value = n) %>%
+    select(-str1) %>%
+    as.matrix()
+  
+  ### rename rows and columns to match EEZs
+  rownames(result_mtx) <- colnames(result_mtx)
+  
+  ### set NAs to zero
+  result_mtx[is.na(result_mtx)] <- 0
+  
+  ### gotta divide matrix by total cell range to convert to pctage
+  
+  
+  df <- bind_rows(df, spp_intsx)
+}
+
+df <- df %>%
+  filter(!is.na(cell_id))
+result_df <- pairwise_count(df, item = stressor, feature = iucn_sid) %>%
+  rename(str1 = item1, str2 = item2)
+
+
+
+result_mtx <- result_df %>%
+  spread(key = str2, value = n) %>%
+  select(-str1) %>%
+  as.matrix()
+
+
+result_mtx
+
+mtxplot_df <- result_df %>%
+  mutate(n = ifelse(str2 > str1, NA, n),
+         str1 = fct_rev(str1))
+ggplot(mtxplot_df, aes(x = str1, y = str2)) +
+  ggtheme_plot() +
+  geom_point(aes(size = n)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        axis.title = element_blank())
+```
+

@@ -54,39 +54,3 @@ write_csv(sens_all_df, sens_all_file)
 
 ```
 
-## Species impacted by each stressor
-
-Plotting the number of species impacted by each stressor.  This plot includes species that:
-
-* have an IUCN range map
-* are in a comprehensively assessed taxon (and birds are seabirds)
-* are threatened or near threatened (i.e. not LC or EX)
-* are sensitive to at least one stressor in our study
-
-```{r}
-
-sens_all_df <- read_csv(sens_all_file, col_types = cols('iucn_sid' = 'i'))
-
-spp_incl <- get_incl_spp() %>%
-  filter(!is.na(stressor))
-
-plot_df <- sens_all_df %>%
-  filter(sens) %>%
-  select(-code, -sens) %>%
-  distinct() %>%
-  filter(iucn_sid %in% spp_incl$iucn_sid) %>%
-  group_by(stressor, category) %>%
-  summarize(n_spp = n()) %>%
-  ungroup() %>%
-  arrange(n_spp) %>%
-  mutate(category = fct_inorder(category),
-         stressor = fct_inorder(stressor))
-
-ggplot(plot_df, aes(x = stressor, y = n_spp, fill = category)) +
-  ggtheme_plot() +
-  geom_col() +
-  coord_flip() +
-  labs(x = 'Stressor',
-       y = 'Number of impacted species')
-```
-

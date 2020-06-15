@@ -1,0 +1,94 @@
+---
+title: 'Map cumulative stressor footprints'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+library(sf)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+```
+
+
+# Summary
+
+Here we create maps of the footprint of stressor categories to help discern where "zero impact" means no stressors present, vs. no sensitive species present.
+
+# Methods
+
+## Get stressor maps
+
+For each category, for each year, pull in the stressor maps for that combo and stack them up.  Make a raster showing how many stressors exist in each cell.  Cells without any stressors (in that category/year) can then be later identified as a special case of zero impact.
+
+```{r}
+
+str_cat_df <- get_str_cats()
+str_cats <- c('all', unique(str_cat_df$category))
+yrs <- 2003:2013
+
+### filename stem for sprintf'ing the info
+str_ft_stem <- here('_output/rasters/stressor_ftprints/footprint_%s_%s.tif')
+
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[1]
+  
+  for(yr in yrs) {
+    # yr <- yrs[1]
+    
+    str_ft_file <- sprintf(str_ft_stem, str_cat, yr)
+    message('Processing ', basename(str_ft_file))
+  
+    if(!file.exists(str_ft_file)) {
+      strs <- str_cat_df %>%
+        filter(category == str_cat | str_cat == 'all') %>%
+        .$stressor
+      
+      str_rast_stem <- file.path(dir_bd_anx, 'layers', 'stressors_10km_95cv',
+                                 '%s_%s_mol10km_95cv.tif')
+      str_stack <- stack(sprintf(str_rast_stem, strs, yr))
+      
+      ### normalize all layers to 1/NA (presence/absence of stressor)
+      str_stack_norm <- str_stack / str_stack
+      
+      if(nlayers(str_stack) > 1) {
+        str_count <- calc(str_stack_norm, fun = sum, na.rm = TRUE)
+      } else {
+        str_count <- str_stack_norm
+      }
+      values(str_count)[values(str_count) == 0] <- NA
+      writeRaster(str_count, str_ft_file, overwrite = TRUE)
+    }
+  }
+}
+
+```
+
+## Plot 2013 layers
+
+```{r}
+for(str_cat in str_cats) {
+  # str_cat <- str_cats[1]
+  f <- sprintf(str_ft_stem, str_cat, 2013)
+  r <- raster(f)
+  plot(r, axes = F, col = hcl.colors(20),
+       main = sprintf('Stressor count (%s), 2013', str_cat))
+}
+```
+

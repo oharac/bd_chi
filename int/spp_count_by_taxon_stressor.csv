@@ -1,0 +1,128 @@
+rank,stressor,n_spp,n_spp_thr
+Actinopterygii,art_fish,42,198
+Aves,art_fish,28,154
+Chondrichthyes,art_fish,207,317
+Cnidaria,art_fish,407,407
+Mammalia,art_fish,35,60
+Mollusca,art_fish,10,67
+Plantae,art_fish,1,32
+Reptilia,art_fish,17,26
+Actinopterygii,dem_dest,15,198
+Aves,dem_dest,24,154
+Chondrichthyes,dem_dest,203,317
+Mammalia,dem_dest,16,60
+Myxini,dem_dest,3,11
+Plantae,dem_dest,1,32
+Reptilia,dem_dest,3,26
+Actinopterygii,dem_nondest_hb,25,198
+Aves,dem_nondest_hb,52,154
+Chondrichthyes,dem_nondest_hb,134,317
+Mammalia,dem_nondest_hb,20,60
+Myxini,dem_nondest_hb,3,11
+Reptilia,dem_nondest_hb,9,26
+Actinopterygii,dem_nondest_lb,18,198
+Chondrichthyes,dem_nondest_lb,47,317
+Mammalia,dem_nondest_lb,1,60
+Actinopterygii,direct_human,15,198
+Aves,direct_human,47,154
+Chondrichthyes,direct_human,25,317
+Cnidaria,direct_human,407,407
+Mammalia,direct_human,31,60
+Mollusca,direct_human,8,67
+Plantae,direct_human,32,32
+Reptilia,direct_human,15,26
+Aves,light,18,154
+Reptilia,light,2,26
+Actinopterygii,nutrient,5,198
+Aves,nutrient,4,154
+Chondrichthyes,nutrient,5,317
+Mammalia,nutrient,15,60
+Mollusca,nutrient,1,67
+Plantae,nutrient,25,32
+Reptilia,nutrient,1,26
+Aves,oa,3,154
+Cnidaria,oa,406,407
+Actinopterygii,organic,3,198
+Aves,organic,40,154
+Chondrichthyes,organic,7,317
+Mammalia,organic,22,60
+Mollusca,organic,8,67
+Reptilia,organic,1,26
+Actinopterygii,pel_hb,16,198
+Aves,pel_hb,57,154
+Chondrichthyes,pel_hb,80,317
+Mammalia,pel_hb,31,60
+Reptilia,pel_hb,9,26
+Actinopterygii,pel_lb,13,198
+Aves,pel_lb,9,154
+Chondrichthyes,pel_lb,37,317
+Mammalia,pel_lb,9,60
+Aves,shipping,3,154
+Chondrichthyes,shipping,1,317
+Cnidaria,shipping,406,407
+Mammalia,shipping,25,60
+Plantae,shipping,3,32
+Plantae,slr,2,32
+Reptilia,slr,2,26
+Actinopterygii,sst,9,198
+Aves,sst,46,154
+Cnidaria,sst,406,407
+Mammalia,sst,10,60
+Plantae,sst,17,32
+Reptilia,sst,8,26
+Actinopterygii,cum_climate,9,198
+Aves,cum_climate,46,154
+Cnidaria,cum_climate,407,407
+Mammalia,cum_climate,10,60
+Plantae,cum_climate,17,32
+Reptilia,cum_climate,8,26
+Actinopterygii,cum_fishing,57,198
+Aves,cum_fishing,79,154
+Chondrichthyes,cum_fishing,265,317
+Cnidaria,cum_fishing,407,407
+Mammalia,cum_fishing,49,60
+Mollusca,cum_fishing,10,67
+Myxini,cum_fishing,3,11
+Plantae,cum_fishing,2,32
+Reptilia,cum_fishing,19,26
+Actinopterygii,cum_land-based,20,198
+Aves,cum_land-based,76,154
+Chondrichthyes,cum_land-based,28,317
+Cnidaria,cum_land-based,407,407
+Mammalia,cum_land-based,38,60
+Mollusca,cum_land-based,15,67
+Plantae,cum_land-based,32,32
+Reptilia,cum_land-based,15,26
+Aves,cum_ocean,3,154
+Chondrichthyes,cum_ocean,1,317
+Cnidaria,cum_ocean,406,407
+Mammalia,cum_ocean,25,60
+Plantae,cum_ocean,3,32
+Actinopterygii,cum_all,78,198
+Aves,cum_all,116,154
+Chondrichthyes,cum_all,269,317
+Cnidaria,cum_all,407,407
+Mammalia,cum_all,56,60
+Mollusca,cum_all,20,67
+Myxini,cum_all,3,11
+Plantae,cum_all,32,32
+Reptilia,cum_all,25,26
+All spp,art_fish,747,NA
+All spp,cum_all,1006,NA
+All spp,cum_climate,497,NA
+All spp,cum_fishing,891,NA
+All spp,cum_land-based,631,NA
+All spp,cum_ocean,438,NA
+All spp,dem_dest,265,NA
+All spp,dem_nondest_hb,243,NA
+All spp,dem_nondest_lb,66,NA
+All spp,direct_human,580,NA
+All spp,light,20,NA
+All spp,nutrient,56,NA
+All spp,oa,409,NA
+All spp,organic,81,NA
+All spp,pel_hb,193,NA
+All spp,pel_lb,68,NA
+All spp,shipping,438,NA
+All spp,slr,4,NA
+All spp,sst,496,NA

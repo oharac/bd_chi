@@ -120,7 +120,7 @@ write_csv(spp_priority, here('_output/spp_priority.csv'))
 
 Note that not all included species are represented in the `priority_by_stressor` dataframe - some species listed as threatened by a stressor may not overlap areas where that stressor is significantly occurring according to our data.
 
-```{r expansion by species}
+```{r expansion by species, eval = FALSE}
 message('starting linear model')
 tr_by_stressor_spp <- imp_range_df %>%
   filter(!is.na(year)) %>%
@@ -159,6 +159,8 @@ ggplot(tr_by_priority, aes(x = pct_impact, y = estimate)) +
   facet_wrap( ~ stressor) +
   labs(title = 'expansion by pct impacted range')
 ```
+
+But does this really show anything? since pct_impacted is a late value, a small pct impacted must almost certainly be an impact that remained small throughout the time series - therefore would have a tiny slope.
 
 ### Stressor on all impacted spp
 
@@ -204,7 +206,7 @@ dt_clean(tr_by_stressorXrange)
 
 ### Stressor on impacted spp by taxonomic group
 
-```{r expansion by taxon, eval = TRUE}
+```{r expansion by taxon, eval = FALSE}
 message('calculating expansion by taxon')
 
 tr_by_stressorXtaxon <- imp_range_df %>%
@@ -215,5 +217,104 @@ tr_by_stressorXtaxon <- imp_range_df %>%
   broom::tidy(mdl)
 
 dt_clean(tr_by_stressorXtaxon)
+```
+
+## Plot expansion by taxonomic group
+
+Calculate trends to estimate future impact footprints (as percent of range) for each species, by stressor and stressor group, across 2003:2013.  Keep only significant trends; non-significant trends (for spp/stressor combo) will be assigned zero.
+```{r}
+spp_expansion_trend_file <- here('int/spp_expansion_trends.csv')
+
+if(!file.exists(spp_expansion_trend_file)) {
+  trend_df <- imp_range_df %>%
+    group_by(stressor, iucn_sid) %>%
+    filter(n_distinct(pct_impact, na.rm = TRUE) > 1) %>%
+    do(mdl = lm(pct_impact ~ year, data = .)) %>%
+    broom::tidy(mdl) %>%
+    filter(term == 'year') %>%
+    filter(p.value < 0.05)
+  
+  write_csv(trend_df, spp_expansion_trend_file)
+}
+```
+
+Use trends to predict species impacted range in 2030.
+
+```{r}
+trend_df <- read_csv(spp_expansion_trend_file)
+
+imp_2030_df <- imp_range_df %>%
+  left_join(trend_df, by = c('iucn_sid', 'stressor')) %>%
+  filter(year == 2013) %>%
+  mutate(estimate = ifelse(is.na(estimate), 0, estimate),
+         pct_impact = pct_impact + (2030 - 2013) * estimate,
+         pct_impact = case_when(pct_impact < 0 ~ 0,
+                                pct_impact > 1 ~ 1,
+                                TRUE           ~ pct_impact),
+         year = 2030) %>%
+  select(iucn_sid, year, pct_impact, stressor) %>%
+  bind_rows(imp_range_df) %>%
+  filter(!is.na(pct_impact))
+  
+```
+
+```{r}
+rank_df <- read_csv(here('int/spp_ranks.csv'))
+
+range_summary_all <- imp_2030_df %>%
+  left_join(rank_df, by = 'iucn_sid') %>%
+  group_by(stressor, year) %>%
+  summarize(mean_pct_imp = mean(pct_impact),
+            sd_pct_imp   = sd(pct_impact))
+
+range_summary_taxon <- imp_2030_df %>%
+  left_join(rank_df, by = 'iucn_sid') %>%
+  group_by(rank, stressor, year) %>%
+  summarize(mean_pct_imp = mean(pct_impact),
+            sd_pct_imp   = sd(pct_impact)) %>%
+  ungroup()
+```
+
+```{r}
+cum_impact_df <- range_summary_all %>%
+  filter(stressor == 'cum_all') %>%
+  mutate(rank = 'All spp') %>%
+  bind_rows(range_summary_taxon %>%
+              filter(stressor == 'cum_all') %>%
+              arrange(desc(year), desc(mean_pct_imp))) %>%
+  filter(year %in% c(2003, 2013, 2030)) %>%
+  mutate(rank = fct_inorder(rank),
+         year = factor(year)) %>%
+  rowwise() %>%
+  mutate(ymin = max(0, mean_pct_imp - sd_pct_imp),
+         ymax = min(1, mean_pct_imp + sd_pct_imp)) %>%
+  ungroup()
+
+n_labels <- read_csv(here('int/spp_count_by_taxon_stressor.csv')) %>%
+  filter(stressor == 'cum_all') %>%
+  mutate(n_lbl = paste0('n = ', n_spp))
+
+ggplot(cum_impact_df) +
+  ggtheme_plot() +
+  geom_point(aes(y = mean_pct_imp, x = rank, 
+                 color = year, group = year), 
+             position = position_dodge(width = .6)) +
+  geom_linerange(aes(x = rank, ymin = ymin, ymax = ymax,
+                     color = year, linetype = year, group = year), 
+             position = position_dodge(width = .6),
+             size = .25) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
+  geom_text(data = n_labels,
+            aes(x = rank, label = n_lbl), y = 1.02, 
+            size = 3, hjust = 0) +
+  scale_color_manual(values = c(hcl.colors(n = 3)[1:2], 'grey60')) +
+  scale_linetype_manual(values = c('solid', 'solid', 'dashed')) +
+  scale_y_continuous(expand = c(0, 0), 
+                     limits = c(0, 1.2),
+                     breaks = seq(0, 1, .25),
+                     labels = paste0(seq(0, 100, 25), '%')) +
+  labs(y = 'Percent of range impacted') +
+  coord_flip() +
+  theme(axis.title.y = element_blank())
 ```
 

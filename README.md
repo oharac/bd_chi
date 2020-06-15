@@ -19,13 +19,18 @@ To do:
     * [X] Check that the aggregation step counts NAs for land and zeros for ocean cells with no stressor
     * [X] Clip all stressor year ranges to 2002-2013
     * [X] Ocean acidification in particular!
-    * [X] While you're at it, crop the SLR raster to just coastal areas!
+    * [ ] While you're at it, crop the SLR raster to just coastal areas!
+        * [ ] Crop to 3 nm and then aggregate, not the way I did it!
+        * [ ] Also do this for human impacts if not already done
     * [X] Check the shipping - horizontal routes are artifacts? nope, they're in there
 * [X] Clip out arctic (sea ice) areas for SST due to satellite effects
     * this is done in `_setup/6_aggregate_stressors_to_10km.Rmd`
-* [X] Update threat listings based on narrative text and habitat info
+* [ ] Update threat listings based on narrative text and habitat info
     * [X] Critical for fisheries! differentiate pel_hb, pel_lb, dem_dest, dem_nondest_hb, dem_nondest_lb
     * [X] Critical for climate stressors - OA, SST, SLR (UV not included)
+    * [ ] Manually check and fix spp where threat is coded but not captured by text mining - this may be an issue in both fishing stressors and climate stressors
+        * [ ] e.g. Caretta caretta, large scale unintentional - should be coded as gillnet/longline/etc.
+        * [ ] others?
 * [x] Update species-stressor intersections based on updated species and threats
     * [x] Use just cell ID, not stressor value, for more nimble read/write
 * [X] From intersections, calculate impact summaries for all spp

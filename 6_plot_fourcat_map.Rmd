@@ -30,159 +30,227 @@ reload <- FALSE
 
 # Summary
 
-Using impact maps and intensification maps, create a map dividing the ocean into four categories:
+Using impact maps and intensification maps, create a map dividing the ocean into categories with different ramifications for conservation.  
 
-* High impact, intensifying
-* Low impact, intensifying
-* High impact, deintensifying
-* Low impact, deintensifying
+* High impact, intensifying: top priority for reactive conservation
+* Low impact, intensifying: top priority for proactive conservation
+* High impact, deintensifying: (why priority? esp over high impact, stable stressors? perhaps these are areas ripe for reactive conservation to lock in gains at lower costs (financial or political)?)
+* Low impact, deintensifying: (why priority, again over low impact stable stressors? as above, perhaps opportunities for lower cost protection)
 
-For now this will be done at the stressor group level and cumulative level.
+For now this will be done at the stressor group level and cumulative level, at both a percent and count (and especially areas where both co-occur).
+
+We will divide EEZ from ABNJ a la Selig et al 2014; this is not an issue in terrestrial systems (no ABNJ, though I suppose disputed regions).
 
 # Methods
 
 ## Gather the necessary maps and reclassify
 
-High and low impact will be represented by the cells with the top 20% and bottom 20% of proportional species impact.  High and low intensification will be the top 20% (?) of each.
+High and low impact will be represented by the cells with the top 10% and bottom 10% of proportional species impact (Selig et al use 10% for impact high/low).  Note, this will be done after removing "special cases" of zero:
+
+* zeroes due to absence of species, therefore zero impact.  If stressors are present in these cells, future species assessments may locate species in this region, thus creating an impact where none is currently evident.
+* zeroes due to absence of stressors, therefore zero impact.  If species are present in these cells, future shifts in footprint of stressors may impinge on ranges in this location, creating an impact where none is currently evident.
 
 ```{r}
 str_cats <- c('all', 'fishing', 'land-based', 'ocean', 'climate')
 
 nspp_rast <- raster(here('_output/rasters/n_spp_map.tif'))
-                    
-impact_hilo_qtile <- c(0.2, 0.8)
-intens_qtile   <- 0.5
-deintens_qtile <- 0.5
+
+eez_rast <- abnj_rast <- raster(here('_spatial/eez_mol.tif'))
+eez_rast[eez_rast == 213 | eez_rast >= 255] <- NA
+abnj_rast[abnj_rast != 213 & abnj_rast < 255] <- NA
 ```
 
-Here we reclassify the impact map (2013 cumulative for stressor groups and overall) to two values (and zero for neutral):
+Here we reclassify the impact map (2013 cumulative for stressor groups and overall) to the following values:
 
 \begin{align*}
   impact_{reclass} = \begin{cases}
-    +1 &\text{when high impact}\\
-    -1 &\text{when low impact}\\
-    0 &else
+    +1,2 &\text{when high impact (eez, abnj)}\\
+    -1,2 &\text{when low impact (eez, abnj)}\\
+    0  &\text{when neither high nor low impact\\
+    NA &\text{when no spp $\varnothing_{spp}$ or stressors present $\varnothing_{str}$}
   \end{cases}
 \end{align*}
-``` {r process impact high-low maps}
+
+The thresholds for high and low impacts will only look at cells with both species and stressors (i.e. not include special zeroes $\varnothing_{spp}$ or $\varnothing_{str}$)
+
+```{r}
+drop_special_zeros <- function(val_rast, nspp_rast, nstr_rast) {
+  values(nspp_rast)[values(nspp_rast) == 0] <- NA
+  values(nstr_rast)[values(nstr_rast) == 0] <- NA
+  r <- val_rast ### just to protect the original raster
+  r <- mask(r, nspp_rast)
+  r <- mask(r, nstr_rast)
+
+  return(r)
+}
+set_thresh <- function(val_rast, qtile, mask_rast = NULL) {
+  
+  if(!is.null(mask_rast)) val_rast <- mask(val_rast, mask_rast)
+  
+  v <- values(val_rast)
+  v[is.na(values(nstr_rast))] <- NA
+  v[values(nspp_rast) == 0] <- NA
+  vv <- v[!is.na(v)]
+  
+  threshold <- quantile(vv, qtile, na.rm = TRUE)
+  message('Threshold for ', paste(qtile, collapse = ', '), ' is ',
+          paste(round(threshold, 3), collapse = ', '))
+
+  return(threshold)
+}
+
+get_map <- function(str_cat, y = 2013, type = 'impact'){
+  map_stem <- case_when(
+    type == 'impact' ~
+      here('_output', 'rasters/impact_maps', 'impact_%s_%s.tif'),
+    type == 'stressor' ~
+      here('_output/rasters/stressor_ftprints', 'footprint_%s_%s.tif'),
+    TRUE ~ NA_character_)
+  
+  map_f <- sprintf(map_stem, str_cat, y)
+  if(length(y) > 1) {
+    rast <- stack(map_f) %>%
+      calc(mean, na.rm = TRUE)  
+  } else {
+    rast <- raster(map_f)
+  }
+  if(type == 'stressor') { ### cut out cells with zero stressors
+    rast[rast == 0] <- NA
+  }
+  return(rast)
+}
+
+```
+
+``` {r process impact high-low maps by percent}
 impact_hilo_stem <- file.path(here('int', 'impact_hilo_%s.tif'))
 
+impact_hilo_qtile <- c(0.1, 0.9)
+
 for(str_cat in str_cats) {
-  # str_cat <- str_cats[2]
+  # str_cat <- str_cats[1]
   # if(!file.exists(sprintf(impact_hilo_stem, str_cat))) {
-    impact_map <- raster(here('_output', 'rasters',
-                           sprintf('impact_map_2013_%s.tif', str_cat)))
+    ### impact and stressor footprint maps are average of last three years
+    nstr_rast <- get_map(str_cat, y = 2011:2013, type = 'stressor') 
+    impact_map <- get_map(str_cat, y = 2011:2013, type = 'impact')
+    
+    impact_map <- impact_map %>%
+      drop_special_zeros(nspp_rast, nstr_rast)
+    
     impact_pct_map <- impact_map / nspp_rast
-    impact_thresh <- quantile(values(impact_pct_map), 
-                              impact_hilo_qtile, na.rm = TRUE)
+    
+    ### determine thresholds for each zone type
+    imp_thr_eez <- set_thresh(impact_pct_map,
+                              impact_hilo_qtile,
+                              mask_rast = eez_rast)
+    imp_thr_abnj <- set_thresh(impact_pct_map,
+                              impact_hilo_qtile,
+                              mask_rast = abnj_rast)
+
     
     impact_hilo_map <- raster(impact_map) ### create blank
     values(impact_hilo_map) <- 0 ### set to zero as default
-    values(impact_hilo_map)[values(impact_pct_map) > impact_thresh[2]] <- 1
-    values(impact_hilo_map)[values(impact_pct_map) < impact_thresh[1]] <- -1
+    ### 1 means high impact; -1 means low impact; 0 means impact between
+    ### -2 means no species; -3 means no stressors
+    impact_hilo_map[impact_pct_map >= imp_thr_eez[2] & !is.na(eez_rast)] <- 1
+    impact_hilo_map[impact_pct_map <= imp_thr_eez[1] & !is.na(eez_rast)] <- -1
+    impact_hilo_map[impact_pct_map >= imp_thr_abnj[2] & !is.na(abnj_rast)] <- 2
+    impact_hilo_map[impact_pct_map <= imp_thr_abnj[1] & !is.na(abnj_rast)] <- -2
+
+    impact_hilo_map <- mask(impact_hilo_map, impact_map)
     
-    impact_hilo_map <- mask(impact_hilo_map, nspp_rast)
+    ### for all stressors:
+    # sum(!is.na(values(eez_rast))) # 1356222
+    # sum(!is.na(values(abnj_rast))) # 2124116
+    # sum(values(impact_hilo_map) == 1, na.rm = TRUE) # 135462: .09988
+    # sum(values(impact_hilo_map) == 2, na.rm = TRUE) # 211270: .09946
+    # sum(values(impact_hilo_map) == -1, na.rm = TRUE) # 136055: .1003
+    # sum(values(impact_hilo_map) == -2, na.rm = TRUE) # 267278: .1258
     
     writeRaster(impact_hilo_map, sprintf(impact_hilo_stem, str_cat),
                 overwrite = TRUE)
   # }
   impact_hilo_map <- raster(sprintf(impact_hilo_stem, str_cat))
   plot(impact_hilo_map, 
-       col = c('green3', 'grey90', 'red4'),
-       breaks = c(-1, -.5, +.5, 1),
+       col = c('green1', 'green3', 'grey90', 'red4', 'red1'),
+       breaks = c(-2.5, -1.5, -.5, +.5, 1.5, 2.5),
        axes = FALSE,
+       axis.args = list(at = -2:2, 
+                        labels = c('low abnj', 'low eez', 'mid impact', 'hi eez', 'hi abnj')),
        main = sprintf('impact reclass: %s', str_cat))
 }
 ```
 
-Here we reclassify the intensification maps (cumulative for stressor groups and overall) to two values (and zero for neutral):
+Intensification (points where an impacted species is affected by increasing stressor intensity) and deintensification will be combined by taking the difference (i.e. # of spp experiencing intensification - # of spp experiencing deintensification) and then normalizing by the number of spp present.  The top 10% (and > 0) and bottom 10% (and < 0) will count as areas of high relative intensification and deintensification.  These are reclassified into these categories:
 
 \begin{align*}
   intensification_{reclass} = \begin{cases}
-    +1 &\text{when high intensification}\\
-    -1 &\text{when high deintensification}\\
-    0 &else
+    +1 &\text{when high/pos net intensification}\\
+    -1 &\text{when low/neg net intensification}\\
+    0  &\text{when neutral intensification}\\
+    NA &\text{when no spp $\varnothing_{spp}$ or stressors present $\varnothing_{str}$}
   \end{cases}
 \end{align*}
 
-``` {r process intensification maps}
-intens_hilo_stem <- file.path(here('int', 'intens_hilo_%s.tif'))
-
-for(str_cat in str_cats) {
-  # str_cat <- str_cats[1]
-  outfile <- sprintf(intens_hilo_stem, str_cat)
-  # if(!file.exists(outfile)) {
-    fstem <- here('_output', 'rasters',
-                  'intensification_map_%s_%s.tif')
-    intens_map <- raster(sprintf(fstem, str_cat, 'incr'))
-    deintens_map <- raster(sprintf(fstem, str_cat, 'decr'))
-    
-    intens_pct_map <- intens_map / nspp_rast
-    deintens_pct_map <- deintens_map / nspp_rast
-    
-    intens_thresh <- quantile(values(intens_pct_map), intens_qtile, na.rm = TRUE)
-    deintens_thresh <- quantile(values(deintens_pct_map), deintens_qtile, na.rm = TRUE)
-    
-    intens_hilo_map <- raster(intens_map) ### create blank
-    values(intens_hilo_map) <- 0 ### set to zero as default
-    values(intens_hilo_map)[values(intens_pct_map) > intens_thresh] <- 1
-    values(intens_hilo_map)[values(deintens_pct_map) > deintens_thresh] <- -1
-    
-    intens_hilo_map <- mask(intens_hilo_map, nspp_rast)
-    
-    writeRaster(intens_hilo_map, outfile,
-                overwrite = TRUE)
-  # }
-  intens_hilo_map <- raster(outfile)
-  plot(intens_hilo_map, 
-       col = c('green3', 'grey90', 'red4'),
-       breaks = c(-1, -.5, +.5, 1),
-       axes = FALSE,
-       main = sprintf('intensification reclass: %s', str_cat))
-}
-```
-
-### Alternative for intens/deintensification map
-
-Instead of taking the top X% of each map separately, find the difference between the two?  i.e. intensifying - deintensifying; where negative, more spp are benefiting from decreasing impacts, where positive more spp are suffering from intensifying impacts.  This can then be normalized as well.
+Threshold for net intensification is based only on cells with both species and stressors (i.e. not include special zeroes $\varnothing_{spp}$ or $\varnothing_{str}$)
 
 ```{r}
+
+intens_hilo_qtile <- c(0.2, 0.8)
+
 intens_diff_stem <- file.path(here('int', 'intens_diff_%s.tif'))
 
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
   outfile <- sprintf(intens_diff_stem, str_cat)
   # if(!file.exists(outfile)) {
-    fstem <- here('_output', 'rasters',
-                  'intensification_map_%s_%s.tif')
+    fstem <- here('_output', 'rasters', 'intens_maps',
+                  'intens_%s_%s.tif')
     intens_map <- raster(sprintf(fstem, str_cat, 'incr'))
     deintens_map <- raster(sprintf(fstem, str_cat, 'decr'))
     
-    diff_map <- intens_map - deintens_map
+    ### get recent stressor footprint for this stressor
+    nstr_rast <- get_map(str_cat, y = 2011:2013, type = 'stressor') 
+
+    diff_map <- (intens_map - deintens_map) %>%
+      drop_special_zeros(nspp_rast, nstr_rast)
     diff_pct <- diff_map / nspp_rast
-    hist(diff_pct)
-    quantile(values(diff_pct), 
-             c(0.1, .2, .25, .3, .5, .7, .75, .8, .9), na.rm = TRUE)
-    
-    hi_thr <- max(0, quantile(values(diff_pct), 0.8, na.rm = TRUE))
-    lo_thr <- min(0, quantile(values(diff_pct), 0.2, na.rm = TRUE))
-    
+
+    diff_thr_eez <- set_thresh(diff_pct,
+                              intens_hilo_qtile,
+                              mask_rast = eez_rast)
+    diff_thr_abnj <- set_thresh(diff_pct,
+                              intens_hilo_qtile,
+                              mask_rast = abnj_rast)
+
     diff_rcl <- raster(diff_pct) ### create blank
 
     values(diff_rcl) <- 0 ### set to zero as default
-    values(diff_rcl)[values(diff_pct) > hi_thr] <- 1
-    values(diff_rcl)[values(diff_pct) < lo_thr] <- -1
-    
+    diff_rcl[diff_pct > diff_thr_eez[2] & diff_pct > 0 & !is.na(eez_rast)] <- 1
+    diff_rcl[diff_pct < diff_thr_eez[1] & diff_pct < 0  & !is.na(eez_rast)] <- -1
+    diff_rcl[diff_pct > diff_thr_abnj[2] & diff_pct > 0  & !is.na(abnj_rast)] <- 2
+    diff_rcl[diff_pct < diff_thr_abnj[1] & diff_pct < 0  & !is.na(abnj_rast)] <- -2
+
     diff_rcl <- mask(diff_rcl, nspp_rast)
+
+    ### for all stressors:
+    # sum(!is.na(values(eez_rast))) # 1356222
+    # sum(!is.na(values(abnj_rast))) # 2124116
+    # sum(values(diff_rcl) == 1, na.rm = TRUE) # 269643: .1988
+    # sum(values(diff_rcl) == 2, na.rm = TRUE) # 394206: .1856
+    # sum(values(diff_rcl) == -1, na.rm = TRUE) # 95259: .0702
+    # sum(values(diff_rcl) == -2, na.rm = TRUE) # 57941: .0273
     
     writeRaster(diff_rcl, outfile,
                 overwrite = TRUE)
   # }
   diff_rcl <- raster(outfile)
   plot(diff_rcl, 
-       col = c('green3', 'grey90', 'red4'),
-       breaks = c(-1, -.5, +.5, 1),
+       col = c('green1', 'green3', 'grey90', 'red4', 'red1'),
+       breaks = c(-2.5, -1.5, -.5, +.5, 1.5, 2.5),
        axes = FALSE,
+       axis.args = list(at = -2:2, 
+                        labels = c('dec abnj', 'dec eez', 'none', 'incr eez', 'incr abnj')),
        main = sprintf('intensification difference reclass: %s', str_cat))
 }
 
@@ -199,13 +267,13 @@ Here we reclassify to four values (and zero for neutral):
     +1 &\text{when high impact and de-intensifying}\\
     -1 &\text{when low impact and intensifying}\\
     -2 &\text{when low impact and de-intensifying}\\
-    0 &else
+    NA &\text{when no spp $\varnothing_{spp}$ or stressors present $\varnothing_{str}$}
   \end{cases}
 \end{align*}
 
 ``` {r combine impact and intensification maps}
 impact_hilo_stem <- file.path(here('int', 'impact_hilo_%s.tif'))
-intens_hilo_stem <- file.path(here('int', 'intens_hilo_%s.tif'))
+intens_hilo_stem <- file.path(here('int', 'intens_diff_%s.tif'))
 
 out_fstem <- here('_output/rasters/impact_intens_map_%s.tif')
 
@@ -216,14 +284,17 @@ for(str_cat in str_cats) {
   # if(!file.exists(outfile)) {
     imp <- raster(sprintf(impact_hilo_stem, str_cat))
     int <- raster(sprintf(intens_hilo_stem, str_cat))
+    ### get recent stressor footprint for this stressor
+    nstr_rast <- get_map(str_cat, y = 2011:2013, type = 'stressor') 
 
     imp_int_map <- raster(imp)
     values(imp_int_map) <- 0
     
-    values(imp_int_map)[values(imp) == +1 & values(int) == +1] <- +2
-    values(imp_int_map)[values(imp) == +1 & values(int) == -1] <- +1
-    values(imp_int_map)[values(imp) == -1 & values(int) == +1] <- -1
-    values(imp_int_map)[values(imp) == -1 & values(int) == -1] <- -2
+    imp_int_map[imp > 0 & int > 0] <- +2
+    imp_int_map[imp > 0 & int < 0] <- +1
+    imp_int_map[imp < 0 & int > 0] <- -1
+    imp_int_map[imp < 0 & int < 0] <- -2
+    imp_int_map <- drop_special_zeros(imp_int_map, nspp_rast, nstr_rast)
     
     imp_int_map <- mask(imp_int_map, nspp_rast)
     writeRaster(imp_int_map, 
@@ -231,11 +302,14 @@ for(str_cat in str_cats) {
                 overwrite = TRUE)
   # }
   imp_int_map <- raster(outfile)
-  plot(imp_int_map, col = c('blue3', 'green3', 'grey90', 'orange', 'red4'),
-       breaks = c(-2, -1.5, -.5, +.5, 1.5, 2),
+  plot(imp_int_map, col = c('green3', 
+                            'blue3', 'grey90', 'orange', 'red4'),
+       breaks = c(-2.5, -1.5, -.5, +.5, 1.5, 2.5),
        axes = FALSE,
+       axis.args = list(at = -2:2, 
+                        labels = c('low decr', 'lo incr', 'neutral',
+                                   'hi decr', 'hi incr')),
        main = sprintf('impact + intens reclass: %s', str_cat))
 }
 ```
-
 

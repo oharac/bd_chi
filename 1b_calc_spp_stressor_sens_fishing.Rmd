@@ -588,3 +588,37 @@ ggplot(stressor_per_spp, aes(x = n_txt)) +
 ```
 
 Most species are affected by only one fishing stressor.
+
+## Check for species listed as a threat but not otherwise captured
+
+```{r}
+threats  <- read_csv(here('int/spp_threats_fishing.csv')) %>%
+  rename(thr_sens = sens) %>%
+  mutate(thr_listed = TRUE)
+# iucn_sid; cat_score; code; stressor; thr_sens; thr_listed
+
+gear_sum <- read_csv(here('int', sprintf('spp_sens_fishing_%s.csv', api_version))) %>%
+  rename(gear_sens = sens)
+# iucn_sid; stressor; code; gear_sens
+
+spp_comp <- read_csv(here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version)))
+
+tmp <- threats %>%
+  left_join(gear_sum, by = c('iucn_sid', 'stressor', 'code')) %>%
+  group_by(iucn_sid, code) %>%
+  summarize(n_sens = sum(thr_sens),
+            n_stressor = sum(gear_sens, na.rm = TRUE)) %>%
+  ungroup()
+
+tmp_nomatch <- tmp %>%
+  filter(n_sens >= 1 & n_stressor == 0) %>%
+  group_by(iucn_sid) %>%
+  summarize(codes = paste(code, collapse = ', ')) %>%
+  left_join(spp_comp, by = 'iucn_sid') %>%
+  filter(!is.na(taxon)) %>%
+  filter(taxon != 'sturgeons')
+  
+table(tmp_nomatch$taxon)
+```
+
+Note that each of these is listed as being threatened by fishing pressures, but no categorization of gear type was found in the narratives.  Inspect each of these to better understand/inform better definition of keywords.

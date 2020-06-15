@@ -145,9 +145,9 @@ if(!file.exists(pace_file)) {
         
         df <- rast_to_map(t_r, cell_val = 'trend') %>%
           full_join(rast_to_map(p_r, cell_val = 'p')) %>%
-          mutate(pace = case_when(trend >= cutoff & p < 0.05 ~ 1,
-                                  trend < 0       & p < 0.05 ~ -1,
-                                  TRUE                      ~ NA_real_),
+          mutate(pace = case_when(trend >= cutoff & trend > 0 & p < 0.05 ~ 1,
+                                  trend < 0 & p < 0.05 ~ -1,
+                                  TRUE                 ~ NA_real_),
                  stressor = str) %>%
           filter(!is.na(pace))
       }) %>%
@@ -198,19 +198,8 @@ calc_cum_impact <- function(spp_id, impacts, pace_df) {
   ### dir_spp_intsx to point to location of intersection files
   ### ocean_area_df to calc range including coastal (i.e. not 100% ocean) cells
   ### impacts allows to select subsets of impacts
-  cell_area_km2 <- 105.6633 ### from ocean raster
 
-  ### assemble file name and read the range data
-  spp_range_file <- file.path(dir_spp_maps,
-                              sprintf('iucn_sid_%s.csv', spp_id))
-  spp_range_df <- read_csv(spp_range_file, 
-                           col_types = cols('cell_id' = 'i', 'presence' = 'i')) %>%
-    left_join(ocean_area_df, by = 'cell_id')
-  
-  spp_range_km2 <- spp_range_df %>%
-    filter(presence > 0 & !is.na(presence) & presence != 5) %>%
-    summarize(range_km2 = sum(ocean_prop) * cell_area_km2) %>%
-    .$range_km2
+  spp_range_km2 <- get_spp_range(id = spp_id)
   
   intsx_files <- get_intsx_files(spp_id, impacts)
   
