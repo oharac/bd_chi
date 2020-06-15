@@ -1,0 +1,185 @@
+---
+title: 'Determine species ranges'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
+library(sf)
+
+source(here('common_fxns.R'))
+
+```
+
+# Summary
+
+For the species rasterized in setup script 5b, determine their marine range using cell ocean areas from the ocean raster:
+$$range = \sum_{cell = 1}^C A_{cell}$$
+
+Save these ranges as an output to be used in the main scripts.
+
+For those species listed with zero cells, check their polygon range to verify.  If polygon range is not zero, use this list to manually inspect polygons to make sure the rasterization process isn't dropping ranges.
+
+# Data sources
+
+* IUCN species shapefiles:  IUCN. (2020). The IUCN Red List of Threatened Species. Version 2020-1. Retrieved April 2020, from http://www.iucnredlist.org
+* BirdLife International shapefiles: BirdLife International and Handbook of the Birds of the World. (2018). Bird species distribution maps of the world. Version 7.0. Available at http://datazone.birdlife.org/species/requestdis
+* Bathymetry (GEBCO): Sandwell, D. T., Gille, S. T., & Smith, W. H. F. (2002, June). Bathymetry from Space:Oceanography, Geophysics, and Climate. Retrieved from https://www.gebco.net/
+
+
+# Methods
+
+## Read in each species rangemap (csv)
+
+Bind the resulting dataframe with a dataframe of cell ocean areas.  Sum the total marine range.  Store total raster ranges for all spp in a dataframe.  Save this in the main intermediate directory for use in main scripts.
+
+```{r}
+range_from_rasts_file <- here('int/range_from_rasts.csv')
+
+if(!file.exists(range_from_rasts_file)) {
+  dir_mol_rast <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+  
+  ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+  cell_km2 <- res(ocean_a_rast)[1]^2 / 1e6
+  ocean_a_df <- data.frame(cell_id = 1:ncell(ocean_a_rast),
+                           a_km2  = values(ocean_a_rast) * cell_km2) %>%
+    filter(!is.na(a_km2))
+    
+  rast_files <- list.files(dir_mol_rast, full.names = TRUE)
+  
+  range_l <- parallel::mclapply(rast_files,
+               FUN = function(f) {
+                 ### f <- rast_files[1]
+                 id <- str_extract(basename(f), '[0-9]+') %>% as.integer()
+                 x <- read_csv(f, col_types = 'ii') %>%
+                   filter(presence > 0 & !is.na(presence) & presence != 5) %>%
+                   dt_join(ocean_a_df, by = 'cell_id', type = 'left') %>%
+                   summarize(range_km2 = sum(a_km2)) %>%
+                   mutate(iucn_sid = id)
+                 
+                 return(x)
+               }, mc.cores = 40)
+                              
+  range_df <- bind_rows(range_l)
+  
+  write_csv(range_df, range_from_rasts_file)
+}
+```
+
+## Check the ranges from the polygons
+
+Read in the shapefile; calculate area of each of the polygons (`st_area()`) excluding extinct polygons (`filter(presence != 5)`).  Sum them for spp with multiple polygons.  NOTE: This doesn't account for overlapping polygons, but this is only intended as a check - the polygon area is not used for any calculations.
+
+Note also: this has many more species, but these are coming from non-marine birds, terrestrial mammals, terrestrial reptiles.
+
+```{r}
+range_from_polys_file <- here('_setup/int/range_from_polys.csv')
+
+if(!file.exists(range_from_polys_file)) {
+  
+  dir_bli <- file.path(dir_M, 'git-annex/globalprep/_raw_data/birdlife_intl/d2019')
+  dir_shp <- file.path(dir_M, 'git-annex/globalprep/_raw_data/iucn_spp/d2020-1')
+
+  poly_files <- list.files(c(dir_bli, dir_shp), 
+                           pattern = '.shp$', full.names = TRUE)
+  
+  range_df <- data.frame()
+  
+  for(poly_f in poly_files) {
+    ### poly_f <- poly_files[1]
+    message('Reading ', basename(poly_f))
+    poly <- sf::read_sf(poly_f) 
+    
+    if(!'subpop' %in% names(poly)) {
+      poly <- poly %>% mutate(subpop = NA)
+    }
+    if(!'iucn_sid' %in% names(poly)) {
+      poly <- poly %>% rename(iucn_sid = id_no)
+    }
+    
+    ids <- poly$iucn_sid %>% unique()
+
+    poly_l <- parallel::mclapply(ids, 
+                 FUN = function(id) { ### id <- ids[1]
+                   message('Processing ', basename(poly_f), ' id: ', id)
+                   x <- poly %>%
+                     filter(iucn_sid == id) %>%
+                     filter(presence != 5) %>%
+                     mutate(poly_km2 = st_area(geometry) / 1e6)
+                   y <- x %>% as.data.frame() %>%
+                     group_by(iucn_sid, subpop) %>%
+                     summarize(poly_km2 = sum(poly_km2, na.rm = TRUE)) %>%
+                     mutate(poly_km2 = as.numeric(poly_km2))
+                   
+                   return(y)
+                 }, mc.cores = 16)
+    
+    poly_df <- bind_rows(poly_l)
+    range_df <- bind_rows(range_df, poly_df)
+  }
+  write_csv(range_df, range_from_polys_file)
+}
+```
+
+## Combine 
+
+```{r}
+r_rast <- read_csv(range_from_rasts_file)
+r_poly <- read_csv(range_from_polys_file)
+map_info <- read_csv(here('_data/spp_marine_maps_2020-1.csv'))
+
+x <- r_rast %>%
+  left_join(map_info, by = 'iucn_sid') %>%
+  left_join(r_poly, by = c('shp_iucn_sid' = 'iucn_sid', 'subpop')) %>%
+  mutate(gp = tolower(basename(dbf_file)) %>% str_replace('.dbf', '')) %>%
+  select(iucn_sid, subpop, sciname, gp, range_km2, poly_km2) %>%
+  distinct()
+
+zero_df <- x %>%
+  filter(range_km2 == 0) %>%
+  mutate(poly_km2 = as.integer(poly_km2)) %>%
+  select(-subpop) %>%
+  arrange(desc(poly_km2))
+
+legit_zeros <- zero_df %>%
+  filter(poly_km2 < 100)
+
+problem_zeros <- zero_df %>%
+  filter(poly_km2 >= 100)
+```
+
+### Legitimate zero ranges?
+
+These zero-range species may be legitimate, as the total range (by polygon) is less than the area of a single raster cell.
+
+`r knitr::kable(legit_zeros)`
+
+### Problematic zero ranges?
+
+These zero-range species may be problematic, as their total range exceeds that of a single raster cell.  However, they may be legitimate, if all the range is inland (e.g. birds, some terrestrial mammals, etc)
+
+`r knitr::kable(problem_zeros)`
+
+### NA polygons?
+
+These species show `NA` for polygon range... if so, shouldn't have a raster?
+
+`r knitr::kable(zero_df %>% filter(is.na(poly_km2)))`
