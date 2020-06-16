@@ -154,26 +154,47 @@ Using [General Bathymetric Chart of the Oceans (GEBCO) bathymetry raster](https:
 
 NOTE: 1 arcmin and 30 arcsec are available; 30 arcsec is more recent but one arcmin should be sufficient for our purposes.  Resample to 6 arc-minute (0.10°) using min depth in each cell.
 
-Bathymetry is masked to the ocean area raster.
+Additionally, to ensure some minimum coastal cell presence, we will include a buffer based on the 3nm coastal zone from OHI.
+
+Bathymetry is masked to the ocean area raster.  
 
 ### Create and view minimum depth raster
+
+First, set up the coastal zone raster.  The original raster is 1/NA for whether a cell falls into the 3 nm coastal buffer, at 934 m resolution Mollweide.  Here, all NA cells are set to zero, non-NA remain 1, so aggregate will result in a proportional coastal zone coverage (so later we can select coastal cells based on some ocean presence threshold if desired).
+```{r}
+offshore_rast_10km_file <- here('_spatial', 'coastal_mol.tif')
+
+if(!file.exists(offshore_rast_10km_file)) {
+  offshore_rast_file <- file.path(dir_bd_anx, 'spatial', 'three_nm_offshore_mol.tif')
+  
+  x <- raster(offshore_rast_file)
+  # values(x)[is.na(values(x))] <- 0
+  y <- raster::aggregate(x, fact = 11, fun = sum, na.rm = TRUE, progress = 'text')
+  z <- y / 121 ### divide by number of subcells in each supercell
+  writeRaster(z, offshore_rast_10km_file, overwrite = TRUE)
+}
+```
+
+Now we can use the coastal zone buffer to bolster the shallow water species presence to ensure some minimal inclusion even if the bathymetry drops off immediately.  The coastal zone buffer will also be useful when clipping land-based stressor layers.
 
 ``` {r set up bathymetry raster}
 
 bathy_rast_file <- here('_spatial', 'bathy_mol.tif')
 
-gebco_rast_file <- file.path(dir_bd_anx, 'gebco', 'GRIDONE_1D.nc')
+gebco_rast_file <- file.path(dir_bd_anx, 'spatial/gebco', 'GRIDONE_1D.nc')
 gebco_rast_raw  <- raster(gebco_rast_file)
+
+coastal_rast <- raster(offshore_rast_10km_file)
 
 if(!file.exists(bathy_rast_file)) {
   ### The GEBCO raster is elevation, so depth is neg... for min depth, 
   ### aggregate by max (and vice versa)
   bathy_rast_min <- gebco_rast_raw %>%
-    raster::aggregate(fact = 6, fun = max)
+    raster::aggregate(fact = 6, fun = max, progress = 'text')
   
   bathy_rast_min <- -1 * bathy_rast_min ### depth as positive
     
-  rast_base <- area_rast
+  rast_base <- coastal_rast
   
   bathy_rast_raw <- bathy_rast_min %>%
     projectRaster(rast_base, 
@@ -199,9 +220,12 @@ if(!file.exists(bathy_rast_file)) {
     
   writeRaster(bathy_rast, bathy_rast_file, overwrite = TRUE)
 
-  rast_neritic <- rast_shallow <- bathy_rast
-  values(rast_neritic) <- ifelse(values(bathy_rast) <= 200, 1, NA)
-  values(rast_shallow) <- ifelse(values(bathy_rast) <=  60, 1, NA)
+  ### set up all masks with a base filled with NAs
+  rast_neritic <- rast_shallow <- raster(bathy_rast)
+  values(rast_neritic)[values(bathy_rast) <= 200] <- 1
+  values(rast_neritic)[!is.na(values(coastal_rast))] <- 1
+  values(rast_shallow)[values(bathy_rast) <=  60] <- 1
+  values(rast_shallow)[!is.na(values(coastal_rast))] <- 1
   
   writeRaster(rast_neritic, here('_spatial', 'bathy_mol_neritic.tif'),
               overwrite = TRUE)

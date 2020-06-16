@@ -22,9 +22,7 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'Figs/',
                       echo = TRUE, message = FALSE, warning = FALSE)
 
 library(raster)
-# library(rgeos)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
-  ### includes library(tidyverse); library(stringr); dir_M points to ohi directory
 library(sf)
 
 source(here('common_fxns.R'))
@@ -71,12 +69,12 @@ We will loop over each species in each shapefile and rasterize separately, using
 reload <- FALSE
 
 maps_to_rasterize <- read_csv(
-  file.path(dir_data, sprintf('spp_marine_maps_%s.csv', api_version)),
-  col_types = cols('subpop' = 'c')) %>%
+    file.path(dir_data, sprintf('spp_marine_maps_%s.csv', api_version)),
+    col_types = cols('subpop' = 'c')) %>%
   mutate(shp_file = str_replace(dbf_file, 'dbf$', 'shp'))
 
 ### rast_base for cell IDs
-rast_base <- raster(file.path(dir_spatial, 'cell_id_mol.tif'))
+rast_base <- raster(here('_spatial/cell_id_mol.tif'))
 
 ### directory for mollweide rasters
 dir_mol_rast <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
@@ -107,6 +105,17 @@ if(reload == FALSE) {
 # 2018-09-12 12:38:31 check to make sure they're all later than this!
 ```
 
+### Support functions to help in the processing of all these polygons
+
+These are all stored in `rasterize_fxns.R`:
+
+* `fix_fieldnames()` to adjust the shapefile field names so they match up
+* `fix_turtle_polys()` to fix some gaps in turtle polygons before rasterizing
+* `match_to_map()` to keep only the polygon features that still need to be rasterized, rather than keeping the overall shapefile 
+* `clip_to_depth()` to take the resulting raster and mask the result to bathymetric rasters, based on several depth classes, e.g. neritic, shallow
+* `buffer_tiny_polys()` to add a small buffer around extremely small polygons.  Some polygons are too small (e.g. < 100 km^2^, the size of a raster cell) to be picked up by the rasterization process and result in a zero range.  A small buffer will ensure some minimal inclusion for these highly endemic species.
+
+
 ``` {r rasterize and clip and save to csv}
 
 if(nrow(maps_to_rasterize) == 0) { ### all maps accounted for as .csvs
@@ -117,144 +126,74 @@ if(nrow(maps_to_rasterize) == 0) { ### all maps accounted for as .csvs
   
   message('reload == ', reload, '... Maps to process: ', nrow(maps_to_rasterize))
 
-  ### These will be used as masks
+  ### These will be used as masks for clip_to_depth().  It's cheating
+  ### to keep these in globalEnv but whatever for now.
   rast_bathy <- raster(file.path(dir_spatial,
                                  'bathy_mol.tif'))
   rast_neritic <- raster(file.path(dir_spatial,
-                                 'bathy_mol_neritic.tif'))
+                                   'bathy_mol_neritic.tif'))
   rast_shallow <- raster(file.path(dir_spatial,
-                                 'bathy_mol_shallow.tif'))
-  
+                                   'bathy_mol_shallow.tif'))
+
   ################################################################.
   ### Loop over each distinct shapefile with species range maps
   ################################################################.
   shps <- maps_to_rasterize$shp_file %>% unique()
   for(i in seq_along(shps)) {
-    ### i <- 1
+    ### i <- 2
     
     shp <- shps[i]
     
-    maps_in_shp <- maps_to_rasterize %>%
-      filter(shp_file == shp)
-    
-    id_fix <- maps_in_shp %>%
-      select(shp_iucn_sid, iucn_sid, subpop, max_depth) %>%
-      distinct()
-    
     message(i, ' of ', length(shps), ': reading ', basename(shp), ' from: \n  ', shp)
 
-    polys_all <- read_sf(shp, type = 6) %>%
-      janitor::clean_names()
-      ### we will check geoms and fix them inside the mclapply, 
-      ### and then reproject, one species at a time
-
-    if(!'sciname' %in% names(polys_all)) {
-      polys_all <- polys_all %>%
-        rename(sciname = binomial)
-    }
-    
-    if(!'subpop' %in% names(polys_all)) {
-      polys_all$subpop <- NA_character_
-      ### if shape doesn't have subpop column, add it as NA
-    }
-    if('id_no' %in% names(polys_all)) {
-      polys_all <- polys_all %>%
-        rename(iucn_sid = id_no)
-    }
-    if(!'presence' %in% names(polys_all)) {
-      polys_all <- polys_all %>%
-        mutate(presence = 1)
-    }
-
-    
-    if(str_detect(shp, 'REPTILES')) {
-      message('Replacing REPTILES with buffered turtle polygons!!!')
-      ### the turtle polys have issues with the western boundary - not quite at
-      ### +180; some have issues on the east as well. Buffer problem spp by
-      ### 0.25 degrees before clipping.  Near the equator this adds an error of
-      ### ~ 28 km!  But clearly the shitty polygons are creating an error as well.
-      ### Identify the problem ones:
-      ### Caretta caretta 3897
-      ### Dermochelys coriacea 6494
-      ### Eretmochelys imbricata 8005
-      ### Chelonia mydas 4615
-      ### I'll just buffer all subpops, for ease.  Land will get clipped
-      ### later.
-      turtles_buffered_file <- file.path(dir_bd_anx, 'tmp/reptiles_shp_buffered.shp')
-      if(!file.exists(turtles_buffered_file)) {
-        polys_match_buff <- polys_match %>%
-          filter(shp_iucn_sid %in% c(3897, 6494, 8005, 4615)) %>%
-          st_buffer(dist = 0.25)
-        polys_match_non_buff <- polys_match %>%
-          filter(!shp_iucn_sid %in% c(3897, 6494, 8005, 4615))
-        polys_match <- rbind(polys_match_non_buff, polys_match_buff)
-        st_write(polys_match, turtles_buffered_file)
-      }
-      # dbf <- foreign::read.dbf(turtles_buffered_file)
-      # foreign::write.dbf(dbf, turtles_buffered_file)
-
-      polys_match <- st_read(turtles_buffered_file) %>%
-        setNames(c("shp_iucn_sid", "sciname", "subpop", "presence",
-                   "iucn_sid", "max_depth", "geometry"))
+    if(!str_detect(shp, 'REPTILES')) {
+      ### There's an issue with turtle polys - otherwise just read in the sf
+      polys_all <- read_sf(shp, type = 6) %>%
+        janitor::clean_names() %>%
+        fix_fieldnames()
     } else {
-      
-      polys_match <- polys_all %>%
-        select(shp_iucn_sid = iucn_sid, sciname, subpop, presence, geometry) %>%
-        mutate(presence = ifelse(presence == 0, 1, presence),
-               subpop   = as.character(subpop)) %>%
-        inner_join(id_fix, by = c('shp_iucn_sid', 'subpop')) 
-
+      polys_all <- fix_turtle_polys(shp)
     }
+      
+    polys_match <- match_to_map(polys_all, maps_to_rasterize)
     
-    spp_ids <- maps_in_shp$iucn_sid %>% 
-      sort() %>% 
-      unique()
-    
-  
     ####################################################################.
     ### In each shapefile, loop over each species ID using mclapply().
     ####################################################################.
     
+    spp_ids <- polys_match$iucn_sid %>% 
+      sort() %>% 
+      unique()
+  
     message('Processing ', basename(shp), ' with ', length(spp_ids), ' species...')
     
-    # system.time({
-      tmp <- parallel::mclapply(seq_along(spp_ids),
-                                mc.cores = 24, 
-                                FUN = function(x) {
-        ### x <- 1
-        ### spp <- 3897                          
-        spp <- spp_ids[x]
-        
-        message(x, ' of ', length(spp_ids), ': Processing ', spp, ' in ', 
+    tmp <- parallel::mclapply(seq_along(spp_ids), mc.cores = 24, 
+      FUN = function(j) { ### j <- 1    ### spp <- 178938
+        spp <- spp_ids[j]
+        message(j, ' of ', length(spp_ids), ': Processing ', spp, ' in ', 
                 basename(shp), ' (group ', i, ' of ', length(shps), ')...\n')
         
         spp_shp <- polys_match %>%
           filter(iucn_sid == spp)
         
-        spp_shp <- valid_check(spp_shp)
-          ### if invalid geom, and bounds exceeded, buffer to 0
-        
         spp_shp <- spp_shp %>%
+          valid_check() %>%
+            ### if invalid geom, and bounds exceeded, buffer to 0
           clip_to_globe() %>%
+            ### make sure bounds don't exceed +/- 180
           smoothr::densify(max_distance = 0.5) %>%
-          st_transform(crs(rast_base))
+            ### add points to ensure smooth transform to Mollweide
+          st_transform(crs(rast_base)) %>%
+            ### transform to Mollweide ~10km x 10km resolution
+          buffer_tiny_polys()
+            ### identify tiny polys, buffer to ensure some representation
         
         spp_rast <- fasterize::fasterize(spp_shp, rast_base, 
                                          field = 'presence', fun = 'min')
         
-        ### depth clip if necessary; otherwise clip to bathy raster (which previously
-        ### was clipped to area raster - so cells with any marine area will be kept,
-        ### and non-marine cells will be dropped).
-        ### Manual adds of shallow spp:
-        spp_shallow <- c(133512)
-        
-        if(spp_shp$max_depth == '< 20 m') {
-          spp_rast <- mask(spp_rast, rast_shallow)
-        } else if(spp_shp$max_depth == '< 200 m' | spp_shp$iucn_sid %in% spp_shallow) {
-          spp_rast <- mask(spp_rast, rast_neritic)
-        } else {
-          spp_rast <- mask(spp_rast, rast_bathy)
-        }
+        ### clip the rasterized polygons to various depth regimes
+        ### depending on species characteristics
+        spp_rast <- clip_to_depth(spp_rast, spp_shp)
         
         ### convert to dataframe and write out as a csv:
         spp_present <- data.frame(cell_id  = values(rast_base),
@@ -270,7 +209,6 @@ if(nrow(maps_to_rasterize) == 0) { ### all maps accounted for as .csvs
         
         return(NULL)
       }) ### end of mclapply FUN definition
-    # }) ### end of system.time call
   } ### end of for loop over each species group
 } ### end of "if" check to make sure there are any maps to rasterize
 

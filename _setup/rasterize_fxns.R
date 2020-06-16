@@ -77,6 +77,135 @@ valid_check <- function(spp_shp) {
   return(spp_shp)
 }
 
+fix_fieldnames <- function(poly_sf) {
+  if(!'sciname' %in% names(poly_sf)) {
+    poly_sf <- poly_sf %>%
+      rename(sciname = binomial)
+  }
+  
+  if(!'subpop' %in% names(poly_sf)) {
+    poly_sf$subpop <- NA_character_
+    ### if shape doesn't have subpop column, add it as NA
+  }
+  if('id_no' %in% names(poly_sf)) {
+    ### if id_no field, reset to iucn_sid
+    poly_sf <- poly_sf %>%
+      rename(iucn_sid = id_no)
+  }
+  if(!'presence' %in% names(poly_sf)) {
+    poly_sf <- poly_sf %>%
+      mutate(presence = 1)
+  }
+  return(poly_sf)
+}
+
+fix_turtle_polys <- function(shp) {
+  message('Replacing REPTILES with buffered turtle polygons!!!')
+  ### the turtle polys have issues with the western boundary - not quite at
+  ### +180; some have issues on the east as well. Buffer problem spp by
+  ### 0.25 degrees before clipping.  Near the equator this adds an error of
+  ### ~ 28 km!  But clearly the shitty polygons are creating an error as well.
+  ### Identify the problem ones:
+  ### Caretta caretta 3897;          Dermochelys coriacea 6494; 
+  ### Eretmochelys imbricata 8005;   Chelonia mydas 4615
+  ### I'll just buffer all subpops, for ease.  Land gets clipped later.
+  
+  turtles_buffered_file <- file.path(dir_bd_anx, 'tmp/reptiles_shp_buffered.shp')
+  
+  if(!file.exists(turtles_buffered_file)) {
+    message('Creating a temporary buffered reptiles shapefile...')
+    polys_rept <- read_sf(shp, type = 6) %>%
+      janitor::clean_names() %>%
+      fix_fieldnames()
+    
+    polys_rept_buff <- polys_rept %>%
+      filter(iucn_sid %in% c(3897, 6494, 8005, 4615)) %>%
+      st_buffer(dist = 0.25)
+    polys_rept_non_buff <- polys_rept %>%
+      filter(!iucn_sid %in% c(3897, 6494, 8005, 4615))
+    polys_rept_fixed <- rbind(polys_rept_non_buff, polys_rept_buff)
+    st_write(polys_rept_fixed, turtles_buffered_file, delete_layer = TRUE)
+  }
+  
+  ### now read in as polys_all the fixed buffered file
+  polys_all <- st_read(turtles_buffered_file)
+  return(polys_all)
+}
+
+match_to_map <- function(poly_sf, maps_df) {
+  ### Fix the shapefile IUCN id vs. subpop IUCN id.  The inner_join
+  ### keeps only the polygon features of species still to be
+  ### rasterized (from the id_fix dataframe).
+  id_fix <- maps_df %>%
+    filter(shp_file == shp) %>%
+    select(shp_iucn_sid, iucn_sid, subpop, max_depth) %>%
+    distinct()
+  
+  polys_match <- poly_sf %>%
+    select(shp_iucn_sid = iucn_sid, sciname, subpop, presence, geometry) %>%
+    mutate(presence = ifelse(presence == 0, 1, presence),
+           subpop   = as.character(subpop)) %>%
+    inner_join(id_fix, by = c('shp_iucn_sid', 'subpop')) 
+  
+  return(polys_match)
+}
+
+buffer_tiny_polys <- function(spp_shp) {
+  ### Check that CRS is in meters.
+  poly_crs <- st_crs(spp_shp)[1] %>%
+    as.character()
+  if(!str_detect(poly_crs, '\\+units=m')) {
+    stop('For buffer_tiny_polys(), expecting units in meters')
+  }
+  
+  ### Identify small polygons by their total area.  Most tiny zero-range
+  ### spp have an area less than 100 km^2; one (Conus decoratus)
+  ### is 124 km^2.  Use a little more than this as the size threshold.
+  thresh_m2 <- units::set_units(130 * 1e6, m^2)
+  ### Cell resolution is 10279.3 meters.  A buffer of ~half
+  ### that would nearly guarantee all polygons to result in at least
+  ### one raster cell, unless the polygon is near a corner.
+  poly_area_m2 <- st_area(spp_shp$geometry)
+  buffer_dist <- 5000 ### in meters
+  
+  
+  if(poly_area_m2 < thresh_m2) {
+    msg_stem <- 'Tiny polygon (%s km^2 < %s km2 threshold); buffering by %s km...'
+    message(sprintf(msg_stem, round(poly_area_m2/1e6), thresh_m2/1e6, buffer_dist/1e3))
+    spp_shp_buffered <- spp_shp %>%
+      st_buffer(dist = buffer_dist)
+    return(spp_shp_buffered)
+  } else {
+    return(spp_shp)
+  }
+}
+
+clip_to_depth <- function(spp_rast, spp_shp) {
+  ### depth clip if necessary; otherwise clip to bathy raster (which previously
+  ### was clipped to area raster - so cells with any marine area will be kept,
+  ### and non-marine cells will be dropped).
+  ### Manual adds of shallow spp:
+  spp_shallow <- c(133512)
+  
+  max_depth <- unique(spp_shp$max_depth)
+  
+  if(length(max_depth) != 1) stop('Non-unique max_depth field!')
+  ### this shouldn't happen - each spp should have only one depth
+  
+  if(max_depth == '< 20 m') {
+    ### intertidal, very shallow spp
+    spp_rast <- mask(spp_rast, rast_shallow)
+  } else if(max_depth == '< 200 m' | spp_shp$iucn_sid %in% spp_shallow) {
+    ### spp on the continental shelf
+    spp_rast <- mask(spp_rast, rast_neritic)
+  } else {
+    ### rast_bathy covers the entire ocean - effectively masks out land
+    spp_rast <- mask(spp_rast, rast_bathy)
+  }
+  
+  return(spp_rast)
+}
+
 drop_geom <- function(sf) {
   sf %>% as.data.frame() %>% select(-geometry)
 }

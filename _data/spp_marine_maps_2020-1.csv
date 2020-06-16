@@ -30,7 +30,6 @@ shp_iucn_sid,iucn_sid,sciname,presence,subpop,dbf_file,max_depth
 195023,195023,Engraulis anchoita,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 16440016,16440016,Engraulis eurystole,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 190383,190383,Cetengraulis edentulus,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-98471289,98471289,Clupeonella engrauliformis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 195021,195021,Sprattus fuegensis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 98841657,98841657,Strangomera bentincki,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 191206,191206,Alosa sapidissima,3,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,200 m +
@@ -79,7 +78,6 @@ shp_iucn_sid,iucn_sid,sciname,presence,subpop,dbf_file,max_depth
 183379,183379,Lycengraulis poeyi,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 183416,183416,Pliosteostoma lutipinnis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 183922,183922,Opisthopterus dovii,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-135707,135707,Clupeonella caspia,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 183876,183876,Opisthopterus equatorialis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 154814,154814,Sardinella fijiense,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 155240,155240,Thryssa mystax,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
@@ -125,7 +123,6 @@ shp_iucn_sid,iucn_sid,sciname,presence,subpop,dbf_file,max_depth
 97755938,97755938,Herklotsichthys lippa,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 183464,183464,Anchoa lucida,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 114164251,114164251,Spratelloides atrofasciatus,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-98468550,98468550,Alosa curensis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 99167147,99167147,Etrumeus acuminatus,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 61207,61207,Pellona ditchela,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 183470,183470,Anchoa exigua,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
@@ -163,8 +160,6 @@ shp_iucn_sid,iucn_sid,sciname,presence,subpop,dbf_file,max_depth
 75154011,75154011,Sardinella jussieu,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 98943344,98943344,Encrasicholina purpurea,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 18124721,18124721,Dussumieria acuta,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-135548,135548,Alosa caspia,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-135548,135548,Alosa caspia,5,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 16465969,16465969,Odontognathus mucronatus,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 114164022,114164022,Etrumeus jacksoniensis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,200 m +
 98839002,98839002,Spratelloides robustus,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
@@ -201,7 +196,6 @@ shp_iucn_sid,iucn_sid,sciname,presence,subpop,dbf_file,max_depth
 98735411,98735411,Thryssa whiteheadi,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 97757259,97757259,Nematalosa vlaminghi,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 98897391,98897391,Coilia ramcarati,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-98468449,98468449,Alosa braschnikowi,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 98830797,98830797,Sardinella hualiensis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 99086953,99086953,Thryssa spinidens,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 198580,198580,Sardina pilchardus,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,200 m +
@@ -237,13 +231,11 @@ shp_iucn_sid,iucn_sid,sciname,presence,subpop,dbf_file,max_depth
 98987583,98987583,Papuengraulis micropinna,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 82626288,82626288,Etrumeus sadina,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,200 m +
 75156272,75156272,Stolephorus insularis,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-98471433,98471433,Clupeonella grimmi,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 75150150,75150150,Chirocentrus dorab,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 103422139,103422139,Encrasicholina pseudoheteroloba,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 98822816,98822816,Sardinella atricauda,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 114164094,114164094,Sardinella goni,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 201996,201996,Ilisha obfuscata,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
-98470302,98470302,Alosa saposchnikowii,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m
 134554171,134554171,Stolephorus oceanicus,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,200 m +
 183347,183347,Sardinops sagax,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,200 m +
 155116,155116,Sardinella albella,1,NA,/home/shares/ohi/git-annex/globalprep/_raw_data/iucn_spp/d2020-1/CLUPEIFORMES.dbf,< 200 m

@@ -53,7 +53,7 @@ Bind the resulting dataframe with a dataframe of cell ocean areas.  Sum the tota
 
 ```{r}
 range_from_rasts_file <- here('int/range_from_rasts.csv')
-
+# unlink(range_from_rasts_file)
 if(!file.exists(range_from_rasts_file)) {
   dir_mol_rast <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
   
@@ -64,7 +64,9 @@ if(!file.exists(range_from_rasts_file)) {
     filter(!is.na(a_km2))
     
   rast_files <- list.files(dir_mol_rast, full.names = TRUE)
-  
+  # f <- file.path(dir_mol_rast, 'iucn_sid_178938.csv')
+  # file.exists(f)
+
   range_l <- parallel::mclapply(rast_files,
                FUN = function(f) {
                  ### f <- rast_files[1]
@@ -145,41 +147,54 @@ if(!file.exists(range_from_polys_file)) {
 r_rast <- read_csv(range_from_rasts_file)
 r_poly <- read_csv(range_from_polys_file)
 map_info <- read_csv(here('_data/spp_marine_maps_2020-1.csv'))
+spp_risk <- read_csv(here('_data/iucn_risk_current_2020-1.csv')) %>%
+  select(iucn_sid, cat, cat_score) %>%
+  distinct()
 
 x <- r_rast %>%
   left_join(map_info, by = 'iucn_sid') %>%
   left_join(r_poly, by = c('shp_iucn_sid' = 'iucn_sid', 'subpop')) %>%
   mutate(gp = tolower(basename(dbf_file)) %>% str_replace('.dbf', '')) %>%
   select(iucn_sid, subpop, sciname, gp, range_km2, poly_km2) %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  filter(!is.na(cat_score) & !cat_score %in% c(0, 1)) %>%
   distinct()
 
-zero_df <- x %>%
-  filter(range_km2 == 0) %>%
+small_range_df <- x %>%
+  filter(range_km2 < 10) %>%
   mutate(poly_km2 = as.integer(poly_km2)) %>%
   select(-subpop) %>%
   arrange(desc(poly_km2))
 
-legit_zeros <- zero_df %>%
+legit_small <- small_range_df %>%
   filter(poly_km2 < 100)
 
-problem_zeros <- zero_df %>%
+problem_small <- small_range_df %>%
   filter(poly_km2 >= 100)
 ```
 
-### Legitimate zero ranges?
+### Check small-ranged species
 
-These zero-range species may be legitimate, as the total range (by polygon) is less than the area of a single raster cell.
+`r knitr::kable(small_range_df)`
 
-`r knitr::kable(legit_zeros)`
+#### Checked (prev version):
 
-### Problematic zero ranges?
+Alosa caspia, Clupeonella caspia, Alosa braschnikowi, Alosa curensis, Alosa saposchnikowii, Clupeonella engrauliformis, Clupeonella grimmi, are Caspian sea fish.  Zero marine range is OK.  Excluded from assessment: 
 
-These zero-range species may be problematic, as their total range exceeds that of a single raster cell.  However, they may be legitimate, if all the range is inland (e.g. birds, some terrestrial mammals, etc)
+135548, 135707, 98468449, 98468550, 98470302, 98471289, 98471433
 
-`r knitr::kable(problem_zeros)`
+#### Checked (current version):
 
-### NA polygons?
+For most of these, the polygon does not intersect what I have as coastal or neritic waters.  Could the polygons be displaced/shifted?  The Revillagigedo spp are near but not overlapping the islands identified in the ocean shapefile.  The St Paul's Rocks spp are dropped because neither the coastal buffer nor the bathymetry raster show shallow/coastal waters there (it's an archipelago about 500 feet across in the middle of the Atlantic).
 
-These species show `NA` for polygon range... if so, shouldn't have a raster?
+* 22698097 Pterodroma caribbaea - Jamaican petrel polygon is entirely (far) inland.
+* 178938	Enneanectes smithi - "Enneanectes smithi is known only from St. Paul's Rocks, Brazil in the central Atlantic. It has an area of occupancy of less than 5 km²." __VU__
+* 183625	Halichoeres insularis	- "This species is endemic to the Eastern Pacific, and is only found in the found the Revillagigedo Islands. However, it may also be present at Alijos Rocks and Guadalupe Island, off the coast of central Baja." __VU__
+* 184001	Labrisomus socorroensis	- "This species is endemic to the Eastern Pacific, and is only known from Revillagigedo Islands." __VU__
 
-`r knitr::kable(zero_df %>% filter(is.na(poly_km2)))`
+
+<!-- ### NA polygons? -->
+
+<!-- Do any species show `NA` for polygon range... if so, shouldn't have a raster? -->
+
+<!-- `r knitr::kable(small_range_df %>% filter(is.na(poly_km2)))` -->

@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Mon Jun 15 09:37:36 2020 by ohara" />
+<meta name="author" content="Compiled on Tue Jun 16 10:29:46 2020 by ohara" />
 
 
 <title>Determine species ranges</title>
@@ -1658,7 +1658,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Determine species ranges</h1>
-<h4 class="author"><em>Compiled on Mon Jun 15 09:37:36 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Tue Jun 16 10:29:46 2020 by ohara</em></h4>
 
 </div>
 
@@ -1691,7 +1691,7 @@ div.tocify {
 <h2><span class="header-section-number">3.1</span> Read in each species rangemap (csv)</h2>
 <p>Bind the resulting dataframe with a dataframe of cell ocean areas. Sum the total marine range. Store total raster ranges for all spp in a dataframe. Save this in the main intermediate directory for use in main scripts.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">range_from_rasts_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;int/range_from_rasts.csv&#39;</span>)</a>
-<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co"># unlink(range_from_rasts_file)</span></a>
 <a class="sourceLine" id="cb2-3" title="3"><span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(range_from_rasts_file)) {</a>
 <a class="sourceLine" id="cb2-4" title="4">  dir_mol_rast &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_rasts_mol_2020&#39;</span>)</a>
 <a class="sourceLine" id="cb2-5" title="5">  </a>
@@ -1702,24 +1702,26 @@ div.tocify {
 <a class="sourceLine" id="cb2-10" title="10"><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(a_km2))</a>
 <a class="sourceLine" id="cb2-11" title="11">    </a>
 <a class="sourceLine" id="cb2-12" title="12">  rast_files &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_mol_rast, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb2-13" title="13">  </a>
-<a class="sourceLine" id="cb2-14" title="14">  range_l &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(rast_files,</a>
-<a class="sourceLine" id="cb2-15" title="15">               <span class="dt">FUN =</span> <span class="cf">function</span>(f) {</a>
-<a class="sourceLine" id="cb2-16" title="16">                 <span class="co">### f &lt;- rast_files[1]</span></a>
-<a class="sourceLine" id="cb2-17" title="17">                 id &lt;-<span class="st"> </span><span class="kw">str_extract</span>(<span class="kw">basename</span>(f), <span class="st">&#39;[0-9]+&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">as.integer</span>()</a>
-<a class="sourceLine" id="cb2-18" title="18">                 x &lt;-<span class="st"> </span><span class="kw">read_csv</span>(f, <span class="dt">col_types =</span> <span class="st">&#39;ii&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-19" title="19"><span class="st">                   </span><span class="kw">filter</span>(presence <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(presence) <span class="op">&amp;</span><span class="st"> </span>presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-20" title="20"><span class="st">                   </span><span class="kw">dt_join</span>(ocean_a_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>, <span class="dt">type =</span> <span class="st">&#39;left&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-21" title="21"><span class="st">                   </span><span class="kw">summarize</span>(<span class="dt">range_km2 =</span> <span class="kw">sum</span>(a_km2)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-22" title="22"><span class="st">                   </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> id)</a>
-<a class="sourceLine" id="cb2-23" title="23">                 </a>
-<a class="sourceLine" id="cb2-24" title="24">                 <span class="kw">return</span>(x)</a>
-<a class="sourceLine" id="cb2-25" title="25">               }, <span class="dt">mc.cores =</span> <span class="dv">40</span>)</a>
-<a class="sourceLine" id="cb2-26" title="26">                              </a>
-<a class="sourceLine" id="cb2-27" title="27">  range_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(range_l)</a>
-<a class="sourceLine" id="cb2-28" title="28">  </a>
-<a class="sourceLine" id="cb2-29" title="29">  <span class="kw">write_csv</span>(range_df, range_from_rasts_file)</a>
-<a class="sourceLine" id="cb2-30" title="30">}</a></code></pre></div>
+<a class="sourceLine" id="cb2-13" title="13">  <span class="co"># f &lt;- file.path(dir_mol_rast, &#39;iucn_sid_178938.csv&#39;)</span></a>
+<a class="sourceLine" id="cb2-14" title="14">  <span class="co"># file.exists(f)</span></a>
+<a class="sourceLine" id="cb2-15" title="15"></a>
+<a class="sourceLine" id="cb2-16" title="16">  range_l &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(rast_files,</a>
+<a class="sourceLine" id="cb2-17" title="17">               <span class="dt">FUN =</span> <span class="cf">function</span>(f) {</a>
+<a class="sourceLine" id="cb2-18" title="18">                 <span class="co">### f &lt;- rast_files[1]</span></a>
+<a class="sourceLine" id="cb2-19" title="19">                 id &lt;-<span class="st"> </span><span class="kw">str_extract</span>(<span class="kw">basename</span>(f), <span class="st">&#39;[0-9]+&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">as.integer</span>()</a>
+<a class="sourceLine" id="cb2-20" title="20">                 x &lt;-<span class="st"> </span><span class="kw">read_csv</span>(f, <span class="dt">col_types =</span> <span class="st">&#39;ii&#39;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb2-21" title="21"><span class="st">                   </span><span class="kw">filter</span>(presence <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(presence) <span class="op">&amp;</span><span class="st"> </span>presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="st">                   </span><span class="kw">dt_join</span>(ocean_a_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>, <span class="dt">type =</span> <span class="st">&#39;left&#39;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb2-23" title="23"><span class="st">                   </span><span class="kw">summarize</span>(<span class="dt">range_km2 =</span> <span class="kw">sum</span>(a_km2)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="st">                   </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> id)</a>
+<a class="sourceLine" id="cb2-25" title="25">                 </a>
+<a class="sourceLine" id="cb2-26" title="26">                 <span class="kw">return</span>(x)</a>
+<a class="sourceLine" id="cb2-27" title="27">               }, <span class="dt">mc.cores =</span> <span class="dv">40</span>)</a>
+<a class="sourceLine" id="cb2-28" title="28">                              </a>
+<a class="sourceLine" id="cb2-29" title="29">  range_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(range_l)</a>
+<a class="sourceLine" id="cb2-30" title="30">  </a>
+<a class="sourceLine" id="cb2-31" title="31">  <span class="kw">write_csv</span>(range_df, range_from_rasts_file)</a>
+<a class="sourceLine" id="cb2-32" title="32">}</a></code></pre></div>
 </div>
 <div id="check-the-ranges-from-the-polygons" class="section level2">
 <h2><span class="header-section-number">3.2</span> Check the ranges from the polygons</h2>
@@ -1777,28 +1779,32 @@ div.tocify {
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">r_rast &lt;-<span class="st"> </span><span class="kw">read_csv</span>(range_from_rasts_file)</a>
 <a class="sourceLine" id="cb4-2" title="2">r_poly &lt;-<span class="st"> </span><span class="kw">read_csv</span>(range_from_polys_file)</a>
 <a class="sourceLine" id="cb4-3" title="3">map_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data/spp_marine_maps_2020-1.csv&#39;</span>))</a>
-<a class="sourceLine" id="cb4-4" title="4"></a>
-<a class="sourceLine" id="cb4-5" title="5">x &lt;-<span class="st"> </span>r_rast <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-6" title="6"><span class="st">  </span><span class="kw">left_join</span>(map_info, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-7" title="7"><span class="st">  </span><span class="kw">left_join</span>(r_poly, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;shp_iucn_sid&#39;</span> =<span class="st"> &#39;iucn_sid&#39;</span>, <span class="st">&#39;subpop&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-8" title="8"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">gp =</span> <span class="kw">tolower</span>(<span class="kw">basename</span>(dbf_file)) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_replace</span>(<span class="st">&#39;.dbf&#39;</span>, <span class="st">&#39;&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-9" title="9"><span class="st">  </span><span class="kw">select</span>(iucn_sid, subpop, sciname, gp, range_km2, poly_km2) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-10" title="10"><span class="st">  </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb4-11" title="11"></a>
-<a class="sourceLine" id="cb4-12" title="12">zero_df &lt;-<span class="st"> </span>x <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-13" title="13"><span class="st">  </span><span class="kw">filter</span>(range_km2 <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-14" title="14"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">poly_km2 =</span> <span class="kw">as.integer</span>(poly_km2)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-15" title="15"><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>subpop) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-16" title="16"><span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(poly_km2))</a>
-<a class="sourceLine" id="cb4-17" title="17"></a>
-<a class="sourceLine" id="cb4-18" title="18">legit_zeros &lt;-<span class="st"> </span>zero_df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-19" title="19"><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&lt;</span><span class="st"> </span><span class="dv">100</span>)</a>
-<a class="sourceLine" id="cb4-20" title="20"></a>
-<a class="sourceLine" id="cb4-21" title="21">problem_zeros &lt;-<span class="st"> </span>zero_df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-22" title="22"><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&gt;=</span><span class="st"> </span><span class="dv">100</span>)</a></code></pre></div>
-<div id="legitimate-zero-ranges" class="section level3">
-<h3><span class="header-section-number">3.3.1</span> Legitimate zero ranges?</h3>
-<p>These zero-range species may be legitimate, as the total range (by polygon) is less than the area of a single raster cell.</p>
+<a class="sourceLine" id="cb4-4" title="4">spp_risk &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data/iucn_risk_current_2020-1.csv&#39;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat, cat_score) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="st">  </span><span class="kw">distinct</span>()</a>
+<a class="sourceLine" id="cb4-7" title="7"></a>
+<a class="sourceLine" id="cb4-8" title="8">x &lt;-<span class="st"> </span>r_rast <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="st">  </span><span class="kw">left_join</span>(map_info, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-10" title="10"><span class="st">  </span><span class="kw">left_join</span>(r_poly, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;shp_iucn_sid&#39;</span> =<span class="st"> &#39;iucn_sid&#39;</span>, <span class="st">&#39;subpop&#39;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-11" title="11"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">gp =</span> <span class="kw">tolower</span>(<span class="kw">basename</span>(dbf_file)) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_replace</span>(<span class="st">&#39;.dbf&#39;</span>, <span class="st">&#39;&#39;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-12" title="12"><span class="st">  </span><span class="kw">select</span>(iucn_sid, subpop, sciname, gp, range_km2, poly_km2) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="st">  </span><span class="kw">left_join</span>(spp_risk, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-14" title="14"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-15" title="15"><span class="st">  </span><span class="kw">distinct</span>()</a>
+<a class="sourceLine" id="cb4-16" title="16"></a>
+<a class="sourceLine" id="cb4-17" title="17">small_range_df &lt;-<span class="st"> </span>x <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-18" title="18"><span class="st">  </span><span class="kw">filter</span>(range_km2 <span class="op">&lt;</span><span class="st"> </span><span class="dv">10</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">poly_km2 =</span> <span class="kw">as.integer</span>(poly_km2)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-20" title="20"><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>subpop) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-21" title="21"><span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(poly_km2))</a>
+<a class="sourceLine" id="cb4-22" title="22"></a>
+<a class="sourceLine" id="cb4-23" title="23">legit_small &lt;-<span class="st"> </span>small_range_df <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-24" title="24"><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&lt;</span><span class="st"> </span><span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb4-25" title="25"></a>
+<a class="sourceLine" id="cb4-26" title="26">problem_small &lt;-<span class="st"> </span>small_range_df <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-27" title="27"><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&gt;=</span><span class="st"> </span><span class="dv">100</span>)</a></code></pre></div>
+<div id="check-small-ranged-species" class="section level3">
+<h3><span class="header-section-number">3.3.1</span> Check small-ranged species</h3>
 <table>
 <thead>
 <tr class="header">
@@ -1807,270 +1813,28 @@ div.tocify {
 <th align="left">gp</th>
 <th align="right">range_km2</th>
 <th align="right">poly_km2</th>
+<th align="left">cat</th>
+<th align="right">cat_score</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="right">192343</td>
-<td align="left">Conus trencarti</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">70</td>
-</tr>
-<tr class="even">
-<td align="right">42830689</td>
-<td align="left">Conus longilineus</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">67</td>
-</tr>
-<tr class="odd">
-<td align="right">22694585</td>
-<td align="left">Thalasseus bernsteini</td>
-<td align="left">bli_marine_v2018</td>
-<td align="right">0</td>
-<td align="right">63</td>
-</tr>
-<tr class="even">
-<td align="right">192336</td>
-<td align="left">Conus serranegrae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">51</td>
-</tr>
-<tr class="odd">
-<td align="right">15307967</td>
-<td align="left">Conus denizi</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">49</td>
-</tr>
-<tr class="even">
-<td align="right">161554</td>
-<td align="left">Narcine insolita</td>
-<td align="left">sharks_rays_chimaeras</td>
-<td align="right">0</td>
-<td align="right">48</td>
-</tr>
-<tr class="odd">
-<td align="right">192721</td>
-<td align="left">Conus messiasi</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">44</td>
-</tr>
-<tr class="even">
-<td align="right">192744</td>
-<td align="left">Conus ateralbus</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">41</td>
-</tr>
-<tr class="odd">
-<td align="right">192626</td>
-<td align="left">Conus mordeirae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">34</td>
-</tr>
-<tr class="even">
-<td align="right">192348</td>
-<td align="left">Conus curralensis</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">30</td>
-</tr>
-<tr class="odd">
-<td align="right">192717</td>
-<td align="left">Conus bellulus</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">30</td>
-</tr>
-<tr class="even">
-<td align="right">192286</td>
-<td align="left">Conus lugubris</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">29</td>
-</tr>
-<tr class="odd">
-<td align="right">192610</td>
-<td align="left">Conus saragasae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">24</td>
-</tr>
-<tr class="even">
-<td align="right">192368</td>
-<td align="left">Conus evorai</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">21</td>
-</tr>
-<tr class="odd">
-<td align="right">192602</td>
-<td align="left">Conus salreiensis</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">21</td>
-</tr>
-<tr class="even">
-<td align="right">192329</td>
-<td align="left">Conus fantasmalis</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">15</td>
-</tr>
-<tr class="odd">
-<td align="right">192287</td>
-<td align="left">Conus melissae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">13</td>
-</tr>
-<tr class="even">
-<td align="right">192514</td>
-<td align="left">Conus tacomae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">13</td>
-</tr>
-<tr class="odd">
-<td align="right">192438</td>
-<td align="left">Conus felitae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">12</td>
-</tr>
-<tr class="even">
-<td align="right">192530</td>
-<td align="left">Conus teodorae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">11</td>
-</tr>
-<tr class="odd">
-<td align="right">192284</td>
-<td align="left">Conus luquei</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">10</td>
-</tr>
-<tr class="even">
-<td align="right">192358</td>
-<td align="left">Conus dorotheae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">9</td>
-</tr>
-<tr class="odd">
-<td align="right">192469</td>
-<td align="left">Conus derrubado</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">8</td>
-</tr>
-<tr class="even">
-<td align="right">15307975</td>
-<td align="left">Conus furnae</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="right">22698097</td>
-<td align="left">Pterodroma caribbaea</td>
-<td align="left">bli_marine_v2018</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="problematic-zero-ranges" class="section level3">
-<h3><span class="header-section-number">3.3.2</span> Problematic zero ranges?</h3>
-<p>These zero-range species may be problematic, as their total range exceeds that of a single raster cell. However, they may be legitimate, if all the range is inland (e.g. birds, some terrestrial mammals, etc)</p>
-<table>
-<thead>
-<tr class="header">
-<th align="right">iucn_sid</th>
-<th align="left">sciname</th>
-<th align="left">gp</th>
-<th align="right">range_km2</th>
-<th align="right">poly_km2</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="right">135548</td>
-<td align="left">Alosa caspia</td>
-<td align="left">clupeiformes</td>
-<td align="right">0</td>
-<td align="right">468695</td>
-</tr>
-<tr class="even">
-<td align="right">135707</td>
-<td align="left">Clupeonella caspia</td>
-<td align="left">clupeiformes</td>
-<td align="right">0</td>
-<td align="right">416576</td>
-</tr>
-<tr class="odd">
-<td align="right">98468449</td>
-<td align="left">Alosa braschnikowi</td>
-<td align="left">clupeiformes</td>
-<td align="right">0</td>
-<td align="right">372394</td>
-</tr>
-<tr class="even">
-<td align="right">98468550</td>
-<td align="left">Alosa curensis</td>
-<td align="left">clupeiformes</td>
-<td align="right">0</td>
-<td align="right">372394</td>
-</tr>
-<tr class="odd">
-<td align="right">98470302</td>
-<td align="left">Alosa saposchnikowii</td>
-<td align="left">clupeiformes</td>
-<td align="right">0</td>
-<td align="right">372394</td>
-</tr>
-<tr class="even">
-<td align="right">98471289</td>
-<td align="left">Clupeonella engrauliformis</td>
-<td align="left">clupeiformes</td>
-<td align="right">0</td>
-<td align="right">205415</td>
-</tr>
-<tr class="odd">
-<td align="right">98471433</td>
-<td align="left">Clupeonella grimmi</td>
-<td align="left">clupeiformes</td>
-<td align="right">0</td>
-<td align="right">168596</td>
-</tr>
-<tr class="even">
 <td align="right">178938</td>
 <td align="left">Enneanectes smithi</td>
 <td align="left">marinefish_part1</td>
 <td align="right">0</td>
 <td align="right">80666</td>
+<td align="left">VU</td>
+<td align="right">0.4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="right">183625</td>
 <td align="left">Halichoeres insularis</td>
 <td align="left">marinefish_part3</td>
 <td align="right">0</td>
 <td align="right">62869</td>
-</tr>
-<tr class="even">
-<td align="right">185139</td>
-<td align="left">Scartella itajobi</td>
-<td align="left">marinefish_part3</td>
-<td align="right">0</td>
-<td align="right">43847</td>
+<td align="left">VU</td>
+<td align="right">0.4</td>
 </tr>
 <tr class="odd">
 <td align="right">184001</td>
@@ -2078,166 +1842,43 @@ div.tocify {
 <td align="left">marinefish_part1</td>
 <td align="right">0</td>
 <td align="right">31434</td>
+<td align="left">VU</td>
+<td align="right">0.4</td>
 </tr>
 <tr class="even">
-<td align="right">40711</td>
-<td align="left">Stegastes sanctipauli</td>
-<td align="left">marinefish_part2</td>
+<td align="right">22698097</td>
+<td align="left">Pterodroma caribbaea</td>
+<td align="left">bli_marine_v2018</td>
 <td align="right">0</td>
-<td align="right">30482</td>
-</tr>
-<tr class="odd">
-<td align="right">4363</td>
-<td align="left">Prognathodes obliquus</td>
-<td align="left">marinefish_part2</td>
 <td align="right">0</td>
-<td align="right">30482</td>
-</tr>
-<tr class="even">
-<td align="right">192726</td>
-<td align="left">Conus verdensis</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">426</td>
-</tr>
-<tr class="odd">
-<td align="right">192403</td>
-<td align="left">Conus cuneolus</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">181</td>
-</tr>
-<tr class="even">
-<td align="right">15307981</td>
-<td align="left">Conus pseudocuneolus</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">180</td>
-</tr>
-<tr class="odd">
-<td align="right">192350</td>
-<td align="left">Conus decoratus</td>
-<td align="left">conus</td>
-<td align="right">0</td>
-<td align="right">124</td>
+<td align="left">CR</td>
+<td align="right">0.8</td>
 </tr>
 </tbody>
 </table>
+<div id="checked-prev-version" class="section level4">
+<h4><span class="header-section-number">3.3.1.1</span> Checked (prev version):</h4>
+<p>Alosa caspia, Clupeonella caspia, Alosa braschnikowi, Alosa curensis, Alosa saposchnikowii, Clupeonella engrauliformis, Clupeonella grimmi, are Caspian sea fish. Zero marine range is OK. Excluded from assessment:</p>
+<p>135548, 135707, 98468449, 98468550, 98470302, 98471289, 98471433</p>
 </div>
-<div id="na-polygons" class="section level3">
-<h3><span class="header-section-number">3.3.3</span> NA polygons?</h3>
-<p>These species show <code>NA</code> for polygon range… if so, shouldn’t have a raster?</p>
-<table>
-<thead>
-<tr class="header">
-<th align="right">iucn_sid</th>
-<th align="left">sciname</th>
-<th align="left">gp</th>
-<th align="right">range_km2</th>
-<th align="right">poly_km2</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="right">103798418</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">22680418</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">22680496</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">22683106</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">22692708</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">22693621</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">22693656</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">22693899</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">22694856</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">22696750</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">22720722</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">22728800</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">22728804</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">62289108</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="right">0</td>
-<td align="right">NA</td>
-</tr>
-</tbody>
-</table>
+<div id="checked-current-version" class="section level4">
+<h4><span class="header-section-number">3.3.1.2</span> Checked (current version):</h4>
+<p>For most of these, the polygon does not intersect what I have as coastal or neritic waters. Could the polygons be displaced/shifted? The Revillagigedo spp are near but not overlapping the islands identified in the ocean shapefile. The St Paul’s Rocks spp are dropped because neither the coastal buffer nor the bathymetry raster show shallow/coastal waters there (it’s an archipelago about 500 feet across in the middle of the Atlantic).</p>
+<ul>
+<li>22698097 Pterodroma caribbaea - Jamaican petrel polygon is entirely (far) inland.</li>
+<li>178938 Enneanectes smithi - “Enneanectes smithi is known only from St. Paul’s Rocks, Brazil in the central Atlantic. It has an area of occupancy of less than 5 km².” <strong>VU</strong></li>
+<li>183625 Halichoeres insularis - “This species is endemic to the Eastern Pacific, and is only found in the found the Revillagigedo Islands. However, it may also be present at Alijos Rocks and Guadalupe Island, off the coast of central Baja.” <strong>VU</strong></li>
+<li>184001 Labrisomus socorroensis - “This species is endemic to the Eastern Pacific, and is only known from Revillagigedo Islands.” <strong>VU</strong></li>
+</ul>
+<!-- ### NA polygons? -->
+<!-- Do any species show `NA` for polygon range... if so, shouldn't have a raster? -->
+<!-- 
+
+| iucn_sid|sciname |gp | range_km2| poly_km2|cat | cat_score|
+|--------:|:-------|:--|---------:|--------:|:---|---------:|
+
+ -->
+</div>
 </div>
 </div>
 </div>

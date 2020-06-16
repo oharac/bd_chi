@@ -173,3 +173,26 @@ get_spp_range <- function(id = NULL) {
   }
   return(ranges)
 }
+
+get_spp_taxon <- function(id = NULL, all_cols = FALSE) {
+  taxa_descs <- read_csv(here('_raw/taxa_descriptions.csv'),
+                         col_types = cols(.default = 'c'))
+
+  taxon_f <- here('int/spp_ranks.csv')
+  if(!file.exists(taxon_f)) {
+    stop('No taxa file found.  Please run setup script 5d_generate_taxon_list.Rmd')
+  }
+  taxa <- read_csv(taxon_f, col_types = c('iucn_sid' = 'i')) %>%
+    left_join(taxa_descs, by = c('assess_gp', 'rank'))
+  
+  
+  if(!is.null(id)) {
+    taxa <- taxa %>%
+      filter(iucn_sid %in% id)
+  }
+  if(!all_cols) {
+    taxa <- taxa %>%
+      select(iucn_sid, assess_gp, rank, desc)
+  }
+  return(taxa)
+}

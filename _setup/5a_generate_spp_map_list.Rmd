@@ -234,7 +234,7 @@ if(!file.exists(comp_file)) {
   comp_spp_url <- 'http://apiv3.iucnredlist.org/api/v3/comp-group/getspecies/%s?token=%s'
   comp_spp <- mc_get_from_api(comp_spp_url, comp_gps$group_name, api_key, 
                               add_param_val = TRUE) %>%
-    select(iucn_sid = taxonid, sciname = scientific_name, taxon = param_val)
+    select(iucn_sid = taxonid, sciname = scientific_name, assess_gp = param_val)
   
   ### NOTE: sygnathiformes and clupeiformes not included here? wtf
   ### add them in:
@@ -244,19 +244,19 @@ if(!file.exists(comp_file)) {
     filter(tolower(family) %in% c('syngnathidae', 'aulostomidae', 
                                   'centriscidae', 'fistulariidae', 
                                   'pegasidae', 'solenostomidae')) %>%
-    mutate(taxon = 'syngnathiformes')
+    mutate(assess_gp = 'syngnathiformes')
   clupeids <- spp_info %>%
     filter(tolower(order) == 'clupeiformes') %>%
-    mutate(taxon = 'clupeiformes')
+    mutate(assess_gp = 'clupeiformes')
   ### NOTE: turtles also not included here
   turtles <- c('Dermochelys', 'Caretta', 'Lepidochelys', 
                'Natator', 'Chelonia', 'Eretmochelys')
   turtles <- spp_info %>%
     filter(genus %in% turtles) %>%
-    mutate(taxon = 'sea_turtles')
+    mutate(assess_gp = 'sea_turtles')
     
   comp_spp <- bind_rows(comp_spp, clupeids, syngnathids, turtles) %>%
-    select(iucn_sid, sciname, taxon) %>%
+    select(iucn_sid, sciname, assess_gp) %>%
     distinct()
   
   write_csv(comp_spp, comp_file)
@@ -316,8 +316,13 @@ marine_spp_ids <- read_csv(here('_data', sprintf('spp_marine_from_api_%s.csv',
                                                  api_version))) %>%
   select(iucn_sid, max_depth)
 
+### Filter clupeiformes from Caspian sea (found because they result
+### in zero-cell rangefiles despite large polygons):
+caspian_spp <- c(135548, 135707, 98468449, 98468550, 98470302, 98471289, 98471433)
+
 marine_map_info <- map_info_add_subpops %>%
-  inner_join(marine_spp_ids, by = 'iucn_sid')
+  inner_join(marine_spp_ids, by = 'iucn_sid') %>%
+  filter(!iucn_sid %in% caspian_spp)
 
 write_csv(marine_map_info, 
           here('_data', sprintf('spp_marine_maps_%s.csv', api_version)))
@@ -329,7 +334,7 @@ write_csv(marine_map_info,
 To this point we have created a list of all marine species with maps in the shapefiles from IUCN.  Here we will generate a table of the subset of marine species considered in this study.  Included species meet the following criteria:
 
 * species has a polygon feature in one of the shapefiles
-* species is listed in a taxon with comprehensively assessed status (incl manually adjusted ones)
+* species is listed in a group with comprehensively assessed status (incl manually adjusted ones)
 * species extinction risk is threatened or near threatened (i.e. not Least Concern, Extinct, or Data Deficient)
 
 Note that when processing these down, we will focus on threatened marine species with sensitivity to the particular stressors; additionally, some species listed here may have maps that don't overlap with ocean area, creating a degenerate range map.

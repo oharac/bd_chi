@@ -1,5 +1,5 @@
 ---
-title: 'Combine stressor sensitivities'
+title: 'Examine stressor sensitivities'
 author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
   html_document:
@@ -121,7 +121,7 @@ rownames(result_mtx) <- colnames(result_mtx)
 ### set NAs to zero
 result_mtx[is.na(result_mtx)] <- 0
 
-result_mtx
+# result_mtx
 
 mtxplot_df <- result_df %>%
   mutate(n = ifelse(str2 > str1, NA, n),
