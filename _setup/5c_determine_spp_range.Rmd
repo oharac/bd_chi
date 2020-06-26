@@ -55,7 +55,7 @@ Bind the resulting dataframe with a dataframe of cell ocean areas.  Sum the tota
 range_from_rasts_file <- here('int/range_from_rasts.csv')
 # unlink(range_from_rasts_file)
 if(!file.exists(range_from_rasts_file)) {
-  dir_mol_rast <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+  dir_mol_map <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
   
   ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
   cell_km2 <- res(ocean_a_rast)[1]^2 / 1e6
@@ -63,18 +63,18 @@ if(!file.exists(range_from_rasts_file)) {
                            a_km2  = values(ocean_a_rast) * cell_km2) %>%
     filter(!is.na(a_km2))
     
-  rast_files <- list.files(dir_mol_rast, full.names = TRUE)
-  # f <- file.path(dir_mol_rast, 'iucn_sid_178938.csv')
+  map_files <- list.files(dir_mol_rast, full.names = TRUE)
+  # f <- file.path(dir_mol_rast, 'iucn_sid_907.csv')
   # file.exists(f)
 
-  range_l <- parallel::mclapply(rast_files,
+  range_l <- parallel::mclapply(map_files,
                FUN = function(f) {
-                 ### f <- rast_files[1]
+                 ### f <- map_files[1]
                  id <- str_extract(basename(f), '[0-9]+') %>% as.integer()
                  x <- read_csv(f, col_types = 'ii') %>%
                    filter(presence > 0 & !is.na(presence) & presence != 5) %>%
                    dt_join(ocean_a_df, by = 'cell_id', type = 'left') %>%
-                   summarize(range_km2 = sum(a_km2)) %>%
+                   summarize(range_km2 = sum(a_km2, na.rm = TRUE)) %>%
                    mutate(iucn_sid = id)
                  
                  return(x)

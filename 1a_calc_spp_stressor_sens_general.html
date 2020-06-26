@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Fri Apr 24 11:52:13 2020 by ohara" />
+<meta name="author" content="Compiled on Tue Jun 16 15:46:29 2020 by ohara" />
 
 
 <title>Calculate land- and ocean-based stressor sensitivities from IUCN impact scores</title>
@@ -1343,9 +1343,9 @@ In here, put in a link to repo and website?
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -1355,14 +1355,16 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -1371,9 +1373,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; } /* Alert */
 code span.an { color: #008000; } /* Annotation */
@@ -1658,14 +1660,17 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Calculate land- and ocean-based stressor sensitivities from IUCN impact scores</h1>
-<h4 class="author"><em>Compiled on Fri Apr 24 11:52:13 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Tue Jun 16 15:46:29 2020 by ohara</em></h4>
 
 </div>
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</a>
-<a class="sourceLine" id="cb1-2" title="2"></a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">fig.width =</span> <span class="dv">6</span>, <span class="dt">fig.height =</span> <span class="dv">4</span>, <span class="dt">fig.path =</span> <span class="st">&#39;figs/&#39;</span>,</span>
+<span id="cb1-2"><a href="#cb1-2"></a>                      <span class="dt">echo =</span> <span class="ot">TRUE</span>, <span class="dt">message =</span> <span class="ot">FALSE</span>, <span class="dt">warning =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</span></code></pre></div>
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
 <p>Stressor sensitivity is a very simplified version of stressor weights (see draft1 folder for complicated version). Here, we will simply note whether a given species is sensitive to a given stressor, using the IUCN impact weights (i.e. non-negligible impact score), ranked as 0-3 (no, low, medium, high impact) for later differentiation if necessary. For species with NA impact scores, we can imply sensitivity based on other fields, e.g. severity. This version of sensitivity is not related to the range of exposure, as the weight calculation was doing.</p>
@@ -1677,10 +1682,81 @@ div.tocify {
 <h2><span class="header-section-number">2.1</span> Set up stressor sensitivity dataframe</h2>
 <p>Using all listed threats and the threat-to-stressor lookup, identify species with non-negligible impacts from impact score, and where impact is unknown, based on severity field. Here we will consider all species, regardless of mapped status, comprehensively assessed status, or threatened status.</p>
 <p>In cases where a species is impacted by multiple threats that map to a single stressor (e.g. different activities that map to “direct human” impact) we summarize to the <em>maximum</em> score out of all listed. For example, a species suffers low impact from residential development (score = 3) but medium impact from commercial (score = 5), the direct human impact layer will be weighted as a 5 across the board.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>spp_marine &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_from_api_%s.csv&#39;</span>, api_version)))</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>spp_maps &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_maps_%s.csv&#39;</span>, api_version)))</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a>spp_risk &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;iucn_risk_current_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat_score)</span>
+<span id="cb2-7"><a href="#cb2-7"></a></span>
+<span id="cb2-8"><a href="#cb2-8"></a>spp_comp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;iucn_comp_assessed_%s.csv&#39;</span>, api_version)))</span></code></pre></div>
 <div id="calc-for-land-based-stressors" class="section level3">
 <h3><span class="header-section-number">2.1.1</span> Calc for land-based stressors</h3>
 <p>Nutrient, chemical, direct human, and light</p>
-<p>Out of the list of 6550 marine species with maps in comprehensively-assessed taxa, 1273 are not Least Concern, Extinct, nor Data Deficient.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>chi_lookup &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_raw/iucn_threat_to_stressor_lookup.csv&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> <span class="kw">str_split</span>(stressor, <span class="st">&#39;;&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="st">  </span><span class="kw">unnest</span>(stressor) <span class="op">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="st">  </span><span class="kw">filter</span>(<span class="kw">str_detect</span>(stressor, <span class="st">&#39;[a-z]&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="st">  </span><span class="kw">filter</span>(category <span class="op">==</span><span class="st"> &#39;land-based&#39;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a>spp_threats &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn/threats&#39;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8"></a>                               <span class="kw">sprintf</span>(<span class="st">&#39;iucn_spp_threats_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="st">  </span><span class="kw">left_join</span>(chi_lookup, <span class="dt">by =</span> <span class="st">&#39;code&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(code))</span>
+<span id="cb3-11"><a href="#cb3-11"></a></span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="co">### Join the marine species list to the threats.</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="co">### * recategorize sensitivities based on impact score</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a><span class="co">### * if no impact score, categorize sensitivities based on severity</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a><span class="co">### * rather than filtering, set NA and past scores to 0</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a><span class="co">###   * this allows non-threatened species to remain in the mix</span></span>
+<span id="cb3-17"><a href="#cb3-17"></a>threats_to_marine &lt;-<span class="st"> </span>spp_marine <span class="op">%&gt;%</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="st">  </span><span class="kw">left_join</span>(spp_risk, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="st">  </span><span class="kw">left_join</span>(spp_threats, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-20"><a href="#cb3-20"></a><span class="st">  </span><span class="co">### code sensitivity based on impact:</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">sens =</span> <span class="kw">case_when</span>(score_num <span class="op">%in%</span><span class="st"> </span><span class="dv">0</span><span class="op">:</span><span class="dv">2</span> <span class="op">~</span><span class="st"> </span><span class="ot">FALSE</span>,   <span class="co">### no/negligible impact</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a>                          score_num <span class="op">&gt;</span><span class="st"> </span><span class="dv">2</span>      <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb3-23"><a href="#cb3-23"></a>                          <span class="ot">TRUE</span>               <span class="op">~</span><span class="st"> </span><span class="ot">NA</span>)) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### set all else to NA</span></span>
+<span id="cb3-24"><a href="#cb3-24"></a><span class="st">  </span><span class="co">### for NA impact, code sensitivity based on severity:</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">sev =</span> <span class="kw">tolower</span>(severity),</span>
+<span id="cb3-26"><a href="#cb3-26"></a>         <span class="dt">sens =</span> <span class="kw">case_when</span>(<span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;negligible|no decl&#39;</span>) <span class="op">~</span><span class="st"> </span><span class="ot">FALSE</span>,</span>
+<span id="cb3-27"><a href="#cb3-27"></a>                          <span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;very rapid decl&#39;</span>)    <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb3-28"><a href="#cb3-28"></a>                          <span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;rapid decl&#39;</span>)         <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb3-29"><a href="#cb3-29"></a>                          <span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;causing|slow, significant&#39;</span>) <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb3-30"><a href="#cb3-30"></a>                          <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span>sens)) <span class="op">%&gt;%</span></span>
+<span id="cb3-31"><a href="#cb3-31"></a><span class="st">  </span><span class="co">### set past impacts and unresolved sensitivies to 0:</span></span>
+<span id="cb3-32"><a href="#cb3-32"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">sens =</span> <span class="kw">ifelse</span>(timing <span class="op">==</span><span class="st"> &#39;Past, Unlikely to Return&#39;</span>, <span class="ot">FALSE</span>, sens),</span>
+<span id="cb3-33"><a href="#cb3-33"></a>         <span class="dt">sens =</span> <span class="kw">ifelse</span>(<span class="kw">is.na</span>(sens), <span class="ot">FALSE</span>, sens)) <span class="op">%&gt;%</span></span>
+<span id="cb3-34"><a href="#cb3-34"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(code)) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### drop code mismatches</span></span>
+<span id="cb3-35"><a href="#cb3-35"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(stressor)) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### drop codes that don&#39;t match stressors</span></span>
+<span id="cb3-36"><a href="#cb3-36"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat_score,</span>
+<span id="cb3-37"><a href="#cb3-37"></a>         sens, stressor, code) <span class="op">%&gt;%</span></span>
+<span id="cb3-38"><a href="#cb3-38"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb3-39"><a href="#cb3-39"></a></span>
+<span id="cb3-40"><a href="#cb3-40"></a><span class="co">### sensitivity categories:</span></span>
+<span id="cb3-41"><a href="#cb3-41"></a><span class="co"># [1] &quot;Unknown&quot;                          &quot;Negligible declines&quot;             </span></span>
+<span id="cb3-42"><a href="#cb3-42"></a><span class="co"># [3] NA                                 &quot;No decline&quot;                      </span></span>
+<span id="cb3-43"><a href="#cb3-43"></a><span class="co"># [5] &quot;Rapid Declines&quot;                   &quot;Slow, Significant Declines&quot;      </span></span>
+<span id="cb3-44"><a href="#cb3-44"></a><span class="co"># [7] &quot;Causing/Could cause fluctuations&quot; &quot;Very Rapid Declines&quot;   </span></span>
+<span id="cb3-45"><a href="#cb3-45"></a></span>
+<span id="cb3-46"><a href="#cb3-46"></a><span class="kw">write_csv</span>(threats_to_marine <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(<span class="op">-</span>cat_score),</span>
+<span id="cb3-47"><a href="#cb3-47"></a>          <span class="kw">here</span>(<span class="st">&#39;int&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_sens_land_%s.csv&#39;</span>, api_version)))</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>n_comp &lt;-<span class="st"> </span>spp_marine <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_maps<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_comp<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="st">  </span>.<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">length</span>()</span>
+<span id="cb4-5"><a href="#cb4-5"></a>n_threatened &lt;-<span class="st"> </span>spp_risk <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_maps<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_comp<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="st">  </span>.<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">length</span>()</span>
+<span id="cb4-10"><a href="#cb4-10"></a></span>
+<span id="cb4-11"><a href="#cb4-11"></a>n_stressed &lt;-<span class="st"> </span>threats_to_marine <span class="op">%&gt;%</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_maps<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_comp<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a><span class="st">  </span><span class="kw">filter</span>(sens) <span class="op">%&gt;%</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a><span class="st">  </span>.<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">length</span>()</span></code></pre></div>
+<p>Out of the list of 6543 marine species with maps in comprehensively-assessed taxa, 1271 are not Least Concern, Extinct, nor Data Deficient.</p>
 <p>The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one <strong>land-based</strong> stressor is: 631. Land-based stressors comprise:</p>
 <ul>
 <li><code>direct_human</code></li>
@@ -1693,7 +1769,70 @@ div.tocify {
 <div id="calc-for-ocean-based-stressors" class="section level3">
 <h3><span class="header-section-number">2.1.2</span> Calc for ocean-based stressors</h3>
 <p>Just shipping…</p>
-<p>Out of the list of 6550 marine species with maps in comprehensively-assessed taxa, 1273 are not Least Concern, Extinct, nor Data Deficient.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>chi_lookup &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_raw/iucn_threat_to_stressor_lookup.csv&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> <span class="kw">str_split</span>(stressor, <span class="st">&#39;;&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="st">  </span><span class="kw">unnest</span>(stressor) <span class="op">%&gt;%</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="st">  </span><span class="kw">filter</span>(<span class="kw">str_detect</span>(stressor, <span class="st">&#39;[a-z]&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="st">  </span><span class="kw">filter</span>(category <span class="op">==</span><span class="st"> &#39;ocean&#39;</span>)</span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a>spp_threats &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn/threats&#39;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8"></a>                               <span class="kw">sprintf</span>(<span class="st">&#39;iucn_spp_threats_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="st">  </span><span class="kw">left_join</span>(chi_lookup, <span class="dt">by =</span> <span class="st">&#39;code&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(code))</span>
+<span id="cb5-11"><a href="#cb5-11"></a></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="co">### Join the marine species list to the threats.</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="co">### * recategorize sensitivities based on impact score</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a><span class="co">### * if no impact score, categorize sensitivities based on severity</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="co">### * rather than filtering, set NA and past scores to 0</span></span>
+<span id="cb5-16"><a href="#cb5-16"></a><span class="co">###   * this allows non-threatened species to remain in the mix</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a>threats_to_marine &lt;-<span class="st"> </span>spp_marine <span class="op">%&gt;%</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a><span class="st">  </span><span class="kw">left_join</span>(spp_risk, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="st">  </span><span class="kw">left_join</span>(spp_threats, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb5-20"><a href="#cb5-20"></a><span class="st">  </span><span class="co">### code sensitivity based on impact:</span></span>
+<span id="cb5-21"><a href="#cb5-21"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">sens =</span> <span class="kw">case_when</span>(score_num <span class="op">%in%</span><span class="st"> </span><span class="dv">0</span><span class="op">:</span><span class="dv">2</span> <span class="op">~</span><span class="st"> </span><span class="ot">FALSE</span>,   <span class="co">### no/negligible impact</span></span>
+<span id="cb5-22"><a href="#cb5-22"></a>                          score_num <span class="op">&gt;</span><span class="st"> </span><span class="dv">2</span>      <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb5-23"><a href="#cb5-23"></a>                          <span class="ot">TRUE</span>               <span class="op">~</span><span class="st"> </span><span class="ot">NA</span>)) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### set all else to NA</span></span>
+<span id="cb5-24"><a href="#cb5-24"></a><span class="st">  </span><span class="co">### for NA impact, code sensitivity based on severity:</span></span>
+<span id="cb5-25"><a href="#cb5-25"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">sev =</span> <span class="kw">tolower</span>(severity),</span>
+<span id="cb5-26"><a href="#cb5-26"></a>         <span class="dt">sens =</span> <span class="kw">case_when</span>(<span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;negligible|no decl&#39;</span>) <span class="op">~</span><span class="st"> </span><span class="ot">FALSE</span>,</span>
+<span id="cb5-27"><a href="#cb5-27"></a>                          <span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;very rapid decl&#39;</span>)    <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb5-28"><a href="#cb5-28"></a>                          <span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;rapid decl&#39;</span>)         <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb5-29"><a href="#cb5-29"></a>                          <span class="kw">is.na</span>(sens) <span class="op">&amp;</span><span class="st"> </span><span class="kw">str_detect</span>(sev, <span class="st">&#39;causing|slow, significant&#39;</span>) <span class="op">~</span><span class="st"> </span><span class="ot">TRUE</span>,</span>
+<span id="cb5-30"><a href="#cb5-30"></a>                          <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span>sens)) <span class="op">%&gt;%</span></span>
+<span id="cb5-31"><a href="#cb5-31"></a><span class="st">  </span><span class="co">### set past impacts and unresolved sensitivies to 0:</span></span>
+<span id="cb5-32"><a href="#cb5-32"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">sens =</span> <span class="kw">ifelse</span>(timing <span class="op">==</span><span class="st"> &#39;Past, Unlikely to Return&#39;</span>, <span class="ot">FALSE</span>, sens),</span>
+<span id="cb5-33"><a href="#cb5-33"></a>         <span class="dt">sens =</span> <span class="kw">ifelse</span>(<span class="kw">is.na</span>(sens), <span class="ot">FALSE</span>, sens)) <span class="op">%&gt;%</span></span>
+<span id="cb5-34"><a href="#cb5-34"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(code)) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### drop code mismatches</span></span>
+<span id="cb5-35"><a href="#cb5-35"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(stressor)) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### drop codes that don&#39;t match stressors</span></span>
+<span id="cb5-36"><a href="#cb5-36"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat_score,</span>
+<span id="cb5-37"><a href="#cb5-37"></a>         sens, stressor, code) <span class="op">%&gt;%</span></span>
+<span id="cb5-38"><a href="#cb5-38"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb5-39"><a href="#cb5-39"></a></span>
+<span id="cb5-40"><a href="#cb5-40"></a><span class="co">### sensitivity categories:</span></span>
+<span id="cb5-41"><a href="#cb5-41"></a><span class="co"># [1] &quot;Unknown&quot;                          &quot;Negligible declines&quot;             </span></span>
+<span id="cb5-42"><a href="#cb5-42"></a><span class="co"># [3] NA                                 &quot;No decline&quot;                      </span></span>
+<span id="cb5-43"><a href="#cb5-43"></a><span class="co"># [5] &quot;Rapid Declines&quot;                   &quot;Slow, Significant Declines&quot;      </span></span>
+<span id="cb5-44"><a href="#cb5-44"></a><span class="co"># [7] &quot;Causing/Could cause fluctuations&quot; &quot;Very Rapid Declines&quot;   </span></span>
+<span id="cb5-45"><a href="#cb5-45"></a></span>
+<span id="cb5-46"><a href="#cb5-46"></a><span class="kw">write_csv</span>(threats_to_marine <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">select</span>(<span class="op">-</span>cat_score),</span>
+<span id="cb5-47"><a href="#cb5-47"></a>          <span class="kw">here</span>(<span class="st">&#39;int&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_sens_ocean_%s.csv&#39;</span>, api_version)))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>n_comp &lt;-<span class="st"> </span>spp_marine <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_maps<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_comp<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="st">  </span>.<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">length</span>()</span>
+<span id="cb6-5"><a href="#cb6-5"></a>n_threatened &lt;-<span class="st"> </span>spp_risk <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_maps<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_comp<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="st">  </span>.<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">length</span>()</span>
+<span id="cb6-10"><a href="#cb6-10"></a></span>
+<span id="cb6-11"><a href="#cb6-11"></a>n_stressed &lt;-<span class="st"> </span>threats_to_marine <span class="op">%&gt;%</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_maps<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb6-13"><a href="#cb6-13"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_comp<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb6-14"><a href="#cb6-14"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a><span class="st">  </span><span class="kw">filter</span>(sens) <span class="op">%&gt;%</span></span>
+<span id="cb6-16"><a href="#cb6-16"></a><span class="st">  </span>.<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">length</span>()</span></code></pre></div>
+<p>Out of the list of 6543 marine species with maps in comprehensively-assessed taxa, 1271 are not Least Concern, Extinct, nor Data Deficient.</p>
 <p>The resulting number of threatened spp (including Near Threatened) with sensitivity to at least one <strong>ocean-based</strong> stressor is: 438. Ocean-based stressors comprise:</p>
 <ul>
 <li><code>shipping</code></li>

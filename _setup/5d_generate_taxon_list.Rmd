@@ -18,6 +18,9 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
@@ -45,7 +48,7 @@ spp_maps <- read_csv(maps_file, col_types = cols('iucn_sid' = 'i',
   distinct()
 
 spp_comp <- read_csv(comp_file, col_types = cols('iucn_sid' = 'i')) %>%
-  select(-sciname, assess_gp = taxon)
+  select(-sciname, assess_gp)
 
 spp_incl <- spp_maps %>%
   left_join(spp_comp, by = c('iucn_sid')) %>%

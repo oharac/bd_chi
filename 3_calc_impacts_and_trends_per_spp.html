@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Mon Jun 8 14:24:36 2020 by ohara" />
+<meta name="author" content="Compiled on Tue Jun 23 09:16:59 2020 by ohara" />
 
 
 <title>Calculate species stressor impacts</title>
@@ -1282,13 +1282,13 @@ window.initializeCodeFolding = function(show) {
   var currentIndex = 1;
 
   // select all R code blocks
-  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia');
+  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
   rCodeBlocks.each(function() {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show || $(this)[0].classList.contains('fold-show'))
-      div.addClass('in');
+    show = (show || $(this).hasClass('fold-show')) && !$(this).hasClass('fold-hide');
+    if (show) div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
     $(this).before(div);
@@ -1323,6 +1323,22 @@ window.initializeCodeFolding = function(show) {
 
 }
 </script>
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
 
 
 
@@ -1343,9 +1359,9 @@ In here, put in a link to repo and website?
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -1355,14 +1371,16 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -1371,9 +1389,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; } /* Alert */
 code span.an { color: #008000; } /* Annotation */
@@ -1658,20 +1676,23 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Calculate species stressor impacts</h1>
-<h4 class="author"><em>Compiled on Mon Jun 8 14:24:36 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Tue Jun 23 09:16:59 2020 by ohara</em></h4>
 
 </div>
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(raster)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</a>
-<a class="sourceLine" id="cb1-3" title="3"></a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="kw">source</span>(<span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</a>
-<a class="sourceLine" id="cb1-5" title="5"></a>
-<a class="sourceLine" id="cb1-6" title="6">dir_str_95cv  &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressors_10km_95cv&#39;</span>)</a>
-<a class="sourceLine" id="cb1-7" title="7">dir_str_trend &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressor_trends&#39;</span>)</a>
-<a class="sourceLine" id="cb1-8" title="8">dir_spp_maps  &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_rasts_mol_2020&#39;</span>)</a>
-<a class="sourceLine" id="cb1-9" title="9">dir_spp_intsx &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_str_rasts&#39;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">fig.width =</span> <span class="dv">6</span>, <span class="dt">fig.height =</span> <span class="dv">4</span>, <span class="dt">fig.path =</span> <span class="st">&#39;figs/&#39;</span>,</span>
+<span id="cb1-2"><a href="#cb1-2"></a>                      <span class="dt">echo =</span> <span class="ot">TRUE</span>, <span class="dt">message =</span> <span class="ot">FALSE</span>, <span class="dt">warning =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">library</span>(raster)</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">source</span>(<span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</span>
+<span id="cb1-8"><a href="#cb1-8"></a></span>
+<span id="cb1-9"><a href="#cb1-9"></a>dir_str_95cv  &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressors_10km_95cv&#39;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10"></a>dir_str_trend &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressor_trends&#39;</span>)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>dir_spp_maps  &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_rasts_mol_2020&#39;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12"></a>dir_spp_intsx &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_str_rasts&#39;</span>)</span></code></pre></div>
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
 <p>For each species, pull in all associated stressor intersections and stressor trends, as well as species range.</p>
@@ -1692,192 +1713,199 @@ div.tocify {
 <div id="create-list-of-species-for-mapping-cumulative-impacts" class="section level2">
 <h2><span class="header-section-number">2.1</span> Create list of species for mapping cumulative impacts</h2>
 <p>Here we will identify all species with sensitivity to one or more stressor, and a range map.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">spp_incl &lt;-<span class="st"> </span><span class="kw">get_incl_spp</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(stressor))</a>
-<a class="sourceLine" id="cb2-3" title="3"></a>
-<a class="sourceLine" id="cb2-4" title="4">spp_ids &lt;-<span class="st"> </span>spp_incl<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-5" title="5"><span class="st">  </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">sort</span>()</a>
-<a class="sourceLine" id="cb2-6" title="6"></a>
-<a class="sourceLine" id="cb2-7" title="7">ocean_area_rast &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">here</span>(<span class="st">&#39;_spatial/ocean_area_mol.tif&#39;</span>))</a>
-<a class="sourceLine" id="cb2-8" title="8">ocean_area_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">ocean_prop =</span> <span class="kw">values</span>(ocean_area_rast),</a>
-<a class="sourceLine" id="cb2-9" title="9">                            <span class="dt">cell_id =</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncell</span>(ocean_area_rast))</a>
-<a class="sourceLine" id="cb2-10" title="10"></a>
-<a class="sourceLine" id="cb2-11" title="11">str_cats &lt;-<span class="st"> </span><span class="kw">get_str_cats</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>spp_incl &lt;-<span class="st"> </span><span class="kw">get_incl_spp</span>() <span class="op">%&gt;%</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(stressor))</span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>spp_ids &lt;-<span class="st"> </span>spp_incl<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="st">  </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">sort</span>()</span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>ocean_area_rast &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">here</span>(<span class="st">&#39;_spatial/ocean_area_mol.tif&#39;</span>))</span>
+<span id="cb2-8"><a href="#cb2-8"></a>cell_area_km2 &lt;-<span class="st"> </span>(<span class="kw">res</span>(ocean_area_rast)[<span class="dv">1</span>]<span class="op">^</span><span class="dv">2</span>) <span class="op">/</span><span class="st"> </span><span class="fl">1e6</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>ocean_area_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">ocean_prop =</span> <span class="kw">values</span>(ocean_area_rast),</span>
+<span id="cb2-10"><a href="#cb2-10"></a>                            <span class="dt">cell_id =</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncell</span>(ocean_area_rast)) <span class="op">%&gt;%</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(ocean_prop)) <span class="op">%&gt;%</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">ocean_area_km2 =</span> ocean_prop <span class="op">*</span><span class="st"> </span>cell_area_km2)</span>
+<span id="cb2-13"><a href="#cb2-13"></a></span>
+<span id="cb2-14"><a href="#cb2-14"></a>str_cats  &lt;-<span class="st"> </span><span class="kw">get_str_cats</span>()</span>
+<span id="cb2-15"><a href="#cb2-15"></a>stressors &lt;-<span class="st"> </span>str_cats<span class="op">$</span>stressor</span></code></pre></div>
 </div>
 <div id="create-stressor-pace-dataframe" class="section level2">
 <h2><span class="header-section-number">2.2</span> Create stressor “pace” dataframe</h2>
 <p>To represent significantly intensifying/increasing and deintensifying/decreasing trends of stressors in a location, we can consider the “pace” (from pace of change paper), focusing on significant high and low paces of change at the stressor level.</p>
 <div id="examine-stressor-trendsignificance-to-test-thresholds-of-intensification" class="section level3">
 <h3><span class="header-section-number">2.2.1</span> Examine stressor trend/significance to test thresholds of intensification</h3>
-<p>This table checks the trends across each stressor map, calculates a high threshold (at the 80th percentile) and low threshold (zero). For “high” trends and “low” trends, what proportion of these cells show a statistically significant trend?</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">stressors &lt;-<span class="st"> </span>str_cats<span class="op">$</span>stressor</a>
-<a class="sourceLine" id="cb3-2" title="2"></a>
-<a class="sourceLine" id="cb3-3" title="3">check_list &lt;-<span class="st"> </span><span class="kw">vector</span>(<span class="st">&#39;list&#39;</span>, <span class="dt">length =</span> <span class="kw">length</span>(stressors))</a>
-<a class="sourceLine" id="cb3-4" title="4"><span class="cf">for</span>(i <span class="cf">in</span> <span class="kw">seq_along</span>(stressors)) {</a>
-<a class="sourceLine" id="cb3-5" title="5">  str &lt;-<span class="st"> </span>stressors[i]</a>
-<a class="sourceLine" id="cb3-6" title="6">  <span class="kw">message</span>(<span class="st">&#39;Calculating pace summary for &#39;</span>, str)</a>
-<a class="sourceLine" id="cb3-7" title="7">  </a>
-<a class="sourceLine" id="cb3-8" title="8">  trend_r_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend,</a>
-<a class="sourceLine" id="cb3-9" title="9">                            <span class="st">&#39;stressor_trend_%s_value.tif&#39;</span>)</a>
-<a class="sourceLine" id="cb3-10" title="10">  p_val_r_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend,</a>
-<a class="sourceLine" id="cb3-11" title="11">                            <span class="st">&#39;stressor_trend_%s_p_val.tif&#39;</span>)</a>
-<a class="sourceLine" id="cb3-12" title="12">  trend_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(trend_r_file, str))</a>
-<a class="sourceLine" id="cb3-13" title="13">  p_val_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(p_val_r_file, str))</a>
-<a class="sourceLine" id="cb3-14" title="14">  df &lt;-<span class="st"> </span><span class="kw">rast_to_map</span>(trend_r, <span class="dt">cell_val =</span> <span class="st">&#39;trend&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-15" title="15"><span class="st">    </span><span class="kw">full_join</span>(<span class="kw">rast_to_map</span>(p_val_r, <span class="dt">cell_val =</span> <span class="st">&#39;p&#39;</span>), <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>)</a>
-<a class="sourceLine" id="cb3-16" title="16">  cutoff &lt;-<span class="st"> </span><span class="kw">quantile</span>(df<span class="op">$</span>trend, <span class="fl">.8</span>)</a>
-<a class="sourceLine" id="cb3-17" title="17">  df2 &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-18" title="18"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">range =</span> <span class="kw">case_when</span>(trend <span class="op">&gt;</span><span class="st"> </span>cutoff <span class="op">~</span><span class="st"> &#39;high&#39;</span>, </a>
-<a class="sourceLine" id="cb3-19" title="19">                             trend <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">~</span><span class="st"> &#39;low&#39;</span>,</a>
-<a class="sourceLine" id="cb3-20" title="20">                             <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> &#39;mid&#39;</span>),</a>
-<a class="sourceLine" id="cb3-21" title="21">           <span class="dt">sig =</span> p <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-22" title="22"><span class="st">    </span><span class="kw">group_by</span>(range) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-23" title="23"><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">pct_sig =</span> <span class="kw">sum</span>(sig) <span class="op">/</span><span class="st"> </span><span class="kw">n</span>()) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-24" title="24"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> str,</a>
-<a class="sourceLine" id="cb3-25" title="25">           <span class="dt">cutoff =</span> cutoff)</a>
-<a class="sourceLine" id="cb3-26" title="26">  check_list[[i]] &lt;-<span class="st"> </span>df2</a>
-<a class="sourceLine" id="cb3-27" title="27">}</a>
-<a class="sourceLine" id="cb3-28" title="28">check_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(check_list) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb3-29" title="29"><span class="st">  </span><span class="kw">filter</span>(range <span class="op">!=</span><span class="st"> &#39;mid&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-30" title="30"><span class="st">  </span><span class="kw">spread</span>(range, pct_sig)</a>
-<a class="sourceLine" id="cb3-31" title="31">knitr<span class="op">::</span><span class="kw">kable</span>(check_df)</a></code></pre></div>
+<p>This table checks the trends across each stressor map, determines whether stressor intensity in a cell is increasing or decreasing. For “incr” trends and “decr” trends, what proportion of these cells show a statistically significant trend?</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>pace_sum_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;int/pace_summary.csv&#39;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(pace_sum_file)) {</span>
+<span id="cb3-4"><a href="#cb3-4"></a>  </span>
+<span id="cb3-5"><a href="#cb3-5"></a>  check_list &lt;-<span class="st"> </span><span class="kw">vector</span>(<span class="st">&#39;list&#39;</span>, <span class="dt">length =</span> <span class="kw">length</span>(stressors))</span>
+<span id="cb3-6"><a href="#cb3-6"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="kw">seq_along</span>(stressors)) {</span>
+<span id="cb3-7"><a href="#cb3-7"></a>    <span class="co"># i &lt;- 1</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    str &lt;-<span class="st"> </span>stressors[i]</span>
+<span id="cb3-9"><a href="#cb3-9"></a>    <span class="kw">message</span>(<span class="st">&#39;Calculating pace summary for &#39;</span>, str)</span>
+<span id="cb3-10"><a href="#cb3-10"></a>    </span>
+<span id="cb3-11"><a href="#cb3-11"></a>    trend_r_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend,</span>
+<span id="cb3-12"><a href="#cb3-12"></a>                              <span class="st">&#39;stressor_trend_%s_value.tif&#39;</span>)</span>
+<span id="cb3-13"><a href="#cb3-13"></a>    p_val_r_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend,</span>
+<span id="cb3-14"><a href="#cb3-14"></a>                              <span class="st">&#39;stressor_trend_%s_p_val.tif&#39;</span>)</span>
+<span id="cb3-15"><a href="#cb3-15"></a>    trend_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(trend_r_file, str))</span>
+<span id="cb3-16"><a href="#cb3-16"></a>    p_val_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(p_val_r_file, str))</span>
+<span id="cb3-17"><a href="#cb3-17"></a>    </span>
+<span id="cb3-18"><a href="#cb3-18"></a>    df &lt;-<span class="st"> </span><span class="kw">rast_to_map</span>(trend_r, <span class="dt">cell_val =</span> <span class="st">&#39;trend&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="st">      </span><span class="kw">full_join</span>(<span class="kw">rast_to_map</span>(p_val_r, <span class="dt">cell_val =</span> <span class="st">&#39;p&#39;</span>), <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>)</span>
+<span id="cb3-20"><a href="#cb3-20"></a>    df2 &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a><span class="st">      </span><span class="kw">mutate</span>(<span class="dt">range =</span> <span class="kw">case_when</span>(trend <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">~</span><span class="st"> &#39;incr&#39;</span>, </span>
+<span id="cb3-22"><a href="#cb3-22"></a>                               trend <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">~</span><span class="st"> &#39;decr&#39;</span>,</span>
+<span id="cb3-23"><a href="#cb3-23"></a>                               <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> &#39;mid&#39;</span>),</span>
+<span id="cb3-24"><a href="#cb3-24"></a>             <span class="dt">sig =</span> p <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a><span class="st">      </span><span class="kw">group_by</span>(range) <span class="op">%&gt;%</span></span>
+<span id="cb3-26"><a href="#cb3-26"></a><span class="st">      </span><span class="kw">summarize</span>(<span class="dt">pct_sig =</span> <span class="kw">sum</span>(sig) <span class="op">/</span><span class="st"> </span><span class="kw">n</span>()) <span class="op">%&gt;%</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a><span class="st">      </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> str)</span>
+<span id="cb3-28"><a href="#cb3-28"></a>    check_list[[i]] &lt;-<span class="st"> </span>df2</span>
+<span id="cb3-29"><a href="#cb3-29"></a>  }</span>
+<span id="cb3-30"><a href="#cb3-30"></a>  check_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(check_list) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb3-31"><a href="#cb3-31"></a><span class="st">    </span><span class="kw">filter</span>(range <span class="op">!=</span><span class="st"> &#39;mid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-32"><a href="#cb3-32"></a><span class="st">    </span><span class="kw">spread</span>(range, pct_sig)</span>
+<span id="cb3-33"><a href="#cb3-33"></a>  </span>
+<span id="cb3-34"><a href="#cb3-34"></a>  <span class="kw">write_csv</span>(check_df, pace_sum_file)</span>
+<span id="cb3-35"><a href="#cb3-35"></a>} <span class="cf">else</span> {</span>
+<span id="cb3-36"><a href="#cb3-36"></a>  check_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(pace_sum_file)</span>
+<span id="cb3-37"><a href="#cb3-37"></a>}</span>
+<span id="cb3-38"><a href="#cb3-38"></a></span>
+<span id="cb3-39"><a href="#cb3-39"></a>knitr<span class="op">::</span><span class="kw">kable</span>(check_df, <span class="dt">caption =</span> <span class="st">&#39;pct significant by trend direction&#39;</span>)</span></code></pre></div>
 <table>
+<caption>pct significant by trend direction</caption>
 <thead>
 <tr class="header">
 <th align="left">stressor</th>
-<th align="right">cutoff</th>
-<th align="right">high</th>
-<th align="right">low</th>
+<th align="right">decr</th>
+<th align="right">incr</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">art_fish</td>
-<td align="right">0.0001780</td>
-<td align="right">0.7225125</td>
 <td align="right">0.6432680</td>
+<td align="right">0.5473097</td>
 </tr>
 <tr class="even">
 <td align="left">dem_dest</td>
-<td align="right">0.0000013</td>
-<td align="right">0.2260601</td>
 <td align="right">0.1149123</td>
+<td align="right">0.3876200</td>
 </tr>
 <tr class="odd">
 <td align="left">dem_nondest_hb</td>
-<td align="right">0.0000149</td>
-<td align="right">0.1272312</td>
 <td align="right">0.0865096</td>
+<td align="right">0.1851613</td>
 </tr>
 <tr class="even">
 <td align="left">dem_nondest_lb</td>
-<td align="right">0.0000046</td>
-<td align="right">0.1223461</td>
 <td align="right">0.0700042</td>
+<td align="right">0.0999472</td>
 </tr>
 <tr class="odd">
 <td align="left">direct_human</td>
-<td align="right">0.0005322</td>
-<td align="right">0.9998620</td>
 <td align="right">0.9619061</td>
+<td align="right">0.9777996</td>
 </tr>
 <tr class="even">
 <td align="left">light</td>
-<td align="right">0.0065570</td>
-<td align="right">0.8596030</td>
 <td align="right">0.0542572</td>
+<td align="right">0.3958849</td>
 </tr>
 <tr class="odd">
 <td align="left">nutrient</td>
-<td align="right">0.0007419</td>
-<td align="right">0.5095778</td>
 <td align="right">0.3207718</td>
+<td align="right">0.3321382</td>
 </tr>
 <tr class="even">
 <td align="left">oa</td>
-<td align="right">0.0073937</td>
-<td align="right">0.9327879</td>
 <td align="right">0.0098164</td>
+<td align="right">0.7543831</td>
 </tr>
 <tr class="odd">
 <td align="left">organic</td>
-<td align="right">0.0001162</td>
-<td align="right">0.6234654</td>
 <td align="right">0.3940253</td>
+<td align="right">0.4123440</td>
 </tr>
 <tr class="even">
 <td align="left">pel_hb</td>
-<td align="right">0.0000008</td>
-<td align="right">0.3728053</td>
 <td align="right">0.1942710</td>
+<td align="right">0.3319741</td>
 </tr>
 <tr class="odd">
 <td align="left">pel_lb</td>
-<td align="right">0.0000140</td>
-<td align="right">0.2468213</td>
 <td align="right">0.2221313</td>
+<td align="right">0.1838738</td>
 </tr>
 <tr class="even">
 <td align="left">shipping</td>
-<td align="right">0.0058635</td>
-<td align="right">0.9289674</td>
 <td align="right">0.3040740</td>
+<td align="right">0.9138146</td>
 </tr>
 <tr class="odd">
 <td align="left">slr</td>
-<td align="right">0.0196263</td>
-<td align="right">0.9882074</td>
 <td align="right">0.2898328</td>
+<td align="right">0.7579202</td>
 </tr>
 <tr class="even">
 <td align="left">sst</td>
-<td align="right">0.0304635</td>
-<td align="right">0.9984044</td>
 <td align="right">0.2823987</td>
+<td align="right">0.6909038</td>
 </tr>
 </tbody>
 </table>
 <p>Reclassify trend values into pace</p>
 <ul>
-<li>For per-cell trend value <span class="math inline">\(T\)</span> for each stressor, determine the threshold <span class="math inline">\(T_{80th}\)</span> from 80th percentile across all cells.</li>
-<li>For each cell, reclassify <span class="math inline">\(T\)</span> (linear model slope) into <span class="math inline">\(P\)</span> (categorical):</li>
+<li>For each cell, reclassify trend <span class="math inline">\(T\)</span> (linear model slope) into pace <span class="math inline">\(P\)</span> (categorical):</li>
 </ul>
 <p><span class="math display">\[\begin{align*}
   P = \begin{cases} 
-    +1 &amp;\text{if } (T \geq T_{80th}) * (T &gt; 0) * p &lt; 0.05\\
+    +1 &amp;\text{if } (T &gt; 0) * (p &lt; 0.05)\\
     -1 &amp;\text{if } (T &lt; 0) * (p &lt; 0.05)\\
     NA &amp;\text{else}
   \end{cases}
 \end{align*}\]</span></p>
 <p>Cells that are neither intensifying nor deintensifying will be dropped here, for a smaller and more nimble .csv.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="co">### Trend files are rasters of value (trend slope) and p_val.</span></a>
-<a class="sourceLine" id="cb4-2" title="2">pace_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressor_pace.csv&#39;</span>)</a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="co"># unlink(pace_file)</span></a>
-<a class="sourceLine" id="cb4-4" title="4"></a>
-<a class="sourceLine" id="cb4-5" title="5"><span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(pace_file)) {</a>
-<a class="sourceLine" id="cb4-6" title="6">  trend_fstem &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend,</a>
-<a class="sourceLine" id="cb4-7" title="7">                           <span class="st">&#39;stressor_trend_%s_value.tif&#39;</span>)</a>
-<a class="sourceLine" id="cb4-8" title="8">  p_val_fstem &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend,</a>
-<a class="sourceLine" id="cb4-9" title="9">                           <span class="st">&#39;stressor_trend_%s_p_val.tif&#39;</span>)</a>
-<a class="sourceLine" id="cb4-10" title="10">  pace_df &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(stressors,</a>
-<a class="sourceLine" id="cb4-11" title="11">      <span class="dt">FUN =</span> <span class="cf">function</span>(str) { <span class="co">### str &lt;- stressors[1]</span></a>
-<a class="sourceLine" id="cb4-12" title="12">        t_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(trend_fstem, str))</a>
-<a class="sourceLine" id="cb4-13" title="13">        p_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(p_val_fstem, str))</a>
-<a class="sourceLine" id="cb4-14" title="14">        <span class="co">### calculate high cutoff as 80%ile value.</span></a>
-<a class="sourceLine" id="cb4-15" title="15">        cutoff &lt;-<span class="st"> </span><span class="kw">quantile</span>(<span class="kw">values</span>(t_r), <span class="fl">0.8</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb4-16" title="16">        </a>
-<a class="sourceLine" id="cb4-17" title="17">        df &lt;-<span class="st"> </span><span class="kw">rast_to_map</span>(t_r, <span class="dt">cell_val =</span> <span class="st">&#39;trend&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-18" title="18"><span class="st">          </span><span class="kw">full_join</span>(<span class="kw">rast_to_map</span>(p_r, <span class="dt">cell_val =</span> <span class="st">&#39;p&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-19" title="19"><span class="st">          </span><span class="kw">mutate</span>(<span class="dt">pace =</span> <span class="kw">case_when</span>(trend <span class="op">&gt;=</span><span class="st"> </span>cutoff <span class="op">&amp;</span><span class="st"> </span>trend <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span>p <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span> <span class="op">~</span><span class="st"> </span><span class="dv">1</span>,</a>
-<a class="sourceLine" id="cb4-20" title="20">                                  trend <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span>p <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span> <span class="op">~</span><span class="st"> </span><span class="dv">-1</span>,</a>
-<a class="sourceLine" id="cb4-21" title="21">                                  <span class="ot">TRUE</span>                 <span class="op">~</span><span class="st"> </span><span class="ot">NA_real_</span>),</a>
-<a class="sourceLine" id="cb4-22" title="22">                 <span class="dt">stressor =</span> str) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-23" title="23"><span class="st">          </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(pace))</a>
-<a class="sourceLine" id="cb4-24" title="24">      }) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb4-25" title="25"><span class="st">    </span><span class="kw">bind_rows</span>()</a>
-<a class="sourceLine" id="cb4-26" title="26">  </a>
-<a class="sourceLine" id="cb4-27" title="27">  <span class="kw">write_csv</span>(pace_df, pace_file)</a>
-<a class="sourceLine" id="cb4-28" title="28">}</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">### stem for output pace raster</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>pace_fstem &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressor_pace/stressor_pace_%s.csv&#39;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="co"># to clear: unlink(file.path(dirname(pace_fstem), &#39;*.*&#39;))</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="co">### stems for trend and pvalue rasters (inputs)</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>trend_fstem &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend, <span class="st">&#39;stressor_trend_%s_value.tif&#39;</span>)</span>
+<span id="cb4-7"><a href="#cb4-7"></a>p_val_fstem &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_str_trend, <span class="st">&#39;stressor_trend_%s_p_val.tif&#39;</span>)</span>
+<span id="cb4-8"><a href="#cb4-8"></a></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="cf">for</span>(str <span class="cf">in</span> stressors) {</span>
+<span id="cb4-10"><a href="#cb4-10"></a>  <span class="co">### str &lt;- stressors[1]</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>  pace_file &lt;-<span class="st"> </span><span class="kw">sprintf</span>(pace_fstem, str)</span>
+<span id="cb4-12"><a href="#cb4-12"></a>  </span>
+<span id="cb4-13"><a href="#cb4-13"></a>  <span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(pace_file)) {</span>
+<span id="cb4-14"><a href="#cb4-14"></a>    <span class="kw">message</span>(<span class="st">&#39;Determining pace raster for &#39;</span>, str)</span>
+<span id="cb4-15"><a href="#cb4-15"></a>    t_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(trend_fstem, str))</span>
+<span id="cb4-16"><a href="#cb4-16"></a>    p_r &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">sprintf</span>(p_val_fstem, str))</span>
+<span id="cb4-17"><a href="#cb4-17"></a></span>
+<span id="cb4-18"><a href="#cb4-18"></a>    pace_df &lt;-<span class="st"> </span><span class="kw">rast_to_map</span>(t_r, <span class="dt">cell_val =</span> <span class="st">&#39;trend&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a><span class="st">      </span><span class="kw">full_join</span>(<span class="kw">rast_to_map</span>(p_r, <span class="dt">cell_val =</span> <span class="st">&#39;p&#39;</span>), <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a><span class="st">      </span><span class="kw">mutate</span>(<span class="dt">pace =</span> <span class="kw">case_when</span>(trend <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span>p <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span> <span class="op">~</span><span class="st"> </span><span class="dv">1</span>,</span>
+<span id="cb4-21"><a href="#cb4-21"></a>                              trend <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span>p <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.05</span> <span class="op">~</span><span class="st"> </span><span class="dv">-1</span>,</span>
+<span id="cb4-22"><a href="#cb4-22"></a>                              <span class="ot">TRUE</span>                 <span class="op">~</span><span class="st"> </span><span class="ot">NA_real_</span>),</span>
+<span id="cb4-23"><a href="#cb4-23"></a>             <span class="dt">stressor =</span> str) <span class="op">%&gt;%</span></span>
+<span id="cb4-24"><a href="#cb4-24"></a><span class="st">      </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(pace)) <span class="op">%&gt;%</span></span>
+<span id="cb4-25"><a href="#cb4-25"></a><span class="st">      </span><span class="kw">select</span>(cell_id, pace, stressor)</span>
+<span id="cb4-26"><a href="#cb4-26"></a>    </span>
+<span id="cb4-27"><a href="#cb4-27"></a>    <span class="kw">write_csv</span>(pace_df, pace_file)</span>
+<span id="cb4-28"><a href="#cb4-28"></a>  }</span>
+<span id="cb4-29"><a href="#cb4-29"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">### function to read in all the pace files</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>get_pace_df &lt;-<span class="st"> </span><span class="cf">function</span>() {</span>
+<span id="cb5-3"><a href="#cb5-3"></a>  pace_fs &lt;-<span class="st"> </span><span class="kw">list.files</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;layers/stressor_pace&#39;</span>), </span>
+<span id="cb5-4"><a href="#cb5-4"></a>                        <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb5-5"><a href="#cb5-5"></a>  pace_df &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(pace_fs, <span class="dt">FUN =</span> <span class="cf">function</span>(f) {</span>
+<span id="cb5-6"><a href="#cb5-6"></a>        df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(f, <span class="dt">col_types =</span> <span class="kw">c</span>(<span class="dt">cell_id =</span> <span class="st">&#39;i&#39;</span>, <span class="dt">pace =</span> <span class="st">&#39;i&#39;</span>, <span class="dt">stressor =</span> <span class="st">&#39;c&#39;</span>))</span>
+<span id="cb5-7"><a href="#cb5-7"></a>      }, <span class="dt">mc.cores =</span> <span class="dv">14</span>) <span class="op">%&gt;%</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="st">    </span><span class="kw">bind_rows</span>()</span>
+<span id="cb5-9"><a href="#cb5-9"></a>}</span></code></pre></div>
 </div>
 </div>
 <div id="loop-over-species-by-id" class="section level2">
@@ -1890,145 +1918,143 @@ div.tocify {
 </ul>
 <div id="set-up-functions" class="section level3">
 <h3><span class="header-section-number">2.3.1</span> set up functions</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">get_intsx_files &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, impact_cat) {</a>
-<a class="sourceLine" id="cb5-2" title="2">  <span class="co">### To calc across all stressors, set impact_cat = &#39;all&#39;</span></a>
-<a class="sourceLine" id="cb5-3" title="3">  <span class="co">### </span><span class="al">NOTE</span><span class="co">: this uses global variables to avoid relisting all the intersection</span></a>
-<a class="sourceLine" id="cb5-4" title="4">  <span class="co">### files each time...</span></a>
-<a class="sourceLine" id="cb5-5" title="5">  </a>
-<a class="sourceLine" id="cb5-6" title="6">  <span class="co"># impact_cat &lt;- &#39;fishing&#39;</span></a>
-<a class="sourceLine" id="cb5-7" title="7">  <span class="co"># spp_id &lt;- spp_ids[1]</span></a>
-<a class="sourceLine" id="cb5-8" title="8">  </a>
-<a class="sourceLine" id="cb5-9" title="9">  <span class="co">### get all the intersection files for this spp in the intsx directory</span></a>
-<a class="sourceLine" id="cb5-10" title="10">  intsx_files &lt;-<span class="st"> </span>intsx_files_all[intsx_id_vec <span class="op">==</span><span class="st"> </span>spp_id]</a>
-<a class="sourceLine" id="cb5-11" title="11">  </a>
-<a class="sourceLine" id="cb5-12" title="12">  <span class="cf">if</span>(impact_cat <span class="op">!=</span><span class="st"> &#39;all&#39;</span>) {</a>
-<a class="sourceLine" id="cb5-13" title="13">    <span class="co">### subset stressors by impact category</span></a>
-<a class="sourceLine" id="cb5-14" title="14">    intsx_dirs &lt;-<span class="st"> </span><span class="kw">basename</span>(<span class="kw">dirname</span>(intsx_files))</a>
-<a class="sourceLine" id="cb5-15" title="15">    strs &lt;-<span class="st"> </span>str_cats <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb5-16" title="16"><span class="st">      </span><span class="kw">filter</span>(category <span class="op">==</span><span class="st"> </span>impact_cat) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-17" title="17"><span class="st">      </span>.<span class="op">$</span>stressor</a>
-<a class="sourceLine" id="cb5-18" title="18">    intsx_files &lt;-<span class="st"> </span>intsx_files[intsx_dirs <span class="op">%in%</span><span class="st"> </span>strs]</a>
-<a class="sourceLine" id="cb5-19" title="19">  }</a>
-<a class="sourceLine" id="cb5-20" title="20">  </a>
-<a class="sourceLine" id="cb5-21" title="21">  <span class="kw">return</span>(intsx_files)</a>
-<a class="sourceLine" id="cb5-22" title="22">}</a>
-<a class="sourceLine" id="cb5-23" title="23"></a>
-<a class="sourceLine" id="cb5-24" title="24">calc_cum_impact &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, impacts, pace_df) {</a>
-<a class="sourceLine" id="cb5-25" title="25">  <span class="co">### dir_spp_maps to point to location of range files;</span></a>
-<a class="sourceLine" id="cb5-26" title="26">  <span class="co">### dir_spp_intsx to point to location of intersection files</span></a>
-<a class="sourceLine" id="cb5-27" title="27">  <span class="co">### ocean_area_df to calc range including coastal (i.e. not 100% ocean) cells</span></a>
-<a class="sourceLine" id="cb5-28" title="28">  <span class="co">### impacts allows to select subsets of impacts</span></a>
-<a class="sourceLine" id="cb5-29" title="29">  cell_area_km2 &lt;-<span class="st"> </span><span class="fl">105.6633</span> <span class="co">### from ocean raster</span></a>
-<a class="sourceLine" id="cb5-30" title="30"></a>
-<a class="sourceLine" id="cb5-31" title="31">  <span class="co">### assemble file name and read the range data</span></a>
-<a class="sourceLine" id="cb5-32" title="32">  spp_range_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_spp_maps,</a>
-<a class="sourceLine" id="cb5-33" title="33">                              <span class="kw">sprintf</span>(<span class="st">&#39;iucn_sid_%s.csv&#39;</span>, spp_id))</a>
-<a class="sourceLine" id="cb5-34" title="34">  spp_range_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(spp_range_file, </a>
-<a class="sourceLine" id="cb5-35" title="35">                           <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;cell_id&#39;</span> =<span class="st"> &#39;i&#39;</span>, <span class="st">&#39;presence&#39;</span> =<span class="st"> &#39;i&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-36" title="36"><span class="st">    </span><span class="kw">left_join</span>(ocean_area_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>)</a>
-<a class="sourceLine" id="cb5-37" title="37">  </a>
-<a class="sourceLine" id="cb5-38" title="38">  spp_range_km2 &lt;-<span class="st"> </span>spp_range_df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-39" title="39"><span class="st">    </span><span class="kw">filter</span>(presence <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(presence) <span class="op">&amp;</span><span class="st"> </span>presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-40" title="40"><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">range_km2 =</span> <span class="kw">sum</span>(ocean_prop) <span class="op">*</span><span class="st"> </span>cell_area_km2) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-41" title="41"><span class="st">    </span>.<span class="op">$</span>range_km2</a>
-<a class="sourceLine" id="cb5-42" title="42">  </a>
-<a class="sourceLine" id="cb5-43" title="43">  intsx_files &lt;-<span class="st"> </span><span class="kw">get_intsx_files</span>(spp_id, impacts)</a>
-<a class="sourceLine" id="cb5-44" title="44">  </a>
-<a class="sourceLine" id="cb5-45" title="45">  spp_intsx_df &lt;-<span class="st"> </span><span class="kw">lapply</span>(intsx_files,</a>
-<a class="sourceLine" id="cb5-46" title="46">      <span class="dt">FUN =</span> <span class="cf">function</span>(x) { <span class="co"># x &lt;- intsx_files[1]</span></a>
-<a class="sourceLine" id="cb5-47" title="47">        str_name &lt;-<span class="st"> </span><span class="kw">basename</span>(x) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-48" title="48"><span class="st">          </span><span class="kw">str_replace_all</span>(<span class="st">&#39;spp_intsx_|_[0-9].*&#39;</span>, <span class="st">&#39;&#39;</span>)</a>
-<a class="sourceLine" id="cb5-49" title="49">        </a>
-<a class="sourceLine" id="cb5-50" title="50">        <span class="kw">read_csv</span>(x, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;cell_id&#39;</span> =<span class="st"> &#39;i&#39;</span>,</a>
-<a class="sourceLine" id="cb5-51" title="51">                                     <span class="st">&#39;year&#39;</span> =<span class="st"> &#39;i&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-52" title="52"><span class="st">          </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> str_name)</a>
-<a class="sourceLine" id="cb5-53" title="53">      }) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-54" title="54"><span class="st">    </span><span class="kw">bind_rows</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-55" title="55"><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cell_id)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-56" title="56"><span class="st">    </span><span class="kw">left_join</span>(ocean_area_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-57" title="57"><span class="st">    </span><span class="kw">left_join</span>(pace_df, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;cell_id&#39;</span>, <span class="st">&#39;stressor&#39;</span>))</a>
-<a class="sourceLine" id="cb5-58" title="58">      <span class="co">### left joining here will drop any cells with paces that</span></a>
-<a class="sourceLine" id="cb5-59" title="59">      <span class="co">### do not fall within the footprint for the stressor/year - </span></a>
-<a class="sourceLine" id="cb5-60" title="60">      <span class="co">### accounts for footprint/trend overlap, no need to crop trends</span></a>
-<a class="sourceLine" id="cb5-61" title="61">  </a>
-<a class="sourceLine" id="cb5-62" title="62">  spp_impact_by_stressor &lt;-<span class="st"> </span>spp_intsx_df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-63" title="63"><span class="st">    </span><span class="kw">group_by</span>(stressor, year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-64" title="64"><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">impact_km2 =</span> <span class="kw">sum</span>(ocean_prop) <span class="op">*</span><span class="st"> </span>cell_area_km2,</a>
-<a class="sourceLine" id="cb5-65" title="65">              <span class="dt">incr_km2   =</span> <span class="kw">sum</span>((pace <span class="op">==</span><span class="st"> </span><span class="dv">1</span>) <span class="op">*</span><span class="st"> </span>ocean_prop, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">*</span><span class="st"> </span>cell_area_km2, </a>
-<a class="sourceLine" id="cb5-66" title="66">              <span class="dt">decr_km2   =</span> <span class="kw">sum</span>((pace <span class="op">==</span><span class="st"> </span><span class="dv">-1</span>) <span class="op">*</span><span class="st"> </span>ocean_prop, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">*</span><span class="st"> </span>cell_area_km2) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-67" title="67"><span class="st">    </span><span class="kw">ungroup</span>()</a>
-<a class="sourceLine" id="cb5-68" title="68">  </a>
-<a class="sourceLine" id="cb5-69" title="69">  spp_cum_impact &lt;-<span class="st"> </span>spp_intsx_df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-70" title="70"><span class="st">    </span><span class="co"># select(cell_id, year, ocean_prop, stressor) %&gt;%</span></a>
-<a class="sourceLine" id="cb5-71" title="71"><span class="st">    </span><span class="kw">distinct</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-72" title="72"><span class="st">    </span><span class="kw">group_by</span>(cell_id, year, ocean_prop) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-73" title="73"><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">incr =</span> <span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">-1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</a>
-<a class="sourceLine" id="cb5-74" title="74">              <span class="dt">decr =</span> <span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">-1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</a>
-<a class="sourceLine" id="cb5-75" title="75">              <span class="dt">n_impact =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-76" title="76"><span class="st">    </span><span class="kw">group_by</span>(year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-77" title="77"><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">impact_km2 =</span> <span class="kw">sum</span>(ocean_prop) <span class="op">*</span><span class="st"> </span>cell_area_km2,</a>
-<a class="sourceLine" id="cb5-78" title="78">              <span class="dt">impact_2plus_km2 =</span> <span class="kw">sum</span>((n_impact <span class="op">&gt;</span><span class="st"> </span><span class="dv">1</span>) <span class="op">*</span><span class="st"> </span>ocean_prop) <span class="op">*</span><span class="st"> </span>cell_area_km2,</a>
-<a class="sourceLine" id="cb5-79" title="79">              <span class="dt">impact_3plus_km2 =</span> <span class="kw">sum</span>((n_impact <span class="op">&gt;</span><span class="st"> </span><span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>ocean_prop) <span class="op">*</span><span class="st"> </span>cell_area_km2,</a>
-<a class="sourceLine" id="cb5-80" title="80">              <span class="dt">incr_km2   =</span> <span class="kw">sum</span>(incr <span class="op">*</span><span class="st"> </span>ocean_prop, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">*</span><span class="st"> </span>cell_area_km2, </a>
-<a class="sourceLine" id="cb5-81" title="81">              <span class="dt">decr_km2   =</span> <span class="kw">sum</span>(decr <span class="op">*</span><span class="st"> </span>ocean_prop, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">*</span><span class="st"> </span>cell_area_km2,</a>
-<a class="sourceLine" id="cb5-82" title="82">              <span class="dt">stressor =</span> <span class="st">&#39;cumulative&#39;</span>)</a>
-<a class="sourceLine" id="cb5-83" title="83">  </a>
-<a class="sourceLine" id="cb5-84" title="84">  <span class="cf">if</span>(<span class="kw">nrow</span>(spp_cum_impact) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</a>
-<a class="sourceLine" id="cb5-85" title="85">    spp_cum_impact &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
-<a class="sourceLine" id="cb5-86" title="86">      <span class="dt">stressor =</span> <span class="st">&#39;cumulative&#39;</span>,</a>
-<a class="sourceLine" id="cb5-87" title="87">      <span class="dt">year =</span> <span class="ot">NA</span>,</a>
-<a class="sourceLine" id="cb5-88" title="88">      <span class="dt">impact_km2 =</span> <span class="dv">0</span>, <span class="dt">incr_km2 =</span> <span class="dv">0</span>, <span class="dt">decr_km2 =</span> <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb5-89" title="89">  }</a>
-<a class="sourceLine" id="cb5-90" title="90">  </a>
-<a class="sourceLine" id="cb5-91" title="91">  impact_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(spp_impact_by_stressor, spp_cum_impact) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb5-92" title="92"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">range_km2 =</span> spp_range_km2,</a>
-<a class="sourceLine" id="cb5-93" title="93">           <span class="dt">iucn_sid =</span> spp_id)</a>
-<a class="sourceLine" id="cb5-94" title="94">  </a>
-<a class="sourceLine" id="cb5-95" title="95">  <span class="kw">return</span>(impact_df)</a>
-<a class="sourceLine" id="cb5-96" title="96">}</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>get_intsx_files &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, impact_cat) {</span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="co">### To calc across all stressors, set impact_cat = &#39;all&#39;</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>  <span class="co">### </span><span class="al">NOTE</span><span class="co">: this uses global variables to avoid relisting all the intersection</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>  <span class="co">### files each time...</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a>  </span>
+<span id="cb6-6"><a href="#cb6-6"></a>  <span class="co"># impact_cat &lt;- &#39;fishing&#39;</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>  <span class="co"># spp_id &lt;- spp_ids[1]</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>  </span>
+<span id="cb6-9"><a href="#cb6-9"></a>  <span class="co">### get all the intersection files for this spp in the intsx directory</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a>  intsx_files &lt;-<span class="st"> </span>intsx_files_all[intsx_id_vec <span class="op">==</span><span class="st"> </span>spp_id]</span>
+<span id="cb6-11"><a href="#cb6-11"></a>  </span>
+<span id="cb6-12"><a href="#cb6-12"></a>  <span class="cf">if</span>(impact_cat <span class="op">!=</span><span class="st"> &#39;all&#39;</span>) {</span>
+<span id="cb6-13"><a href="#cb6-13"></a>    <span class="co">### subset stressors by impact category</span></span>
+<span id="cb6-14"><a href="#cb6-14"></a>    intsx_dirs &lt;-<span class="st"> </span><span class="kw">basename</span>(<span class="kw">dirname</span>(intsx_files))</span>
+<span id="cb6-15"><a href="#cb6-15"></a>    strs &lt;-<span class="st"> </span>str_cats <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb6-16"><a href="#cb6-16"></a><span class="st">      </span><span class="kw">filter</span>(category <span class="op">==</span><span class="st"> </span>impact_cat) <span class="op">%&gt;%</span></span>
+<span id="cb6-17"><a href="#cb6-17"></a><span class="st">      </span>.<span class="op">$</span>stressor</span>
+<span id="cb6-18"><a href="#cb6-18"></a>    intsx_files &lt;-<span class="st"> </span>intsx_files[intsx_dirs <span class="op">%in%</span><span class="st"> </span>strs]</span>
+<span id="cb6-19"><a href="#cb6-19"></a>  }</span>
+<span id="cb6-20"><a href="#cb6-20"></a>  </span>
+<span id="cb6-21"><a href="#cb6-21"></a>  <span class="kw">return</span>(intsx_files)</span>
+<span id="cb6-22"><a href="#cb6-22"></a>}</span>
+<span id="cb6-23"><a href="#cb6-23"></a></span>
+<span id="cb6-24"><a href="#cb6-24"></a>calc_cum_impact &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, impacts, pace_df) {</span>
+<span id="cb6-25"><a href="#cb6-25"></a>  <span class="co">### dir_spp_maps to point to location of range files;</span></span>
+<span id="cb6-26"><a href="#cb6-26"></a>  <span class="co">### dir_spp_intsx to point to location of intersection files</span></span>
+<span id="cb6-27"><a href="#cb6-27"></a>  <span class="co">### ocean_area_df to calc range including coastal (i.e. not 100% ocean) cells</span></span>
+<span id="cb6-28"><a href="#cb6-28"></a>  <span class="co">### impacts allows to select subsets of impacts</span></span>
+<span id="cb6-29"><a href="#cb6-29"></a></span>
+<span id="cb6-30"><a href="#cb6-30"></a>  spp_range_km2 &lt;-<span class="st"> </span><span class="kw">get_spp_range</span>(<span class="dt">id =</span> spp_id) <span class="op">%&gt;%</span></span>
+<span id="cb6-31"><a href="#cb6-31"></a><span class="st">    </span>.<span class="op">$</span>range_km2</span>
+<span id="cb6-32"><a href="#cb6-32"></a>  </span>
+<span id="cb6-33"><a href="#cb6-33"></a>  intsx_files &lt;-<span class="st"> </span><span class="kw">get_intsx_files</span>(spp_id, impacts)</span>
+<span id="cb6-34"><a href="#cb6-34"></a>  </span>
+<span id="cb6-35"><a href="#cb6-35"></a>  spp_intsx_df &lt;-<span class="st"> </span><span class="kw">lapply</span>(intsx_files,</span>
+<span id="cb6-36"><a href="#cb6-36"></a>      <span class="dt">FUN =</span> <span class="cf">function</span>(x) { <span class="co"># x &lt;- intsx_files[1]</span></span>
+<span id="cb6-37"><a href="#cb6-37"></a>        str_name &lt;-<span class="st"> </span><span class="kw">basename</span>(x) <span class="op">%&gt;%</span></span>
+<span id="cb6-38"><a href="#cb6-38"></a><span class="st">          </span><span class="kw">str_replace_all</span>(<span class="st">&#39;spp_intsx_|_[0-9].*&#39;</span>, <span class="st">&#39;&#39;</span>)</span>
+<span id="cb6-39"><a href="#cb6-39"></a>        </span>
+<span id="cb6-40"><a href="#cb6-40"></a>        <span class="kw">read_csv</span>(x, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;cell_id&#39;</span> =<span class="st"> &#39;i&#39;</span>,</span>
+<span id="cb6-41"><a href="#cb6-41"></a>                                     <span class="st">&#39;year&#39;</span> =<span class="st"> &#39;i&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb6-42"><a href="#cb6-42"></a><span class="st">          </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> str_name)</span>
+<span id="cb6-43"><a href="#cb6-43"></a>      }) <span class="op">%&gt;%</span></span>
+<span id="cb6-44"><a href="#cb6-44"></a><span class="st">    </span><span class="kw">bind_rows</span>() <span class="op">%&gt;%</span></span>
+<span id="cb6-45"><a href="#cb6-45"></a><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cell_id)) <span class="op">%&gt;%</span></span>
+<span id="cb6-46"><a href="#cb6-46"></a><span class="st">    </span><span class="kw">left_join</span>(ocean_area_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb6-47"><a href="#cb6-47"></a><span class="st">    </span><span class="kw">left_join</span>(pace_df, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;cell_id&#39;</span>, <span class="st">&#39;stressor&#39;</span>))</span>
+<span id="cb6-48"><a href="#cb6-48"></a>      <span class="co">### left joining here will drop any cells with paces that</span></span>
+<span id="cb6-49"><a href="#cb6-49"></a>      <span class="co">### do not fall within the footprint for the stressor/year - </span></span>
+<span id="cb6-50"><a href="#cb6-50"></a>      <span class="co">### accounts for footprint/trend overlap, no need to crop trends</span></span>
+<span id="cb6-51"><a href="#cb6-51"></a>  </span>
+<span id="cb6-52"><a href="#cb6-52"></a>  spp_impact_by_stressor &lt;-<span class="st"> </span>spp_intsx_df <span class="op">%&gt;%</span></span>
+<span id="cb6-53"><a href="#cb6-53"></a><span class="st">    </span><span class="kw">group_by</span>(stressor, year) <span class="op">%&gt;%</span></span>
+<span id="cb6-54"><a href="#cb6-54"></a><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">impact_km2 =</span> <span class="kw">sum</span>(ocean_area_km2),</span>
+<span id="cb6-55"><a href="#cb6-55"></a>              <span class="dt">incr_km2   =</span> <span class="kw">sum</span>((pace <span class="op">==</span><span class="st"> </span><span class="dv">1</span>) <span class="op">*</span><span class="st"> </span>ocean_area_km2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>), </span>
+<span id="cb6-56"><a href="#cb6-56"></a>              <span class="dt">decr_km2   =</span> <span class="kw">sum</span>((pace <span class="op">==</span><span class="st"> </span><span class="dv">-1</span>) <span class="op">*</span><span class="st"> </span>ocean_area_km2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb6-57"><a href="#cb6-57"></a><span class="st">    </span><span class="kw">ungroup</span>()</span>
+<span id="cb6-58"><a href="#cb6-58"></a>  </span>
+<span id="cb6-59"><a href="#cb6-59"></a>  spp_cum_impact &lt;-<span class="st"> </span>spp_intsx_df <span class="op">%&gt;%</span></span>
+<span id="cb6-60"><a href="#cb6-60"></a><span class="st">    </span><span class="co"># select(cell_id, year, ocean_area_km2, stressor) %&gt;%</span></span>
+<span id="cb6-61"><a href="#cb6-61"></a><span class="st">    </span><span class="kw">distinct</span>() <span class="op">%&gt;%</span></span>
+<span id="cb6-62"><a href="#cb6-62"></a><span class="st">    </span><span class="kw">group_by</span>(cell_id, year, ocean_area_km2) <span class="op">%&gt;%</span></span>
+<span id="cb6-63"><a href="#cb6-63"></a><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">incr =</span> <span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">-1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb6-64"><a href="#cb6-64"></a>              <span class="dt">decr =</span> <span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">-1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">any</span>(pace <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb6-65"><a href="#cb6-65"></a>              <span class="dt">n_impact =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></span>
+<span id="cb6-66"><a href="#cb6-66"></a><span class="st">    </span><span class="kw">group_by</span>(year) <span class="op">%&gt;%</span></span>
+<span id="cb6-67"><a href="#cb6-67"></a><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">impact_km2 =</span> <span class="kw">sum</span>(ocean_area_km2),</span>
+<span id="cb6-68"><a href="#cb6-68"></a>              <span class="dt">impact_2plus_km2 =</span> <span class="kw">sum</span>((n_impact <span class="op">&gt;</span><span class="st"> </span><span class="dv">1</span>) <span class="op">*</span><span class="st"> </span>ocean_area_km2),</span>
+<span id="cb6-69"><a href="#cb6-69"></a>              <span class="dt">impact_3plus_km2 =</span> <span class="kw">sum</span>((n_impact <span class="op">&gt;</span><span class="st"> </span><span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>ocean_area_km2),</span>
+<span id="cb6-70"><a href="#cb6-70"></a>              <span class="dt">incr_km2   =</span> <span class="kw">sum</span>(incr <span class="op">*</span><span class="st"> </span>ocean_area_km2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>), </span>
+<span id="cb6-71"><a href="#cb6-71"></a>              <span class="dt">decr_km2   =</span> <span class="kw">sum</span>(decr <span class="op">*</span><span class="st"> </span>ocean_area_km2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb6-72"><a href="#cb6-72"></a>              <span class="dt">stressor =</span> <span class="st">&#39;cumulative&#39;</span>)</span>
+<span id="cb6-73"><a href="#cb6-73"></a>  </span>
+<span id="cb6-74"><a href="#cb6-74"></a>  <span class="cf">if</span>(<span class="kw">nrow</span>(spp_cum_impact) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</span>
+<span id="cb6-75"><a href="#cb6-75"></a>    spp_cum_impact &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</span>
+<span id="cb6-76"><a href="#cb6-76"></a>      <span class="dt">stressor =</span> <span class="st">&#39;cumulative&#39;</span>,</span>
+<span id="cb6-77"><a href="#cb6-77"></a>      <span class="dt">year =</span> <span class="ot">NA</span>,</span>
+<span id="cb6-78"><a href="#cb6-78"></a>      <span class="dt">impact_km2 =</span> <span class="dv">0</span>, <span class="dt">incr_km2 =</span> <span class="dv">0</span>, <span class="dt">decr_km2 =</span> <span class="dv">0</span>)</span>
+<span id="cb6-79"><a href="#cb6-79"></a>  }</span>
+<span id="cb6-80"><a href="#cb6-80"></a>  </span>
+<span id="cb6-81"><a href="#cb6-81"></a>  impact_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(spp_impact_by_stressor, spp_cum_impact) <span class="op">%&gt;%</span></span>
+<span id="cb6-82"><a href="#cb6-82"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">range_km2 =</span> spp_range_km2,</span>
+<span id="cb6-83"><a href="#cb6-83"></a>           <span class="dt">iucn_sid =</span> spp_id)</span>
+<span id="cb6-84"><a href="#cb6-84"></a>  </span>
+<span id="cb6-85"><a href="#cb6-85"></a>  <span class="kw">return</span>(impact_df)</span>
+<span id="cb6-86"><a href="#cb6-86"></a>}</span></code></pre></div>
 </div>
 <div id="calculate-species-cumulative-impacts-by-stressor-category" class="section level3">
 <h3><span class="header-section-number">2.3.2</span> calculate species cumulative impacts by stressor category</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1"><span class="co">### set up list of all intersection files and an ID for indexing</span></a>
-<a class="sourceLine" id="cb6-2" title="2">intsx_files_all &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_spp_intsx, <span class="dt">recursive =</span> <span class="ot">TRUE</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb6-3" title="3">intsx_id_vec    &lt;-<span class="st"> </span><span class="kw">as.integer</span>(<span class="kw">str_extract</span>(<span class="kw">basename</span>(intsx_files_all), <span class="st">&#39;[0-9]{3,}&#39;</span>))</a>
-<a class="sourceLine" id="cb6-4" title="4"></a>
-<a class="sourceLine" id="cb6-5" title="5"><span class="co">### get pace of change maps dataframe</span></a>
-<a class="sourceLine" id="cb6-6" title="6">pace_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(pace_file) </a>
-<a class="sourceLine" id="cb6-7" title="7"></a>
-<a class="sourceLine" id="cb6-8" title="8"><span class="co">### set up categories to loop over</span></a>
-<a class="sourceLine" id="cb6-9" title="9">categories &lt;-<span class="st"> </span><span class="kw">c</span>(str_cats<span class="op">$</span>category <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>(), <span class="st">&#39;all&#39;</span>)</a>
-<a class="sourceLine" id="cb6-10" title="10"></a>
-<a class="sourceLine" id="cb6-11" title="11">reload &lt;-<span class="st"> </span><span class="ot">FALSE</span></a>
-<a class="sourceLine" id="cb6-12" title="12"><span class="co">### to clear old versions:</span></a>
-<a class="sourceLine" id="cb6-13" title="13"><span class="co"># x &lt;- list.files(file.path(dir_bd_anx, &#39;spp_impacts&#39;), full.names = TRUE)</span></a>
-<a class="sourceLine" id="cb6-14" title="14"><span class="co"># unlink(x)</span></a>
-<a class="sourceLine" id="cb6-15" title="15"></a>
-<a class="sourceLine" id="cb6-16" title="16"><span class="cf">for</span>(impact_cat <span class="cf">in</span> categories) {</a>
-<a class="sourceLine" id="cb6-17" title="17">  <span class="co"># impact_cat &lt;- categories[5]</span></a>
-<a class="sourceLine" id="cb6-18" title="18">  <span class="co"># for(spp_id in spp_ids) {</span></a>
-<a class="sourceLine" id="cb6-19" title="19">  tmp &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(spp_ids, <span class="dt">mc.cores =</span> <span class="dv">12</span>,</a>
-<a class="sourceLine" id="cb6-20" title="20">    <span class="dt">FUN =</span> <span class="cf">function</span>(spp_id) {</a>
-<a class="sourceLine" id="cb6-21" title="21">      <span class="co">### spp_id &lt;- spp_ids[20]</span></a>
-<a class="sourceLine" id="cb6-22" title="22">      <span class="co">### spp_id &lt;- y[1]</span></a>
-<a class="sourceLine" id="cb6-23" title="23">      <span class="co">### spp_id &lt;- 15419</span></a>
-<a class="sourceLine" id="cb6-24" title="24">      </a>
-<a class="sourceLine" id="cb6-25" title="25">      spp_impact_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_impacts&#39;</span>,</a>
-<a class="sourceLine" id="cb6-26" title="26">                                   <span class="kw">sprintf</span>(<span class="st">&#39;spp_impacts_%s_%s.csv&#39;</span>, spp_id, impact_cat))</a>
-<a class="sourceLine" id="cb6-27" title="27">      <span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(spp_impact_file) <span class="op">|</span><span class="st"> </span>reload) {</a>
-<a class="sourceLine" id="cb6-28" title="28">        <span class="kw">message</span>(<span class="st">&#39;Processing spp &#39;</span>, spp_id, <span class="st">&#39;; &#39;</span>, impact_cat)</a>
-<a class="sourceLine" id="cb6-29" title="29">        <span class="co">### Calculate total species range, accounting for partial ocean cells</span></a>
-<a class="sourceLine" id="cb6-30" title="30">        impact_df &lt;-<span class="st"> </span><span class="kw">calc_cum_impact</span>(spp_id, </a>
-<a class="sourceLine" id="cb6-31" title="31">                                     <span class="dt">impacts =</span> impact_cat,</a>
-<a class="sourceLine" id="cb6-32" title="32">                                     <span class="dt">pace_df =</span> pace_df)</a>
-<a class="sourceLine" id="cb6-33" title="33">        <span class="kw">write_csv</span>(impact_df, spp_impact_file)</a>
-<a class="sourceLine" id="cb6-34" title="34">      } <span class="cf">else</span> {</a>
-<a class="sourceLine" id="cb6-35" title="35">        <span class="co"># message(&#39;Impact df file exists: &#39;, basename(spp_impact_file), &#39;... skipping!&#39;)</span></a>
-<a class="sourceLine" id="cb6-36" title="36">      }</a>
-<a class="sourceLine" id="cb6-37" title="37">      <span class="kw">return</span>(<span class="kw">paste</span>(<span class="st">&#39;success:&#39;</span>, spp_id))</a>
-<a class="sourceLine" id="cb6-38" title="38">    }</a>
-<a class="sourceLine" id="cb6-39" title="39">  )</a>
-<a class="sourceLine" id="cb6-40" title="40">}</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">### set up list of all intersection files and an ID for indexing</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>intsx_files_all &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_spp_intsx, <span class="dt">recursive =</span> <span class="ot">TRUE</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb7-3"><a href="#cb7-3"></a>intsx_id_vec    &lt;-<span class="st"> </span><span class="kw">as.integer</span>(<span class="kw">str_extract</span>(<span class="kw">basename</span>(intsx_files_all), <span class="st">&#39;[0-9]{3,}&#39;</span>))</span>
+<span id="cb7-4"><a href="#cb7-4"></a></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="co">### get pace of change maps dataframe</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>pace_df &lt;-<span class="st"> </span><span class="kw">get_pace_df</span>()</span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co">### set up categories to loop over</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>categories &lt;-<span class="st"> </span><span class="kw">c</span>(str_cats<span class="op">$</span>category <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>(), <span class="st">&#39;all&#39;</span>)</span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a>reload &lt;-<span class="st"> </span><span class="ot">FALSE</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="co">### to clear old versions:</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="co"># x &lt;- list.files(file.path(dir_bd_anx, &#39;spp_impacts&#39;), full.names = TRUE)</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="co"># unlink(x)</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="co">### to check whether any are missing, look for ids with fewer than </span></span>
+<span id="cb7-16"><a href="#cb7-16"></a><span class="co">### five stressors</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="co"># y &lt;- data.frame(x) %&gt;%</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a><span class="co">#   mutate(id = str_extract(basename(x), &#39;[0-9]+&#39;) %&gt;% as.integer(),</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="co">#          str = str_replace_all(basename(x), &#39;.+[0-9]+_|.csv&#39;, &#39;&#39;)) %&gt;%</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="co">#   group_by(id) %&gt;%</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a><span class="co">#   summarize(n_str = n(), str = paste0(str, collapse = &#39;, &#39;))</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a><span class="co"># </span></span>
+<span id="cb7-23"><a href="#cb7-23"></a><span class="co"># spp_ids &lt;- y %&gt;% filter(n_str &lt; 5) %&gt;% .$id</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a></span>
+<span id="cb7-25"><a href="#cb7-25"></a><span class="cf">for</span>(impact_cat <span class="cf">in</span> categories) {</span>
+<span id="cb7-26"><a href="#cb7-26"></a>  <span class="co"># impact_cat &lt;- categories[5]</span></span>
+<span id="cb7-27"><a href="#cb7-27"></a>  tmp &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(spp_ids, <span class="dt">mc.cores =</span> <span class="dv">20</span>,</span>
+<span id="cb7-28"><a href="#cb7-28"></a>    <span class="dt">FUN =</span> <span class="cf">function</span>(spp_id) {</span>
+<span id="cb7-29"><a href="#cb7-29"></a>      <span class="co">### spp_id &lt;- spp_ids[1]</span></span>
+<span id="cb7-30"><a href="#cb7-30"></a>      <span class="co">### spp_id &lt;- y[1]</span></span>
+<span id="cb7-31"><a href="#cb7-31"></a>      <span class="co">### spp_id &lt;- 15419</span></span>
+<span id="cb7-32"><a href="#cb7-32"></a>      spp_impact_fstem &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_impacts/spp_impacts_%s_%s.csv&#39;</span>)</span>
+<span id="cb7-33"><a href="#cb7-33"></a>      spp_impact_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">sprintf</span>(spp_impact_fstem, spp_id, impact_cat))</span>
+<span id="cb7-34"><a href="#cb7-34"></a>      </span>
+<span id="cb7-35"><a href="#cb7-35"></a>      <span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(spp_impact_file) <span class="op">|</span><span class="st"> </span>reload) {</span>
+<span id="cb7-36"><a href="#cb7-36"></a>        <span class="kw">message</span>(<span class="st">&#39;Processing spp &#39;</span>, spp_id, <span class="st">&#39;; &#39;</span>, impact_cat)</span>
+<span id="cb7-37"><a href="#cb7-37"></a>        <span class="co">### Calculate total species range, accounting for partial ocean cells</span></span>
+<span id="cb7-38"><a href="#cb7-38"></a>        impact_df &lt;-<span class="st"> </span><span class="kw">calc_cum_impact</span>(spp_id, </span>
+<span id="cb7-39"><a href="#cb7-39"></a>                                     <span class="dt">impacts =</span> impact_cat,</span>
+<span id="cb7-40"><a href="#cb7-40"></a>                                     <span class="dt">pace_df =</span> pace_df)</span>
+<span id="cb7-41"><a href="#cb7-41"></a>        <span class="kw">write_csv</span>(impact_df, spp_impact_file)</span>
+<span id="cb7-42"><a href="#cb7-42"></a>      } <span class="cf">else</span> {</span>
+<span id="cb7-43"><a href="#cb7-43"></a>        <span class="co"># message(&#39;Impact df file exists: &#39;, basename(spp_impact_file), &#39;... skipping!&#39;)</span></span>
+<span id="cb7-44"><a href="#cb7-44"></a>      }</span>
+<span id="cb7-45"><a href="#cb7-45"></a>      <span class="kw">return</span>(<span class="kw">paste</span>(<span class="st">&#39;success:&#39;</span>, spp_id))</span>
+<span id="cb7-46"><a href="#cb7-46"></a>    }</span>
+<span id="cb7-47"><a href="#cb7-47"></a>  )</span>
+<span id="cb7-48"><a href="#cb7-48"></a>}</span></code></pre></div>
 </div>
 </div>
 <div id="calculate-maps-of-cumulative-impacts" class="section level2">
@@ -2042,83 +2068,83 @@ div.tocify {
 <p>Each of these will be performed for each stressor category. Full cumulative can be found from simply adding ’em up.</p>
 <div id="map-species-cumulative-impacts-by-stressor-category" class="section level3">
 <h3><span class="header-section-number">2.4.1</span> map species cumulative impacts by stressor category</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">map_cum_impact &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, </a>
-<a class="sourceLine" id="cb7-2" title="2">                           dir_spp_maps,</a>
-<a class="sourceLine" id="cb7-3" title="3">                           <span class="dt">impacts =</span> <span class="st">&#39;all&#39;</span>) {</a>
-<a class="sourceLine" id="cb7-4" title="4">  <span class="co">### dir_spp_maps to point to location of range files</span></a>
-<a class="sourceLine" id="cb7-5" title="5"></a>
-<a class="sourceLine" id="cb7-6" title="6">  <span class="co">### assemble file name and read the range data</span></a>
-<a class="sourceLine" id="cb7-7" title="7">  spp_range_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_spp_maps,</a>
-<a class="sourceLine" id="cb7-8" title="8">                              <span class="kw">sprintf</span>(<span class="st">&#39;iucn_sid_%s.csv&#39;</span>, spp_id))</a>
-<a class="sourceLine" id="cb7-9" title="9">  spp_range_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(spp_range_file, </a>
-<a class="sourceLine" id="cb7-10" title="10">                           <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;cell_id&#39;</span> =<span class="st"> &#39;i&#39;</span>, <span class="st">&#39;presence&#39;</span> =<span class="st"> &#39;i&#39;</span>))</a>
-<a class="sourceLine" id="cb7-11" title="11">  </a>
-<a class="sourceLine" id="cb7-12" title="12">  intsx_files &lt;-<span class="st"> </span><span class="kw">get_intsx_files</span>(spp_id, impacts)</a>
-<a class="sourceLine" id="cb7-13" title="13">  </a>
-<a class="sourceLine" id="cb7-14" title="14">  spp_intsx_df &lt;-<span class="st"> </span><span class="kw">lapply</span>(intsx_files,</a>
-<a class="sourceLine" id="cb7-15" title="15">      <span class="dt">FUN =</span> <span class="cf">function</span>(x) { <span class="co"># x &lt;- intsx_files[1]</span></a>
-<a class="sourceLine" id="cb7-16" title="16">        str_name &lt;-<span class="st"> </span><span class="kw">basename</span>(x) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-17" title="17"><span class="st">          </span><span class="kw">str_replace_all</span>(<span class="st">&#39;spp_intsx_|_[0-9].*&#39;</span>, <span class="st">&#39;&#39;</span>)</a>
-<a class="sourceLine" id="cb7-18" title="18">        </a>
-<a class="sourceLine" id="cb7-19" title="19">        <span class="kw">read_csv</span>(x, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;cell_id&#39;</span> =<span class="st"> &#39;i&#39;</span>,</a>
-<a class="sourceLine" id="cb7-20" title="20">                                     <span class="st">&#39;year&#39;</span> =<span class="st"> &#39;i&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-21" title="21"><span class="st">          </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> str_name)</a>
-<a class="sourceLine" id="cb7-22" title="22">      }) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-23" title="23"><span class="st">    </span><span class="kw">bind_rows</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-24" title="24"><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cell_id)) </a>
-<a class="sourceLine" id="cb7-25" title="25"></a>
-<a class="sourceLine" id="cb7-26" title="26">  spp_cum_impact_map &lt;-<span class="st"> </span>spp_range_df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-27" title="27"><span class="st">    </span><span class="kw">left_join</span>(spp_intsx_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-28" title="28"><span class="st">      </span><span class="co">### left_join keeps totally unimpacted cells</span></a>
-<a class="sourceLine" id="cb7-29" title="29"><span class="st">    </span><span class="kw">group_by</span>(cell_id, year) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-30" title="30"><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">n_impacts =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(stressor))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-31" title="31"><span class="st">    </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-32" title="32"><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(year))</a>
-<a class="sourceLine" id="cb7-33" title="33">    <span class="co">### Note: totally unimpacted cells will have an NA for year and</span></a>
-<a class="sourceLine" id="cb7-34" title="34">    <span class="co">### zero for n_impacts; cells with impacts some years and not others</span></a>
-<a class="sourceLine" id="cb7-35" title="35">    <span class="co">### will only have data for impact years...</span></a>
-<a class="sourceLine" id="cb7-36" title="36">    <span class="co">### dropping these observations will make for smaller files; unimpacted</span></a>
-<a class="sourceLine" id="cb7-37" title="37">    <span class="co">### ranges can be added back in later from the range map files.</span></a>
-<a class="sourceLine" id="cb7-38" title="38">  </a>
-<a class="sourceLine" id="cb7-39" title="39">  <span class="cf">if</span>(<span class="kw">nrow</span>(spp_cum_impact_map) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</a>
-<a class="sourceLine" id="cb7-40" title="40">    <span class="co">### for spp with no impacts in current impact group</span></a>
-<a class="sourceLine" id="cb7-41" title="41">    spp_cum_impact_map &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">cell_id =</span> <span class="ot">NA</span>, </a>
-<a class="sourceLine" id="cb7-42" title="42">                                     <span class="dt">n_impacts =</span> <span class="dv">0</span>, </a>
-<a class="sourceLine" id="cb7-43" title="43">                                     <span class="dt">year =</span> <span class="dv">2003</span><span class="op">:</span><span class="dv">2013</span>)</a>
-<a class="sourceLine" id="cb7-44" title="44">  }</a>
-<a class="sourceLine" id="cb7-45" title="45">  </a>
-<a class="sourceLine" id="cb7-46" title="46">  <span class="kw">return</span>(spp_cum_impact_map)</a>
-<a class="sourceLine" id="cb7-47" title="47">}</a></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">reload &lt;-<span class="st"> </span><span class="ot">FALSE</span></a>
-<a class="sourceLine" id="cb8-2" title="2"><span class="co">### to clear old versions:</span></a>
-<a class="sourceLine" id="cb8-3" title="3"><span class="co">### x &lt;- list.files(file.path(dir_bd_anx, &#39;spp_impact_rasts&#39;), full.names = TRUE)</span></a>
-<a class="sourceLine" id="cb8-4" title="4"><span class="co">### unlink(x)</span></a>
-<a class="sourceLine" id="cb8-5" title="5"></a>
-<a class="sourceLine" id="cb8-6" title="6">categories &lt;-<span class="st"> </span><span class="kw">c</span>(str_cats<span class="op">$</span>category <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>(), <span class="st">&#39;all&#39;</span>)</a>
-<a class="sourceLine" id="cb8-7" title="7"></a>
-<a class="sourceLine" id="cb8-8" title="8"><span class="cf">for</span>(impact_cat <span class="cf">in</span> categories) {</a>
-<a class="sourceLine" id="cb8-9" title="9">  <span class="co"># impact_cat &lt;- categories[1]</span></a>
-<a class="sourceLine" id="cb8-10" title="10">  <span class="co"># for(spp_id in spp_ids) {</span></a>
-<a class="sourceLine" id="cb8-11" title="11">  tmp &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(spp_ids, <span class="dt">mc.cores =</span> <span class="dv">4</span>,</a>
-<a class="sourceLine" id="cb8-12" title="12">    <span class="dt">FUN =</span> <span class="cf">function</span>(spp_id) {</a>
-<a class="sourceLine" id="cb8-13" title="13">      <span class="co">### spp_id &lt;- spp_ids[2]</span></a>
-<a class="sourceLine" id="cb8-14" title="14">      <span class="co">### spp_id &lt;- y[1]</span></a>
-<a class="sourceLine" id="cb8-15" title="15">      impact_rast_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_impact_rasts&#39;</span>,</a>
-<a class="sourceLine" id="cb8-16" title="16">                                   <span class="kw">sprintf</span>(<span class="st">&#39;spp_impact_map_%s_%s.csv&#39;</span>, spp_id, impact_cat))</a>
-<a class="sourceLine" id="cb8-17" title="17">      <span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(impact_rast_file) <span class="op">|</span><span class="st"> </span>reload) {</a>
-<a class="sourceLine" id="cb8-18" title="18">        <span class="kw">message</span>(<span class="st">&#39;Mapping spp &#39;</span>, spp_id, <span class="st">&#39;; &#39;</span>, impact_cat)</a>
-<a class="sourceLine" id="cb8-19" title="19">        <span class="co">### Calculate total species range, accounting for partial ocean cells</span></a>
-<a class="sourceLine" id="cb8-20" title="20">        impact_rast &lt;-<span class="st"> </span><span class="kw">map_cum_impact</span>(spp_id,</a>
-<a class="sourceLine" id="cb8-21" title="21">                                      dir_spp_maps,</a>
-<a class="sourceLine" id="cb8-22" title="22">                                      <span class="dt">impacts =</span> impact_cat)</a>
-<a class="sourceLine" id="cb8-23" title="23">        <span class="kw">write_csv</span>(impact_rast, impact_rast_file)</a>
-<a class="sourceLine" id="cb8-24" title="24">      } <span class="cf">else</span> {</a>
-<a class="sourceLine" id="cb8-25" title="25">        <span class="co"># message(&#39;Impact map file exists: &#39;, basename(impact_rast_file), &#39;... skipping!&#39;)</span></a>
-<a class="sourceLine" id="cb8-26" title="26">      }</a>
-<a class="sourceLine" id="cb8-27" title="27">      <span class="co"># return(paste(&#39;success:&#39;, spp_id))</span></a>
-<a class="sourceLine" id="cb8-28" title="28">    }</a>
-<a class="sourceLine" id="cb8-29" title="29">  )</a>
-<a class="sourceLine" id="cb8-30" title="30">}</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>map_cum_impact &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, </span>
+<span id="cb8-2"><a href="#cb8-2"></a>                           dir_spp_maps,</span>
+<span id="cb8-3"><a href="#cb8-3"></a>                           <span class="dt">impacts =</span> <span class="st">&#39;all&#39;</span>) {</span>
+<span id="cb8-4"><a href="#cb8-4"></a>  <span class="co">### dir_spp_maps to point to location of range files</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a></span>
+<span id="cb8-6"><a href="#cb8-6"></a>  <span class="co">### assemble file name and read the range data</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>  spp_range_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_spp_maps,</span>
+<span id="cb8-8"><a href="#cb8-8"></a>                              <span class="kw">sprintf</span>(<span class="st">&#39;iucn_sid_%s.csv&#39;</span>, spp_id))</span>
+<span id="cb8-9"><a href="#cb8-9"></a>  spp_range_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(spp_range_file, </span>
+<span id="cb8-10"><a href="#cb8-10"></a>                           <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;cell_id&#39;</span> =<span class="st"> &#39;i&#39;</span>, <span class="st">&#39;presence&#39;</span> =<span class="st"> &#39;i&#39;</span>))</span>
+<span id="cb8-11"><a href="#cb8-11"></a>  </span>
+<span id="cb8-12"><a href="#cb8-12"></a>  intsx_files &lt;-<span class="st"> </span><span class="kw">get_intsx_files</span>(spp_id, impacts)</span>
+<span id="cb8-13"><a href="#cb8-13"></a>  </span>
+<span id="cb8-14"><a href="#cb8-14"></a>  spp_intsx_df &lt;-<span class="st"> </span><span class="kw">lapply</span>(intsx_files,</span>
+<span id="cb8-15"><a href="#cb8-15"></a>      <span class="dt">FUN =</span> <span class="cf">function</span>(x) { <span class="co"># x &lt;- intsx_files[1]</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a>        str_name &lt;-<span class="st"> </span><span class="kw">basename</span>(x) <span class="op">%&gt;%</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a><span class="st">          </span><span class="kw">str_replace_all</span>(<span class="st">&#39;spp_intsx_|_[0-9].*&#39;</span>, <span class="st">&#39;&#39;</span>)</span>
+<span id="cb8-18"><a href="#cb8-18"></a>        </span>
+<span id="cb8-19"><a href="#cb8-19"></a>        <span class="kw">read_csv</span>(x, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;cell_id&#39;</span> =<span class="st"> &#39;i&#39;</span>,</span>
+<span id="cb8-20"><a href="#cb8-20"></a>                                     <span class="st">&#39;year&#39;</span> =<span class="st"> &#39;i&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb8-21"><a href="#cb8-21"></a><span class="st">          </span><span class="kw">mutate</span>(<span class="dt">stressor =</span> str_name)</span>
+<span id="cb8-22"><a href="#cb8-22"></a>      }) <span class="op">%&gt;%</span></span>
+<span id="cb8-23"><a href="#cb8-23"></a><span class="st">    </span><span class="kw">bind_rows</span>() <span class="op">%&gt;%</span></span>
+<span id="cb8-24"><a href="#cb8-24"></a><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cell_id)) </span>
+<span id="cb8-25"><a href="#cb8-25"></a></span>
+<span id="cb8-26"><a href="#cb8-26"></a>  spp_cum_impact_map &lt;-<span class="st"> </span>spp_range_df <span class="op">%&gt;%</span></span>
+<span id="cb8-27"><a href="#cb8-27"></a><span class="st">    </span><span class="kw">left_join</span>(spp_intsx_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb8-28"><a href="#cb8-28"></a><span class="st">      </span><span class="co">### left_join keeps totally unimpacted cells</span></span>
+<span id="cb8-29"><a href="#cb8-29"></a><span class="st">    </span><span class="kw">group_by</span>(cell_id, year) <span class="op">%&gt;%</span></span>
+<span id="cb8-30"><a href="#cb8-30"></a><span class="st">    </span><span class="kw">summarize</span>(<span class="dt">n_impacts =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(stressor))) <span class="op">%&gt;%</span></span>
+<span id="cb8-31"><a href="#cb8-31"></a><span class="st">    </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></span>
+<span id="cb8-32"><a href="#cb8-32"></a><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(year))</span>
+<span id="cb8-33"><a href="#cb8-33"></a>    <span class="co">### Note: totally unimpacted cells will have an NA for year and</span></span>
+<span id="cb8-34"><a href="#cb8-34"></a>    <span class="co">### zero for n_impacts; cells with impacts some years and not others</span></span>
+<span id="cb8-35"><a href="#cb8-35"></a>    <span class="co">### will only have data for impact years...</span></span>
+<span id="cb8-36"><a href="#cb8-36"></a>    <span class="co">### dropping these observations will make for smaller files; unimpacted</span></span>
+<span id="cb8-37"><a href="#cb8-37"></a>    <span class="co">### ranges can be added back in later from the range map files.</span></span>
+<span id="cb8-38"><a href="#cb8-38"></a>  </span>
+<span id="cb8-39"><a href="#cb8-39"></a>  <span class="cf">if</span>(<span class="kw">nrow</span>(spp_cum_impact_map) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</span>
+<span id="cb8-40"><a href="#cb8-40"></a>    <span class="co">### for spp with no impacts in current impact group</span></span>
+<span id="cb8-41"><a href="#cb8-41"></a>    spp_cum_impact_map &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">cell_id =</span> <span class="ot">NA</span>, </span>
+<span id="cb8-42"><a href="#cb8-42"></a>                                     <span class="dt">n_impacts =</span> <span class="dv">0</span>, </span>
+<span id="cb8-43"><a href="#cb8-43"></a>                                     <span class="dt">year =</span> <span class="dv">2003</span><span class="op">:</span><span class="dv">2013</span>)</span>
+<span id="cb8-44"><a href="#cb8-44"></a>  }</span>
+<span id="cb8-45"><a href="#cb8-45"></a>  </span>
+<span id="cb8-46"><a href="#cb8-46"></a>  <span class="kw">return</span>(spp_cum_impact_map)</span>
+<span id="cb8-47"><a href="#cb8-47"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>reload &lt;-<span class="st"> </span><span class="ot">FALSE</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="co">### to clear old versions:</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="co">### x &lt;- list.files(file.path(dir_bd_anx, &#39;spp_impact_rasts&#39;), </span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co">###                 full.names = TRUE)</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="co">### unlink(x)</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a></span>
+<span id="cb9-7"><a href="#cb9-7"></a>categories &lt;-<span class="st"> </span><span class="kw">c</span>(str_cats<span class="op">$</span>category <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>(), <span class="st">&#39;all&#39;</span>)</span>
+<span id="cb9-8"><a href="#cb9-8"></a></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="cf">for</span>(impact_cat <span class="cf">in</span> categories) {</span>
+<span id="cb9-10"><a href="#cb9-10"></a>  <span class="co"># impact_cat &lt;- categories[1]</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a>  <span class="co"># for(spp_id in spp_ids) {</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a>  tmp &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(spp_ids, <span class="dt">mc.cores =</span> <span class="dv">4</span>,</span>
+<span id="cb9-13"><a href="#cb9-13"></a>    <span class="dt">FUN =</span> <span class="cf">function</span>(spp_id) {</span>
+<span id="cb9-14"><a href="#cb9-14"></a>      <span class="co">### spp_id &lt;- spp_ids[2]</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a>      impact_fstem &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_impact_rasts/spp_impact_map_%s_%s.csv&#39;</span>)</span>
+<span id="cb9-16"><a href="#cb9-16"></a>      impact_rast_file &lt;-<span class="st"> </span><span class="kw">sprintf</span>(impact_fstem, spp_id, impact_cat)</span>
+<span id="cb9-17"><a href="#cb9-17"></a>      <span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(impact_rast_file) <span class="op">|</span><span class="st"> </span>reload) {</span>
+<span id="cb9-18"><a href="#cb9-18"></a>        <span class="kw">message</span>(<span class="st">&#39;Mapping spp &#39;</span>, spp_id, <span class="st">&#39;; &#39;</span>, impact_cat)</span>
+<span id="cb9-19"><a href="#cb9-19"></a>        <span class="co">### Calculate total species range, accounting for partial ocean cells</span></span>
+<span id="cb9-20"><a href="#cb9-20"></a>        impact_rast &lt;-<span class="st"> </span><span class="kw">map_cum_impact</span>(spp_id,</span>
+<span id="cb9-21"><a href="#cb9-21"></a>                                      dir_spp_maps,</span>
+<span id="cb9-22"><a href="#cb9-22"></a>                                      <span class="dt">impacts =</span> impact_cat)</span>
+<span id="cb9-23"><a href="#cb9-23"></a>        <span class="kw">write_csv</span>(impact_rast, impact_rast_file)</span>
+<span id="cb9-24"><a href="#cb9-24"></a>      } <span class="cf">else</span> {</span>
+<span id="cb9-25"><a href="#cb9-25"></a>        <span class="co"># message(&#39;Impact map file exists: &#39;, basename(impact_rast_file), &#39;... skipping!&#39;)</span></span>
+<span id="cb9-26"><a href="#cb9-26"></a>      }</span>
+<span id="cb9-27"><a href="#cb9-27"></a>      <span class="co"># return(paste(&#39;success:&#39;, spp_id))</span></span>
+<span id="cb9-28"><a href="#cb9-28"></a>    }</span>
+<span id="cb9-29"><a href="#cb9-29"></a>  )</span>
+<span id="cb9-30"><a href="#cb9-30"></a>}</span></code></pre></div>
 </div>
 </div>
 </div>
@@ -2178,7 +2204,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0

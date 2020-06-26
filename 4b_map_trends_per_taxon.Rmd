@@ -18,6 +18,9 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 library(raster)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
@@ -49,7 +52,9 @@ Identify the species included in the impacted list (using the IUCN species IDs o
 
 ### Get inclusion list; drop species with no sensitivities to stressors
 spp_sens <- get_incl_spp() %>%
-  filter(!is.na(stressor))
+  filter(!is.na(stressor)) %>%
+  left_join(get_spp_taxon(), by = c('iucn_sid', 'assess_gp')) %>%
+  mutate(taxon = tolower(rank))
 
 ### directories for inputs
 spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
@@ -90,7 +95,7 @@ get_spp_vec <- function(spp_ids, i, subgp_size) {
   spp_id_vec <- spp_ids[gp_first:gp_last]
 }
 
-get_spp_range <- function(spp_id) {
+get_spp_rangemap <- function(spp_id) {
   range_map_filestem <- file.path(spp_range_dir, 'iucn_sid_%s.csv')
   rangemap <- read_csv(sprintf(range_map_filestem, spp_id),
                        col_types = 'ii') %>%
@@ -105,8 +110,8 @@ get_str_footprint <- function() {
   str_vec <- get_str_cats() %>%
     .$stressor
   ### set up file stem for stressor footprint rasters
-  str_footprint_dir <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
-  str_ft_stem <- file.path(str_footprint_dir, '%s_2013_mol10km_95cv.tif')
+  str_footprint_dir <- file.path(dir_bd_anx, 'layers/stressors_10km_95vc')
+  str_ft_stem <- file.path(str_footprint_dir, '%s_2013_mol10km_95vc.tif')
     ### stressor - use 2013 footprint for clipping
   
   str_ft <- raster::stack(sprintf(str_ft_stem, str_vec))
@@ -120,19 +125,25 @@ get_str_footprint <- function() {
   return(str_ft_df)
 }
 
+### function to read in all the pace files
+get_pace_df <- function() {
+  pace_fs <- list.files(file.path(dir_bd_anx, 'layers/stressor_pace'), 
+                        full.names = TRUE)
+  pace_df <- parallel::mclapply(pace_fs, FUN = function(f) {
+        df <- read_csv(f, col_types = c(cell_id = 'i', pace = 'i', stressor = 'c'))
+      }, mc.cores = 14) %>%
+    bind_rows()
+}
 ```
 
 ```{r create taxa maps}
 
 ### Trend files are rasters of value (trend slope) and p_val.
-pace_df <- read_csv(file.path(dir_bd_anx, 'layers/stressor_pace.csv')) %>%
-  filter(!is.na(pace)) %>%
-  select(cell_id, stressor, pace)
+pace_df <- get_pace_df()
 
-### load priorities; normalize so max priority = 1.
-priority_df <- read_csv(here('_output/spp_priority.csv')) %>%
-  mutate(priority = priority / max(priority)) %>%
-  select(iucn_sid, priority)
+### load priorities; without normalizing, priority is dependent only on spp range,
+### not dependent on the set of spp considered (e.g. normalizing by max priority)
+priority_df <- get_spp_priority(risk_wt = FALSE) 
 
 ### get the stressor footprints for 2013 as a dataframe
 str_ft_df <- get_str_footprint()
@@ -144,7 +155,7 @@ subgp_size <- 24 ### number of spp to process at a time
 reload <- FALSE
 
 for(str_cat in str_cats) {
-  # str_cat <- str_cats[4]
+  # str_cat <- str_cats[3]
   
   for(taxon_gp in taxon_gps) {
     ### taxon_gp <- taxon_gps[2]
@@ -190,7 +201,7 @@ for(str_cat in str_cats) {
             
           spp_ranges <- parallel::mclapply(
             spp_id_vec,
-            FUN = get_spp_range,
+            FUN = get_spp_rangemap,
             mc.cores = subgp_size) %>%
             bind_rows()
           
@@ -209,10 +220,10 @@ for(str_cat in str_cats) {
             summarize(incr = any(pace == +1) & !any(pace == -1),
                       decr = any(pace == -1) & !any(pace == +1)) %>%
             group_by(cell_id) %>%
-            summarize(priority_incr_spp = sum(priority * incr),
-                      priority_decr_spp = sum(priority * decr),
-                      n_incr_spp = sum(incr),
-                      n_decr_spp = sum(decr)) %>%
+            summarize(priority_incr_spp = sum(priority * incr, na.rm = TRUE),
+                      priority_decr_spp = sum(priority * decr, na.rm = TRUE),
+                      n_incr_spp = sum(incr, na.rm = TRUE),
+                      n_decr_spp = sum(decr, na.rm = TRUE)) %>%
             ungroup()
           
           taxon_trend_list[[i]] <- trend_gp_summary
@@ -265,11 +276,11 @@ Plot taxa maps species experiencing intensifying/deintensifying impacts.  Here w
 
 ```{r trend maps by taxa, eval = TRUE}
 
-nspp_rast <- raster(here('_output/rasters/n_spp_map.tif'))
 mapfiles <- list.files(taxon_trend_map_dir, full.names = TRUE)
 
 strs <- c('fishing', 'climate', 'all')
-taxa <- c('sea_turtles', 'mammals', 'birds', 'sharks_and_rays')
+
+taxa <- taxon_gps[c(1, 2, 3, 5, 9)]
 
 for(str_cat in strs) {
   # str_cat <- strs[1]
@@ -277,12 +288,12 @@ for(str_cat in strs) {
     # t <- taxa[3]
     fstem <- file.path(taxon_trend_map_dir, 'taxon_trend_%s_%s_%s.tif')
     
-    incr_map <- raster(sprintf(fstem, t, str_cat, 'incr')) / nspp_rast
+    incr_map <- raster(sprintf(fstem, t, str_cat, 'incr'))
     plot(incr_map, 
          col = c('grey70', hcl.colors(n = 20, rev = TRUE)),
          main = sprintf('intensifying %s impacts, %s', str_cat, t))
     
-    decr_map <- raster(sprintf(fstem, t, str_cat, 'decr')) / nspp_rast
+    decr_map <- raster(sprintf(fstem, t, str_cat, 'decr'))
     plot(decr_map, 
          col = c('grey70', hcl.colors(n = 20, rev = TRUE)),
          main = sprintf('deintensifying %s impacts, %s', str_cat, t))

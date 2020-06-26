@@ -17,6 +17,10 @@ output:
 ---
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
@@ -378,6 +382,11 @@ DT::datatable(line_trigram_df)
     * commercial line
 * exclude: longline (or long line)
 
+
+### identify keywords for destructive fisheries?
+
+Some species mention threats from destructive fishing practices such as blast/dynamite fishing and cyanide fishing.  These are not in our maps of gear types so they will be excluded.
+
 ## Parse threats to count by gear type
 
 Once parsed, examine frequency of various gear types.  Presumably should be a higher proportion of gears associated with high bycatch - i.e. indiscriminate gear types.
@@ -385,18 +394,21 @@ Once parsed, examine frequency of various gear types.  Presumably should be a hi
 To help differentiate between mid-water trawl and bottom trawl, for species where narratives do not clearly differentiate, we will use habitat information to determine sensitivity.
 
 ```{r set up gear keywords}
-### create search terms for midwater trawl:
-gears_midtrawl <- c('mid.?water trawl', 'pelagic trawl', 'entangl')
+### create search terms for midwater trawl (separate into "trawl"-specific 
+### vs keywords that don't involve "trawl")
+gears_midtrawl1 <- c('mid.?water trawl', 'pelagic trawl')
+gears_midtrawl2 <- c('entangl')
 ### create search terms for bottom trawl:
-gears_btmtrawl <- c('bottom trawl', 
-                    'deep.?water trawl', 
-                    'demersal trawl', 
-                    'beam trawl', 
-                    'benthic trawl',
+gears_btmtrawl1 <- c('bottom trawl', 'deep.?water trawl', 
+                    'demersal trawl', 'beam trawl', 'benthic trawl',
                     'crab trawl', 'crustacean trawl', 'groundfish trawl', 
-                    'shrimp trawl', 'prawn trawl', 'scallop trawl',
-                    'danish seine',
-                    'entangl')
+                    'shrimp trawl', 'prawn trawl', 'scallop trawl')
+gears_btmtrawl2 <- c('deep sea shrimp fisher',
+                     'deep sea crustacean fisher', 
+                     'deep.?water demersal fisher',
+                     'danish seine', 'entangl')
+
+### create keywords for non-fishery "trawl" instances
 trawl_except <- c(
   '(explora|experim|research|scientific|fisher[a-z]+.indep)[a-z]* trawl',
   'trawl[a-z]* (surv|sample|experiment|research)')
@@ -412,16 +424,20 @@ gears_line <- c('caught [a-z]+ line',
                   # line fishery excl longline/long-line, etc
                 'commercial line') # line fishing/fishery/fisheries
 
+### create search terms for gillnet fishing:
+gears_net <- c('gill.?net', 'drift.?net', 'set.?net')
+
 ### create regex of gear type search terms
-gears_of_interest <- c(# 'by.?catch', 
+gears_of_interest <- c('by.?catch', 
                        'dredge',
                        'long.?line', 
                        gears_line,
                        'seine',
-                       'gill.?net',
+                       gears_net,
                        '[^a-z]trap', ### avoid "entrapment"
                        'trawl',
-                       'entangl') %>%
+                       'entangl',
+                       'fisher') %>%
   paste0(collapse = '|')
 ```
 
@@ -429,16 +445,16 @@ gears_of_interest <- c(# 'by.?catch',
 ``` {r search narratives for terms}
 gear_narr_df <- spp_narrs %>%
   gather(dimension, text, -iucn_sid) %>%
-  ### prefilter for speedier unnesting of tokens
+  ### prefilter for speedier unnesting of tokens:
   filter(str_detect(tolower(text), gears_of_interest)) %>%
   tidytext::unnest_tokens(input = text, output = sentence, token = 'sentences') %>%
+  ### then filter to drop sentences without gear mentions:
   filter(str_detect(sentence, gears_of_interest))
 
-### count all the trawl instances, and subtract out the non-stressor trawls
+### count all the "trawl" instances, and subtract out the non-stressor trawls
 trawl_narr_class <- gear_narr_df %>%
-  mutate(trawl_count = str_count(sentence, 'trawl|danish seine'),
-         trawl_count = trawl_count - str_count(sentence, trawl_except)) %>%
-  select(-sentence)
+  mutate(trawl_count = str_count(sentence, 'trawl'),
+         trawl_count = trawl_count - str_count(sentence, trawl_except))
 
 gear_narr_class <- gear_narr_df %>%
   mutate(dredge_count   = str_count(sentence, 'dredge'),
@@ -446,28 +462,38 @@ gear_narr_class <- gear_narr_df %>%
          poleline_count = str_count(sentence, paste0(gears_line, collapse = '|')),
          seine_count    = str_count(sentence, 'seine'), ### note: includes danish seine
          trap_count     = str_count(sentence, 'trap'),
-         gillnet_count  = str_count(sentence, 'gill.?net|entangl'),
-         midtrawl_count = str_count(sentence, paste0(gears_midtrawl, collapse = '|')),
-         btmtrawl_count = str_count(sentence, paste0(gears_btmtrawl, collapse = '|'))) %>%
-  select(-sentence) %>%
-  full_join(trawl_narr_class, by = c('iucn_sid', 'dimension')) %>%
-  ### check that the midtrawl and btmtrawl counts don't exceed the 
+         gillnet_count  = str_count(sentence, paste0(gears_net, collapse = '|')),
+         ### trawl counts associated with explicit mention of "trawl":
+         midtrawl_count1 = str_count(sentence, paste0(gears_midtrawl1, collapse = '|')),
+         btmtrawl_count1 = str_count(sentence, paste0(gears_btmtrawl1, collapse = '|')),
+         ### trawl counts associated with non-"trawl" descriptions:
+         midtrawl_count2 = str_count(sentence, paste0(gears_midtrawl2, collapse = '|')),
+         btmtrawl_count2 = str_count(sentence, paste0(gears_btmtrawl2, collapse = '|'))) %>%
+  full_join(trawl_narr_class, by = c('iucn_sid', 'dimension', 'sentence')) %>%
+  ### check that the midtrawl and btmtrawl counts ("trawl"-specific) don't exceed the 
   ### total non-scientific/exploratory trawls
-  mutate(midtrawl_count = ifelse(midtrawl_count > trawl_count, 
-                                 trawl_count, midtrawl_count),
-         btmtrawl_count = ifelse(btmtrawl_count > trawl_count, 
-                                 trawl_count, btmtrawl_count)) %>%
-  ### if trawl counts but no mid- or btm-trawl, assign trawl counts to btm_trawl
+  mutate(midtrawl_count1 = ifelse(midtrawl_count1 > trawl_count,
+                                 trawl_count, midtrawl_count1),
+         btmtrawl_count1 = ifelse(btmtrawl_count1 > trawl_count,
+                                 trawl_count, btmtrawl_count1)) %>%
+  ### if "trawl" counts but no mid- or btm-trawl, assign trawl counts to btm_trawl
   ### (assume generic trawl means bottom)
-  mutate(btmtrawl_count = ifelse(midtrawl_count == 0 & btmtrawl_count == 0,
-                                 trawl_count, btmtrawl_count)) %>%
-  select(-trawl_count)
+  mutate(btmtrawl_count1 = ifelse(midtrawl_count1 == 0 & btmtrawl_count1 == 0,
+                                 trawl_count, btmtrawl_count1)) %>%
+  ### consolidate the mid-water trawls and bottom trawls
+  mutate(btmtrawl_count = btmtrawl_count1 + btmtrawl_count2,
+         midtrawl_count = midtrawl_count1 + midtrawl_count2) %>%
+  ### clean up
+  select(-trawl_count, -sentence,
+         -btmtrawl_count1, -btmtrawl_count2, 
+         -midtrawl_count1, -midtrawl_count2)
 
 gear_narr_tidy <- gear_narr_class %>%
   gather(gear, count, ends_with('count')) %>%
   mutate(gear = str_replace_all(gear, '_count', '')) %>%
   group_by(iucn_sid, gear) %>%
-  summarize(count = sum(count))
+  summarize(count = sum(count)) %>%
+  ungroup()
 
 write_csv(gear_narr_tidy, here('int/gear_narr_tidy.csv'))
 
@@ -495,7 +521,8 @@ art_fish_from_iucn <- spp_threats_from_iucn %>%
 gear_sens_df <- gear_narr_tidy %>%
   left_join(spp_dem_pel, by = 'iucn_sid') %>%
   left_join(gear_to_stressor_lookup, by = 'gear') %>%
-  filter(spp_hab == gear_hab) %>%
+  filter(spp_hab == gear_hab | is.na(spp_hab)) %>%
+    ### some spp have NA for spp_hab - assume these can be either hab
   left_join(spp_threats_from_iucn, by = c('iucn_sid', 'stressor'))
 
 ### Summarize sensitivity to each stressor as any non-zero counts
@@ -619,6 +646,50 @@ tmp_nomatch <- tmp %>%
   filter(taxon != 'sturgeons')
   
 table(tmp_nomatch$taxon)
+
+DT::datatable(tmp_nomatch)
 ```
 
 Note that each of these is listed as being threatened by fishing pressures, but no categorization of gear type was found in the narratives.  Inspect each of these to better understand/inform better definition of keywords.
+
+First round: 129 unmatched spp.  
+
+* Fixed the `spp_hab == gear_hab` filter by adding `spp_hab == gear_hab | is.na(spp_hab)`
+* Added "deep sea (shrimp|crustacean) fisher"(ies) to search term for trawl
+* fixed up the "trawl" counting and method to exclude "trawl survey" etc by splitting explicit mentions of "trawl" from other terms without the word "trawl" e.g. "deep water shrimp fishery"
+
+After these, 37 species remain that seem to have significant fishing impacts but not enough detail in the narratives to identify gear types.  To be conservative, these will simply be dropped at this point.
+
+```{r}
+x <- readxl::read_excel(here('unmatched_fishing_threats.xlsx'))
+
+z <- tmp_nomatch %>%
+  left_join(spp_narrs, by = 'iucn_sid') %>%
+  filter(dimension %in% c('threats')) %>%
+  # filter(dimension %in% c('threats', 'rationale', 'conservationmeasures')) %>%
+  filter(!is.na(text))
+  # filter(!iucn_sid %in% x$iucn_sid)
+
+non_threats <- c('no major threats', 
+                 'no apparent fishing threats', 
+                 'indirect fishing impacts', 
+                 'competition with fisheries - not direct',
+                 'destructive',
+                 'NA')
+
+### species manually checked and not yet addressed
+y <- x %>% filter(iucn_sid %in% z$iucn_sid) %>%
+  filter(!is.na(notes)) %>%
+  filter(!str_detect(notes, paste0(non_threats, collapse = '|')))
+
+### species manually checked and noted as "no specific fishery" - can't infer
+### what type of gear is involved
+yy <- x %>% filter(iucn_sid %in% z$iucn_sid) %>%
+  filter(notes == 'no specific fishery')
+
+### non-matched not included in check excel - should be zero
+yyy <- z %>% filter(!iucn_sid %in% x$iucn_sid)
+
+DT::datatable(y)
+```
+

@@ -18,6 +18,9 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 library(raster)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
@@ -33,7 +36,7 @@ reload <- FALSE
 
 Create a species richness map for threatened marine species.
 
-Combine taxa-level impact  maps to create maps of number of threatened species impacted per cell, per year.
+Combine taxa-level impact  maps to create maps of number of threatened species impacted per cell, per year.  This is also done by range priority (see the `get_spp_priority()` function for details)
 
 Plot maps as animated rasters, both by absolute numbers of species impacted in a location and by proportion of species (impact counts / species richness).
 
@@ -47,14 +50,16 @@ Set up the dataframe of species to include.  By taxon, load all species range ma
 
 ```{r Identify species in this assessment}
 
-spp_incl <- get_incl_spp()
+spp_incl <- get_incl_spp() %>%
+  left_join(get_spp_taxon(), by = c('iucn_sid', 'assess_gp')) %>%
+  mutate(taxon = tolower(rank))
 
 spp_sens <- spp_incl %>%
   filter(!is.na(stressor))
 
 # spp_incl$iucn_sid %>% n_distinct()
 # spp_incl %>% filter(!is.na(stressor)) %>% .$iucn_sid %>% n_distinct()
-### 1006 if we limit to just sensitive spp, 1273 if we include all
+### 1036 if we limit to just sensitive spp, 1271 if we include all
 ### spp that are mapped/threatened/comp assessed
 ```
 
@@ -81,7 +86,7 @@ if(!file.exists(spp_rich_mapfile) | reload) {
       .$iucn_sid %>%
       unique()
     
-    map_list <- parallel::mclapply(spp_ids_taxa,
+    map_list <- parallel::mclapply(spp_ids_taxa, mc.cores = 12,
       FUN = function(id) {
         # id <- spp_ids_taxa[1]
         spp_f <- file.path(spp_range_dir, sprintf('iucn_sid_%s.csv', id))
@@ -105,9 +110,10 @@ if(!file.exists(spp_rich_mapfile) | reload) {
 }
 
 spp_rich_rast <- raster(spp_rich_mapfile)
-plot(spp_rich_rast, 
+plot(log(spp_rich_rast), 
      axes = F, col = hcl.colors(n = 20),
-     main = 'Species richness')
+     main = 'log(Species richness)')
+
 
 ```
 
@@ -121,19 +127,19 @@ priority_sum_mapfile <- here('_output/rasters/priority_sum_map.tif')
 if(!file.exists(priority_sum_mapfile) | reload) {
   
   spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
-  priority_df <- read_csv(here('_output/spp_priority.csv'))
   taxa_gps <- spp_incl$taxon %>% unique() %>% sort()
+  priority_df <- get_spp_priority(risk_wt = FALSE)
   
   taxa_map_list <- vector('list', length = length(taxa_gps))
   for(i in seq_along(taxa_gps)) {
     # i <- 1
     taxa_gp <- taxa_gps[i]
-    spp_ids_taxa <- spp_sens %>%
+    spp_ids_taxa <- spp_incl %>%
       filter(taxon == taxa_gp) %>%
       .$iucn_sid %>%
       unique()
     
-    map_list <- parallel::mclapply(spp_ids_taxa,
+    map_list <- parallel::mclapply(spp_ids_taxa, mc.cores = 12,
       FUN = function(id) {
         # id <- spp_ids_taxa[1]
         spp_priority <- priority_df %>%
@@ -158,7 +164,7 @@ if(!file.exists(priority_sum_mapfile) | reload) {
     }
     map_priority_sum_df <- map_df %>%
       group_by(cell_id) %>%
-      summarize(priority_sum = sum(priority))
+      summarize(priority_sum = sum(priority, na.rm = TRUE))
     taxa_map_list[[i]] <- map_to_rast(map_priority_sum_df, cell_val = 'priority_sum')
   }
   
@@ -171,7 +177,9 @@ if(!file.exists(priority_sum_mapfile) | reload) {
 }
 
 priority_sum_rast <- raster(priority_sum_mapfile)
-plot(priority_sum_rast, main = 'Species sum(priority)')
+plot(log(priority_sum_rast),
+     axes = F, col = hcl.colors(n = 20),
+     main = 'log(Species sum(priority))')
 
 ```
 
@@ -180,9 +188,17 @@ plot(priority_sum_rast, main = 'Species sum(priority)')
 <!-- This is then normalized by dividing by the max value to get a range from 0-1. -->
 
 ```{r, eval = FALSE}
-n_vs_priority <- priority_sum_rast / spp_rich_rast
-n_vs_priority <- n_vs_priority / maxValue(n_vs_priority)
-plot(n_vs_priority, main = 'normalized (sum priority / spp richness)')
+spp_rich_rast <- raster(here('_output/rasters/n_spp_map.tif'))
+pri_sum_no_risk <- raster(here('_output/rasters/priority_sum_map_norisk.tif'))
+pri_sum_norisk <- raster(here('_output/rasters/priority_sum_map.tif'))
+df <- data.frame(nspp = values(spp_rich_rast), 
+                 # pri_norisk = values(pri_sum_no_risk),
+                 pri_risk = values(pri_sum_risk)) %>%
+  filter(!is.na(nspp) & !is.na(pri_risk)) %>%
+  mutate(r_risk = ifelse(nspp > 0, pri_risk / nspp, 0),
+         r_norisk = ifelse(nspp > 0, pri_norisk / nspp, 0))
+test_rast <- pri_sum_norisk / spp_rich_rast
+plot(log(test_rast), main = 'normalized (sum priority / spp richness)')
 ```
 
 <!-- Areas with high values represent concentrations of high priority species. -->
@@ -207,7 +223,7 @@ all_maps <- list.files(taxon_impact_map_dir,
 taxa_map_df <- data.frame(map = all_maps) %>%
   mutate(year   = str_extract(basename(map), '[0-9]{4}') %>% as.integer(),
          impact = str_replace_all(basename(map), '.+[0-9]{4}_|.tif', '')) %>%
-  filter(!str_detect(basename(map), 'priority'))
+  mutate(priority = str_detect(basename(map), 'priority'))
 ```
 
 
@@ -269,13 +285,13 @@ outfile_stem <- file.path(impact_map_dir, 'impact_%s_%s.tif')
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
   impact_map_files <- taxa_map_df %>%
-    filter(impact == str_cat) # %>%
-    # filter(!priority)
+    filter(impact == str_cat) %>%
+    filter(!priority)
   
   for(y in yrs) {
     # y <- 2003
     outfile <- sprintf(outfile_stem, str_cat, y)
-    message('Processing ', basename(outfile))
+    # message('Processing ', basename(outfile))
     
     if(!file.exists(outfile) | reload) {
       imp_yr_files <- impact_map_files %>%
@@ -288,9 +304,9 @@ for(str_cat in str_cats) {
       
       writeRaster(impact_yr_rast, outfile, overwrite = TRUE)
       
-    } else {
-      message('File exists: ', outfile, '... skipping!')
-    }
+    } #else {
+      # message('File exists: ', outfile, '... skipping!')
+    # }
   }
 }
 
@@ -301,17 +317,18 @@ for(str_cat in str_cats) {
 str_cats <- taxa_map_df$impact %>% unique()
 yrs <- 2003:2013
 
+outfile2_stem <- here('_output/rasters/impact_priority_maps/impact_priority_%s_%s.tif')
+
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
   impact_map_files <- taxa_map_df %>%
     filter(impact == str_cat) %>%
     filter(priority)
-    outfile2_stem <- here('_output/rasters/impact_priority_maps/impact_priority_%s_%s.tif')
   
   for(y in yrs) {
     # y <- 2003
-    
-    outfile <- sprintf(outfile_stem, str_cat, y)
+    outfile <- sprintf(outfile2_stem, str_cat, y)
+    message('Processing ', basename(outfile))
     
     if(!file.exists(outfile) | reload) {
       imp_yr_files <- impact_map_files %>%
@@ -333,7 +350,7 @@ for(str_cat in str_cats) {
 
 ### maps by count of threatened species impacted
 
-``` {r Animate impact count maps, results = 'asis'}
+``` {r Animate impact count maps, results = 'asis', eval = FALSE}
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
   
@@ -357,7 +374,7 @@ for(str_cat in str_cats) {
 
 ### maps by percent of threatened species impacted
 
-``` {r Animate impact pct maps, results = 'asis'}
+``` {r Animate impact pct maps, results = 'asis', eval = FALSE}
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
   
@@ -423,24 +440,29 @@ for(str_cat in str_cats) {
 ``` {r plot just 2013 layers}
 
 for(str_cat in str_cats) {
-  # str_cat <- str_cats[2]
+  # str_cat <- str_cats[1]
   r <- raster(sprintf(outfile_stem, str_cat, 2013))
+  # r_pri <- raster(sprintf(outfile2_stem, str_cat, 2013))
   
   r_norm <- r / nspp_rast
+  # r_pri_norm <- r_pri / priority_sum_rast
     
-  plot(r, col = hcl.colors(n = 20),
-       axes = FALSE,
-       main = paste('count spp impacted:', str_cat, 'stressors'))
+  # plot(r, col = hcl.colors(n = 20),
+  #      axes = FALSE,
+  #      main = paste('count spp impacted:', str_cat, 'stressors'))
   plot(r_norm, col = hcl.colors(n = 20),
        axes = FALSE,
        main = paste('pct spp impacted:', str_cat, 'stressors'))
+  # plot(r_pri_norm, col = hcl.colors(n = 20),
+  #      axes = FALSE,
+  #      main = paste('priority pct spp impacted:', str_cat, 'stressors'))
   
 }
 ```
 
-How correlated are impact counts with species richness?  Examine 2013 year.
+<!-- How correlated are impact counts with species richness?  Examine 2013 year. -->
 
-```{r}
+```{r, eval = FALSE}
 
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
@@ -455,7 +477,7 @@ for(str_cat in str_cats) {
     geom_point(alpha = .2) +
     geom_abline(slope = 1, intercept = 0, color = 'red') +
     geom_smooth(method = 'lm', color = 'green', alpha = .5) +
-    labs(title = sprintf('%s impacts vs spp richness (2% sample)', str_cat))
+    labs(title = sprintf('%s impacts vs spp richness (2 pct sample)', str_cat))
   print(thingplot)
 }
 

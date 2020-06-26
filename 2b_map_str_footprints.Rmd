@@ -18,6 +18,9 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 library(raster)
 library(sf)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
@@ -60,8 +63,8 @@ for(str_cat in str_cats) {
         filter(category == str_cat | str_cat == 'all') %>%
         .$stressor
       
-      str_rast_stem <- file.path(dir_bd_anx, 'layers', 'stressors_10km_95cv',
-                                 '%s_%s_mol10km_95cv.tif')
+      str_rast_stem <- file.path(dir_bd_anx, 'layers', 'stressors_10km_95vc',
+                                 '%s_%s_mol10km_95vc.tif')
       str_stack <- stack(sprintf(str_rast_stem, strs, yr))
       
       ### normalize all layers to 1/NA (presence/absence of stressor)

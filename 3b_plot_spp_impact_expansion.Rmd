@@ -18,6 +18,9 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 library(raster)
 library(sf)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
@@ -48,42 +51,46 @@ Load the impact summaries, attach info on taxonomic groupings and range quintile
 
 ```{r assemble data frame}
 
-spp_incl <- get_incl_spp() %>%
-  select(-code) %>%
-  distinct()
+imp_range_file <- file.path(here('int/impacted_ranges.csv'))
 
-spp_impact_dir <- file.path(dir_bd_anx, 'spp_impacts')
-imp_files <- list.files(spp_impact_dir, full.names = TRUE)
-
-spp_range_file <- here('int/spp_ranges_incl_birds.csv')
-spp_ranges <- read_csv(spp_range_file) %>%
-  left_join(spp_incl %>%
-              select(iucn_sid, taxon) %>%
-              distinct(), by = 'iucn_sid') %>%
-  mutate(all_r_km2 = ifelse(is.na(bird_km2), marine_km2, bird_km2),
-         qtile = cut(all_r_km2, 
-                     breaks = quantile(all_r_km2, probs = (0:5) / 5),
-                     labels = 1:5, include.lowest = TRUE)) %>%
-  select(-marine_km2, -bird_km2)
-
-impacts_df <- parallel::mclapply(imp_files,
-    FUN = function(f) { ### f <- imp_files[1]
-      x <- read_csv(f) %>%
-        mutate(impacts = str_replace_all(basename(f), '.+[0-9]+_|.csv', ''))
-    }, mc.cores = 40) %>%
-  bind_rows() %>%
-  mutate(stressor = ifelse(stressor == 'cumulative', 
-                           paste0('cum_', impacts), stressor)) %>%
-  select(-impacts) %>%
-  filter(iucn_sid %in% spp_incl$iucn_sid) %>%
-  distinct() ### remove duplicates in the 'all' category
-
-### join ranges
-imp_range_df <- impacts_df %>%
-  left_join(spp_ranges, by = 'iucn_sid') %>%
-  mutate(pct_impact = impact_km2 / range_km2)
+if(!file.exists(imp_range_file)) {
+  # unlink(imp_range_file)
+  spp_incl <- get_incl_spp() %>%
+    filter(!is.na(stressor)) %>%
+    select(-code) %>%
+    distinct()
   
-
+  spp_impact_fstem <- file.path(dir_bd_anx, 'spp_impacts/spp_impacts_%s_%s.csv')
+  spp_ids <- spp_incl$iucn_sid %>% unique() %>% sort()
+  str_cats <- c('all', 'climate', 'fishing', 'land-based', 'ocean')
+  
+  impacts_list <- parallel::mclapply(spp_ids,
+      FUN = function(id) { ### id <- spp_ids[1]
+        message('processing spp ', id)
+        tmp_list<- lapply(str_cats, FUN = function(str_cat) { 
+          ### str_cat <- 'all'
+          f <- sprintf(spp_impact_fstem, id, str_cat)
+          x <- read_csv(f) %>%
+            mutate(impacts = str_replace_all(basename(f), '.+[0-9]+_|.csv', ''))
+          return(x)
+        })
+        tmp_df <- bind_rows(tmp_list)
+        return(tmp_df)
+      }, mc.cores = 40)
+  
+  imp_range_df <- bind_rows(impacts_list) %>%
+    mutate(stressor = ifelse(stressor == 'cumulative', 
+                             paste0('cum_', impacts), stressor)) %>%
+    select(-impacts) %>%
+    filter(iucn_sid %in% spp_incl$iucn_sid) %>%
+    distinct() %>%
+    mutate(pct_impact = impact_km2 / range_km2)
+  
+  write_csv(imp_range_df, imp_range_file)
+} else {
+  imp_range_df <- read_csv(imp_range_file)
+}
+  
 ```
 
 
@@ -91,76 +98,6 @@ imp_range_df <- impacts_df %>%
 ## Summarize by stressor
 
 Note, expansion is based only on the species with reported sensitivity - i.e. non-sensitive species are dropped.  More conservative perhaps would be to include these species as having constant zero-impact ranges.
-
-### Stressor on individual species
-
-Prioritize species by stressor based on percent impact and range:
-
-$$\text{priority} = \frac{\text{% range impacted}}{\ln (\text{spp range, km}^2)}$$
-
-The $\ln (\text{spp range, km}^2)$ term reduces priority for large-ranged species and emphasizes small-ranged endemics, even for the same proportion of impacted range.
-
-Here we will not summarize by every stressor, but just the cumulative category levels.  The priority will be based on the cumulative impact across all categories, averaged over the most recent three years of impacts.
-
-``` {r}
-spp_priority <- imp_range_df %>%
-  filter(!is.na(year)) %>%
-  filter(str_detect(stressor, 'cum_all')) %>%
-  mutate(priority = pct_impact / log(range_km2)) %>%
-  group_by(iucn_sid, taxon) %>%
-  arrange(desc(year)) %>%
-  mutate(yearnum = 1:n()) %>%
-  filter(yearnum <= 3) %>%
-  summarize(var_priority = var(priority),
-            priority = mean(priority)) %>%
-  ungroup()
-
-write_csv(spp_priority, here('_output/spp_priority.csv'))
-```
-
-Note that not all included species are represented in the `priority_by_stressor` dataframe - some species listed as threatened by a stressor may not overlap areas where that stressor is significantly occurring according to our data.
-
-```{r expansion by species, eval = FALSE}
-message('starting linear model')
-tr_by_stressor_spp <- imp_range_df %>%
-  filter(!is.na(year)) %>%
-  filter(str_detect(stressor, 'cum_')) %>%
-  group_by(stressor, iucn_sid) %>%
-  filter(n_distinct(pct_impact) > 1) %>%
-  do(mdl = lm(pct_impact ~ year, data = .)) %>%
-  mutate(adj_r2 = summary(mdl)$adj.r.squared) %>%
-  broom::tidy(mdl)
-message('wrapping up linear model')
-
-tr_by_priority <- tr_by_stressor_spp %>%
-  left_join(spp_priority, by = c('iucn_sid')) %>%
-  left_join(imp_range_df %>%
-              filter(year == 2013 & stressor == 'cum_all') %>%
-              select(iucn_sid, pct_impact, all_r_km2),
-            by = 'iucn_sid') %>%
-  filter(term == 'year') %>%
-  mutate(sig = p.value <= .05)
-
-ggplot(tr_by_priority, aes(x = priority, y = estimate)) +
-  geom_point(aes(color = sig)) +
-  scale_x_log10() +
-  facet_wrap( ~ stressor) +
-  labs(title = 'expansion by priority')
-
-ggplot(tr_by_priority, aes(x = 1/log(all_r_km2), y = estimate)) +
-  geom_point(aes(color = sig)) +
-  scale_x_log10() +
-  facet_wrap( ~ stressor) +
-  labs(title = 'expansion by total range')
-
-ggplot(tr_by_priority, aes(x = pct_impact, y = estimate)) +
-  geom_point(aes(color = sig)) +
-  scale_x_log10() +
-  facet_wrap( ~ stressor) +
-  labs(title = 'expansion by pct impacted range')
-```
-
-But does this really show anything? since pct_impacted is a late value, a small pct impacted must almost certainly be an impact that remained small throughout the time series - therefore would have a tiny slope.
 
 ### Stressor on all impacted spp
 
@@ -223,7 +160,11 @@ dt_clean(tr_by_stressorXtaxon)
 
 Calculate trends to estimate future impact footprints (as percent of range) for each species, by stressor and stressor group, across 2003:2013.  Keep only significant trends; non-significant trends (for spp/stressor combo) will be assigned zero.
 ```{r}
+
+imp_range_df <- read_csv(imp_range_file)
+
 spp_expansion_trend_file <- here('int/spp_expansion_trends.csv')
+# unlink(spp_expansion_trend_file)
 
 if(!file.exists(spp_expansion_trend_file)) {
   trend_df <- imp_range_df %>%
@@ -231,8 +172,7 @@ if(!file.exists(spp_expansion_trend_file)) {
     filter(n_distinct(pct_impact, na.rm = TRUE) > 1) %>%
     do(mdl = lm(pct_impact ~ year, data = .)) %>%
     broom::tidy(mdl) %>%
-    filter(term == 'year') %>%
-    filter(p.value < 0.05)
+    filter(term == 'year')
   
   write_csv(trend_df, spp_expansion_trend_file)
 }
@@ -241,6 +181,7 @@ if(!file.exists(spp_expansion_trend_file)) {
 Use trends to predict species impacted range in 2030.
 
 ```{r}
+
 trend_df <- read_csv(spp_expansion_trend_file)
 
 imp_2030_df <- imp_range_df %>%

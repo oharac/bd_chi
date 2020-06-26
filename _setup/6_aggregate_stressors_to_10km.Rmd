@@ -18,6 +18,9 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 library(raster)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
@@ -29,13 +32,17 @@ dir_str_10km  <- file.path(dir_bd_anx, 'layers/stressors_10km')
 
 # Summary
 
-Collect stressor layers from CHI 2019 and reproject/aggregate them to the native resolution of the species range maps.  This can be a simple aggregation 11x as is done for the ocean, EEZ, MEOW, etc rasters.
+Collect stressor layers from CHI 2019 and reproject/aggregate them to the native resolution of the species range maps.  This is a simple aggregation 11x as is done for the ocean, EEZ, MEOW, etc rasters.
 
 ## Loop over all stressor layers, aggregate to spp CRS
 
 Read in each raster, aggregate to a raster at the species projection and resolution.  Because the projection is Mollweide for the source and target, and the base raster for species maps was created the same way, we can simply aggregate the original Mollweide CHI maps up by the same factor.  For spp maps, the aggregation factor was 11$\times$ to approximate 100 km^2^ cells: $.934 \times 11 = 10.28 \text{ km}; \; (.934 \times 11)^2 = 105.6633 \text{ km}^2$.
 
-Note: here we are aggregating using mean value.
+Notes: 
+
+* here we are aggregating using mean value. 
+* land-based stressors will be masked to the coastal 3nmi buffer before aggregating.  Real zeros in coastal zones will still be counted, but zeros farther offshore will be ignored.
+* for sea surface temperature, we will mask out sea ice prior to aggregating.  The original file for the sea ice mask comes from: `mazu:git-annex/Global/NCEAS-Pressures-Summaries_frazier2013/ice_mask_resampled` (both `.gri` and `.grd` files needed)
 
 ```{r}
 ### List directories that end in "final"
@@ -55,6 +62,16 @@ str_dirs <- list.files(dir_str_mol, recursive = TRUE, full.names = TRUE) %>%
 # [19] "oa/final"                               "shipping/final"                        
 # [21] "slr/final"                              "sst/final"                             
 # [23] "uv/final" 
+```
+
+``` {r}
+### identify land-based stressors, and load coastal mask and sea-ice raster.
+land_based_str <- get_str_cats() %>%
+  filter(category == 'land-based') %>%
+  .$stressor
+coastal_str <- c('slr', land_based_str)
+coastal_mask <- raster(file.path(dir_bd_anx, 'spatial/three_nm_offshore_mol.tif'))
+seaice_mask <- raster(file.path(dir_bd_anx, 'spatial/sea_ice_mask_1km.tif'))
 
 for(dir in str_dirs) {
   ### dir <- str_dirs[14] ### slr
@@ -63,15 +80,27 @@ for(dir in str_dirs) {
   files <- list.files(dir, pattern = '.tif$', full.names = TRUE)
   
   # for(f in files) {
-  tmp <- parallel::mclapply(files, mc.cores = 6,
+  tmp <- parallel::mclapply(files, mc.cores = 12,
     FUN = function(f) {
       ### f <- files[1]
+      str <- str_replace_all(basename(f), '_[0-9].+', '')
       str_10km_file <- file.path(dir_str_10km, 
                                str_replace(basename(f), 'mol', 'mol10km'))
       
       if(!file.exists(str_10km_file)) {
         message('Processing ', basename(f))
         str_rast_orig <- raster(f)
+        
+        ### check for coastal or sst stressors
+        if(str %in% coastal_str) {
+          message('Masking ', basename(f), ' to coastal only')
+          str_rast_orig <- mask(str_rast_orig, coastal_mask)
+        }
+        if(str == 'sst') {
+          message('Masking ', basename(f), ' to remove sea ice')
+          str_rast_orig <- mask(str_rast_orig, seaice_mask)
+        }
+        
         str_rast_10km <- raster::aggregate(str_rast_orig, 
                                            fact = 11, fun = mean,
                                            filename = str_10km_file,
@@ -90,58 +119,6 @@ for(dir in str_dirs) {
 }
 ```
 
-## Clip Sea Level Rise stressors to shallow waters only
-
-SLR stressor map covers the whole ocean; but impacts would only affect coastal species.  Since several species sensitive to SLR are wide-ranging (e.g. seabirds, turtles) we don't want to suggest SLR impacts far at sea, so we will clip the SLR stressor layers to shallow waters only.
-
-```{r}
-bathy_rast <- raster(here('_spatial', 'bathy_mol.tif'))
-
-values(bathy_rast)[values(bathy_rast) > 10] <- NA
-
-slr_rast_files <- list.files(dir_str_10km, pattern = '^slr_', full.names = TRUE)
-
-for(f in slr_rast_files) {
-  ### f <- slr_rast_files[1]
-  message('Enshallowing SLR stressor layer: ', f)
-  r <- raster(f)
-  r_shallow <- mask(r, bathy_rast)
-  writeRaster(r_shallow, f, overwrite = TRUE)
-}
-
-```
-
-## Mask SST rasters to exclude sea ice
-
-SST data is problematic in the presence of sea ice, not least because the ocean water is not on the surface!  
-
-```{r}
-
-sst_rast_files <- list.files(dir_str_10km, pattern = '^sst_', full.names = TRUE)
-
-seaice_rast_file <- file.path(dir_bd_anx, 'spatial/sea_ice_mask.tif')
-if(!file.exists(seaice_rast_file)) {
-  seaice_orig <- file.path(dir_M, 'git-annex/Global', 
-                            'NCEAS-Pressures-Summaries_frazier2013/ice_mask_resampled')
-  ice_mask_1km <- raster(seaice_orig)
-  ice_mask_agg <- raster::aggregate(ice_mask_resampled, 
-                                    fact = 11, fun = mean, na.rm = FALSE)
-    ### na.rm = FALSE drops cells (converts to NA) with sea ice.  This
-    ### is a conservative estimate of SST impacts, dropping SST impacts
-    ### wherever partial sea ice is indicated.
-  writeRaster(ice_mask_agg, seaice_rast_file, overwrite = TRUE)
-}
-seaice_rast <- raster(seaice_rast_file)
-
-for(f in sst_rast_files) {
-  ### f <- sst_rast_files[1]
-  message('De-icing SST stressor layer: ', f)
-  r <- raster(f)
-  r_icefree <- mask(r, seaice_rast)
-  writeRaster(r_icefree, f, overwrite = TRUE)
-}
-
-```
 
 ## Map all stressors in gifs
 

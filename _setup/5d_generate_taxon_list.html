@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Mon Jun 15 13:03:24 2020 by ohara" />
+<meta name="author" content="Compiled on Fri Jun 19 21:10:36 2020 by ohara" />
 
 
 <title>Generate a list of taxonomic ranks</title>
@@ -1282,13 +1282,13 @@ window.initializeCodeFolding = function(show) {
   var currentIndex = 1;
 
   // select all R code blocks
-  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia');
+  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
   rCodeBlocks.each(function() {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show || $(this)[0].classList.contains('fold-show'))
-      div.addClass('in');
+    show = (show || $(this).hasClass('fold-show')) && !$(this).hasClass('fold-hide');
+    if (show) div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
     $(this).before(div);
@@ -1323,6 +1323,22 @@ window.initializeCodeFolding = function(show) {
 
 }
 </script>
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
 
 
 
@@ -1343,9 +1359,9 @@ In here, put in a link to repo and website?
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -1355,14 +1371,16 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -1371,9 +1389,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; } /* Alert */
 code span.an { color: #008000; } /* Annotation */
@@ -1658,61 +1676,64 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Generate a list of taxonomic ranks</h1>
-<h4 class="author"><em>Compiled on Mon Jun 15 13:03:24 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Fri Jun 19 21:10:36 2020 by ohara</em></h4>
 
 </div>
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</a>
-<a class="sourceLine" id="cb1-2" title="2"></a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="kw">source</span>(<span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">fig.width =</span> <span class="dv">6</span>, <span class="dt">fig.height =</span> <span class="dv">4</span>, <span class="dt">fig.path =</span> <span class="st">&#39;figs/&#39;</span>,</span>
+<span id="cb1-2"><a href="#cb1-2"></a>                      <span class="dt">echo =</span> <span class="ot">TRUE</span>, <span class="dt">message =</span> <span class="ot">FALSE</span>, <span class="dt">warning =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">source</span>(<span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</span></code></pre></div>
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
 <p>Generate a lookup of IUCN species IDs to taxonomic groups (the shapefile groups as well as the taxonomic ranks) to be used for plotting by taxon.</p>
 </div>
 <div id="methods" class="section level1">
 <h1><span class="header-section-number">2</span> Methods</h1>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">maps_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_maps_%s.csv&#39;</span>, api_version))</a>
-<a class="sourceLine" id="cb2-2" title="2">comp_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;iucn_comp_assessed_%s.csv&#39;</span>, api_version))</a>
-<a class="sourceLine" id="cb2-3" title="3">info_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, </a>
-<a class="sourceLine" id="cb2-4" title="4">               <span class="kw">sprintf</span>(<span class="st">&#39;iucn/spp_info_from_api_%s.csv&#39;</span>, api_version))</a>
-<a class="sourceLine" id="cb2-5" title="5"><span class="co"># bird_file &lt;- here(&#39;_raw&#39;, &#39;seabird_species_2019.csv&#39;)</span></a>
-<a class="sourceLine" id="cb2-6" title="6"></a>
-<a class="sourceLine" id="cb2-7" title="7">spp_maps &lt;-<span class="st"> </span><span class="kw">read_csv</span>(maps_file, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;iucn_sid&#39;</span> =<span class="st"> &#39;i&#39;</span>,</a>
-<a class="sourceLine" id="cb2-8" title="8">                                                 <span class="st">&#39;subpop&#39;</span>   =<span class="st"> &#39;c&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-9" title="9"><span class="st">  </span><span class="kw">filter</span>(presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-10" title="10"><span class="st">  </span><span class="kw">select</span>(iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### just need ID numbers here</span></a>
-<a class="sourceLine" id="cb2-11" title="11"><span class="st">  </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb2-12" title="12"></a>
-<a class="sourceLine" id="cb2-13" title="13">spp_comp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(comp_file, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;iucn_sid&#39;</span> =<span class="st"> &#39;i&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-14" title="14"><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>sciname, <span class="dt">assess_gp =</span> taxon)</a>
-<a class="sourceLine" id="cb2-15" title="15"></a>
-<a class="sourceLine" id="cb2-16" title="16">spp_incl &lt;-<span class="st"> </span>spp_maps <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-17" title="17"><span class="st">  </span><span class="kw">left_join</span>(spp_comp, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;iucn_sid&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-18" title="18"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(assess_gp)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-19" title="19"><span class="st">    </span><span class="co">### drop non-comp-assessed</span></a>
-<a class="sourceLine" id="cb2-20" title="20"><span class="st">  </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb2-21" title="21">  </a>
-<a class="sourceLine" id="cb2-22" title="22">rank_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(info_file) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-23" title="23"><span class="st">  </span>janitor<span class="op">::</span><span class="kw">clean_names</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-24" title="24"><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_incl<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-25" title="25"><span class="st">  </span><span class="kw">select</span>(iucn_sid, kingdom<span class="op">:</span>family) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-26" title="26"><span class="st">  </span><span class="kw">mutate_if</span>(is.character, <span class="dt">.fun =</span> <span class="cf">function</span>(x) tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(x)))</a>
-<a class="sourceLine" id="cb2-27" title="27"></a>
-<a class="sourceLine" id="cb2-28" title="28">spp_ranks &lt;-<span class="st"> </span>spp_incl <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-29" title="29"><span class="st">  </span><span class="kw">left_join</span>(rank_df, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-30" title="30"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">rank =</span> <span class="kw">case_when</span>(phylum <span class="op">==</span><span class="st"> &#39;Chordata&#39;</span> <span class="op">~</span><span class="st"> </span>class, </a>
-<a class="sourceLine" id="cb2-31" title="31">                          kingdom <span class="op">==</span><span class="st"> &#39;Plantae&#39;</span> <span class="op">~</span><span class="st"> </span>kingdom,</a>
-<a class="sourceLine" id="cb2-32" title="32">                          <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span>phylum)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-33" title="33"><span class="st">  </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb2-34" title="34"></a>
-<a class="sourceLine" id="cb2-35" title="35"><span class="kw">write_csv</span>(spp_ranks, <span class="kw">here</span>(<span class="st">&#39;int/spp_ranks.csv&#39;</span>))</a>
-<a class="sourceLine" id="cb2-36" title="36"></a>
-<a class="sourceLine" id="cb2-37" title="37">sum_df &lt;-<span class="st"> </span>spp_ranks <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-38" title="38"><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, assess_gp) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-39" title="39"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">n_spp =</span> <span class="kw">n_distinct</span>(iucn_sid))</a>
-<a class="sourceLine" id="cb2-40" title="40"></a>
-<a class="sourceLine" id="cb2-41" title="41">knitr<span class="op">::</span><span class="kw">kable</span>(sum_df)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>maps_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_maps_%s.csv&#39;</span>, api_version))</span>
+<span id="cb2-2"><a href="#cb2-2"></a>comp_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;iucn_comp_assessed_%s.csv&#39;</span>, api_version))</span>
+<span id="cb2-3"><a href="#cb2-3"></a>info_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, </span>
+<span id="cb2-4"><a href="#cb2-4"></a>               <span class="kw">sprintf</span>(<span class="st">&#39;iucn/spp_info_from_api_%s.csv&#39;</span>, api_version))</span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="co"># bird_file &lt;- here(&#39;_raw&#39;, &#39;seabird_species_2019.csv&#39;)</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>spp_maps &lt;-<span class="st"> </span><span class="kw">read_csv</span>(maps_file, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;iucn_sid&#39;</span> =<span class="st"> &#39;i&#39;</span>,</span>
+<span id="cb2-8"><a href="#cb2-8"></a>                                                 <span class="st">&#39;subpop&#39;</span>   =<span class="st"> &#39;c&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="st">  </span><span class="kw">filter</span>(presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### just need ID numbers here</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a>spp_comp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(comp_file, <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;iucn_sid&#39;</span> =<span class="st"> &#39;i&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>sciname, assess_gp)</span>
+<span id="cb2-15"><a href="#cb2-15"></a></span>
+<span id="cb2-16"><a href="#cb2-16"></a>spp_incl &lt;-<span class="st"> </span>spp_maps <span class="op">%&gt;%</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a><span class="st">  </span><span class="kw">left_join</span>(spp_comp, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;iucn_sid&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb2-18"><a href="#cb2-18"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(assess_gp)) <span class="op">%&gt;%</span></span>
+<span id="cb2-19"><a href="#cb2-19"></a><span class="st">    </span><span class="co">### drop non-comp-assessed</span></span>
+<span id="cb2-20"><a href="#cb2-20"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb2-21"><a href="#cb2-21"></a>  </span>
+<span id="cb2-22"><a href="#cb2-22"></a>rank_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(info_file) <span class="op">%&gt;%</span></span>
+<span id="cb2-23"><a href="#cb2-23"></a><span class="st">  </span>janitor<span class="op">::</span><span class="kw">clean_names</span>() <span class="op">%&gt;%</span></span>
+<span id="cb2-24"><a href="#cb2-24"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>spp_incl<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb2-25"><a href="#cb2-25"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, kingdom<span class="op">:</span>family) <span class="op">%&gt;%</span></span>
+<span id="cb2-26"><a href="#cb2-26"></a><span class="st">  </span><span class="kw">mutate_if</span>(is.character, <span class="dt">.fun =</span> <span class="cf">function</span>(x) tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(x)))</span>
+<span id="cb2-27"><a href="#cb2-27"></a></span>
+<span id="cb2-28"><a href="#cb2-28"></a>spp_ranks &lt;-<span class="st"> </span>spp_incl <span class="op">%&gt;%</span></span>
+<span id="cb2-29"><a href="#cb2-29"></a><span class="st">  </span><span class="kw">left_join</span>(rank_df, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb2-30"><a href="#cb2-30"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">rank =</span> <span class="kw">case_when</span>(phylum <span class="op">==</span><span class="st"> &#39;Chordata&#39;</span> <span class="op">~</span><span class="st"> </span>class, </span>
+<span id="cb2-31"><a href="#cb2-31"></a>                          kingdom <span class="op">==</span><span class="st"> &#39;Plantae&#39;</span> <span class="op">~</span><span class="st"> </span>kingdom,</span>
+<span id="cb2-32"><a href="#cb2-32"></a>                          <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span>phylum)) <span class="op">%&gt;%</span></span>
+<span id="cb2-33"><a href="#cb2-33"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb2-34"><a href="#cb2-34"></a></span>
+<span id="cb2-35"><a href="#cb2-35"></a><span class="kw">write_csv</span>(spp_ranks, <span class="kw">here</span>(<span class="st">&#39;int/spp_ranks.csv&#39;</span>))</span>
+<span id="cb2-36"><a href="#cb2-36"></a></span>
+<span id="cb2-37"><a href="#cb2-37"></a>sum_df &lt;-<span class="st"> </span>spp_ranks <span class="op">%&gt;%</span></span>
+<span id="cb2-38"><a href="#cb2-38"></a><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, assess_gp) <span class="op">%&gt;%</span></span>
+<span id="cb2-39"><a href="#cb2-39"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">n_spp =</span> <span class="kw">n_distinct</span>(iucn_sid))</span>
+<span id="cb2-40"><a href="#cb2-40"></a></span>
+<span id="cb2-41"><a href="#cb2-41"></a>knitr<span class="op">::</span><span class="kw">kable</span>(sum_df)</span></code></pre></div>
 <table>
 <thead>
 <tr class="header">
@@ -1757,7 +1778,7 @@ div.tocify {
 <td align="left">Chordata</td>
 <td align="left">Actinopterygii</td>
 <td align="left">clupeiformes</td>
-<td align="right">299</td>
+<td align="right">292</td>
 </tr>
 <tr class="even">
 <td align="left">Animalia</td>
@@ -1972,7 +1993,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0

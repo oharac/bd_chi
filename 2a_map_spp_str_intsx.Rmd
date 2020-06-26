@@ -18,12 +18,15 @@ output:
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 library(raster)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
-dir_str_95cv <- file.path(dir_bd_anx, 'layers/stressors_10km_95cv')
+dir_str_95vc <- file.path(dir_bd_anx, 'layers/stressors_10km_95vc')
 dir_spp_maps <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
 ```
 
@@ -72,7 +75,7 @@ spp_str_df <- spp_incl_all %>%
 #   filter(iucn_sid %in% check_ids)
 ### none are sensitive to OA; 6336, 8153,	22694740,	22698375 are sensitive to SST
 
-str_w_maps <- list.files(dir_str_95cv) %>%
+str_w_maps <- list.files(dir_str_95vc) %>%
   str_replace('_[0-9].*', '') %>%
   unique()
 
@@ -87,7 +90,7 @@ if(any(!str_names %in% str_w_maps)) {
 Let's create a function to take a stressor name and use that to pull all the stressor layers (all years) into a raster stack.  Let's also create a function to turn the raster stack into a dataframe of cell IDs and filter to non-NA cells.
 
 ```{r}
-build_str_stack <- function(str_name, dir_str = dir_str_95cv) {
+build_str_stack <- function(str_name, dir_str = dir_str_95vc) {
   ### str_name <- str_names[1]
   str_rast_files <- list.files(dir_str, pattern = str_name, full.names = TRUE) %>%
     sort()
@@ -156,9 +159,9 @@ Using this function, loop through each of the included stressors, build the stac
 
 reload <- FALSE
 ### to gut the directory for a fresh start:
-# x <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
-#                 full.names = TRUE, recursive = TRUE)
-# unlink(x)
+x <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
+                full.names = TRUE, recursive = TRUE)
+unlink(x)
 
 for(str_name in str_names) {
   ### str_name <- str_names[13]

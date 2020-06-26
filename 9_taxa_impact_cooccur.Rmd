@@ -1,0 +1,141 @@
+---
+title: 'Examine co-occurrence of impacted taxonomic groups'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(widyr) ### for function: pairwise_count()
+
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Examine co-occurrence of impacts on taxonomic groups for each stressor category.  For each group, identify cells with significant impacts (e.g. greater than 25% of spp in the group are impacted), convert to a presence/absence of significant impacts, and then create a pairwise plot to show which taxonomic groups co-occur (in pairs).
+
+Do the same for intensification maps (don't worry about abatement?)
+
+# Methods
+
+For each stressor category:
+
+* pull in impact rasters for all taxonomic groups for 2013.
+* flatten to "significantly impacted" by taxon.
+* combine into a dataframe; join with ocean area.
+* calculate pairwise impacted area for each taxon pair.
+
+## Helper functions
+
+* Function `get_taxon_impacts()` to read in a taxon map and convert to a data.frame with impacted spp, total spp, and pct impacted.
+* Function `flatten_impacts()` to get taxon impacts (using the function above) and return only those cell IDs that meet or exceed a given threshold.
+
+```{r}
+dir_tx_imp  <- file.path(dir_bd_anx, 'taxon_impact_rasts')
+dir_tx_nspp <- here('_output/rasters/taxon_richness_maps')
+
+get_taxon_impacts <- function(tx, str) {
+  ### tx <- 'aves'; str <- 'all'
+  imp_f  <- file.path(dir_tx_imp,  sprintf('taxon_impact_%s_2013_%s.tif', tx, str))
+  nspp_f <- file.path(dir_tx_nspp, sprintf('taxon_nspp_%s.tif', tx))
+  
+  imp_r  <- raster(imp_f)
+  nspp_r <- raster(nspp_f)
+  imp_df <- data.frame(cell_id = 1:ncell(imp_r),
+                       imp  = values(imp_r),
+                       nspp = values(nspp_r)) %>%
+    filter(!is.na(imp) & !is.na(nspp)) %>%
+    mutate(taxon = tx)
+}
+
+flatten_impacts <- function(tx, str, thresh) {
+  sig_imp_df <- get_taxon_impacts(tx, str) %>%
+    filter(imp / nspp >= thresh) %>%
+    select(cell_id, taxon)
+}
+```
+
+
+```{r}
+
+ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+ocean_a_df <- data.frame(cell_id = 1:ncell(ocean_a_rast),
+                         a_prop = values(ocean_a_rast)) %>%
+  filter(!is.na(a_prop)) %>%
+  mutate(a_km2 = a_prop * res(ocean_a_rast)[1]^2 / 1e6)
+
+spp_sens <- get_incl_spp() %>%
+  filter(!is.na(stressor)) %>%
+  left_join(get_spp_taxon(), by = c('iucn_sid', 'assess_gp')) %>%
+  mutate(taxon = tolower(rank))
+
+taxa_gps <- spp_sens$taxon %>% unique() %>% sort()
+
+str_cats <- c('fishing', 'climate', 'ocean', 'land-based', 'all')
+
+for(str_cat in str_cats) {
+  ### str_cat <- str_cats[1]
+
+  for(thresh in seq(.25, 1, .25)) {
+    # thresh <- .5
+
+    tx_str_df <- parallel::mclapply(
+      taxa_gps, FUN = function(tx) {
+        df <- flatten_impacts(tx, str_cat, thresh = thresh)
+      }, mc.cores = 9) %>%
+      bind_rows() %>%
+      dt_join(ocean_a_df, by = 'cell_id', type = 'left')
+    
+    result_df <- pairwise_count(tx_str_df,
+                                item = taxon, feature = cell_id, wt = a_km2,
+                                sort = TRUE, diag = TRUE) %>%
+      rename(tx1 = item1, tx2 = item2)
+  
+    mtxplot_df <- result_df %>%
+      mutate(n = ifelse(tx1 < tx2, NA, n),
+             tx1 = fct_rev(tx1))
+    
+    pairwise_plot <- ggplot(mtxplot_df, aes(x = tx1, y = tx2)) +
+      ggtheme_plot() +
+      geom_point(aes(size = n)) +
+      theme(axis.text.x = element_text(angle = 60, hjust = 1),
+            axis.title = element_blank()) +
+      labs(title = sprintf('Taxa impact co-occurrence: %s, thresh = %s', str_cat, thresh))
+    
+    print(pairwise_plot)
+    
+    taxa_map_df <- tx_str_df %>%
+      group_by(cell_id) %>%
+      summarize(n_tx = n())
+    
+    taxa_map <- map_to_rast(taxa_map_df, cell_val = 'n_tx')
+    plot(taxa_map,
+         axes = F, col = c('grey40', hcl.colors(n = 9)),
+         main = sprintf('# of taxa impacted: %s, thresh = %s', str_cat, thresh))
+  }
+}
+
+
+```

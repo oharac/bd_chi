@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Mon Jun 15 15:06:58 2020 by ohara" />
+<meta name="author" content="Compiled on Fri Jun 19 21:10:23 2020 by ohara" />
 
 
 <title>Generate IUCN spp map list</title>
@@ -1282,13 +1282,13 @@ window.initializeCodeFolding = function(show) {
   var currentIndex = 1;
 
   // select all R code blocks
-  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia');
+  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
   rCodeBlocks.each(function() {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show || $(this)[0].classList.contains('fold-show'))
-      div.addClass('in');
+    show = (show || $(this).hasClass('fold-show')) && !$(this).hasClass('fold-hide');
+    if (show) div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
     $(this).before(div);
@@ -1323,6 +1323,22 @@ window.initializeCodeFolding = function(show) {
 
 }
 </script>
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
 
 
 
@@ -1343,9 +1359,9 @@ In here, put in a link to repo and website?
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -1355,14 +1371,16 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -1371,9 +1389,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; } /* Alert */
 code span.an { color: #008000; } /* Annotation */
@@ -1658,23 +1676,26 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Generate IUCN spp map list</h1>
-<h4 class="author"><em>Compiled on Mon Jun 15 15:06:58 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Fri Jun 19 21:10:23 2020 by ohara</em></h4>
 
 </div>
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(raster)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</a>
-<a class="sourceLine" id="cb1-3" title="3"></a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</a>
-<a class="sourceLine" id="cb1-5" title="5"><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;_setup/api_fxns.R&#39;</span>))</a>
-<a class="sourceLine" id="cb1-6" title="6"></a>
-<a class="sourceLine" id="cb1-7" title="7">dir_bli &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data&#39;</span>, </a>
-<a class="sourceLine" id="cb1-8" title="8">                     <span class="st">&#39;birdlife_intl/d2019&#39;</span>)</a>
-<a class="sourceLine" id="cb1-9" title="9">dir_shp &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data&#39;</span>, </a>
-<a class="sourceLine" id="cb1-10" title="10">                     <span class="st">&#39;iucn_spp/d2020-1&#39;</span>)</a>
-<a class="sourceLine" id="cb1-11" title="11">  <span class="co">### in this folder are shapefiles at a taxonomic level, from</span></a>
-<a class="sourceLine" id="cb1-12" title="12">  <span class="co">### IUCN spatial data download (version 2020-1).</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">fig.width =</span> <span class="dv">6</span>, <span class="dt">fig.height =</span> <span class="dv">4</span>, <span class="dt">fig.path =</span> <span class="st">&#39;figs/&#39;</span>,</span>
+<span id="cb1-2"><a href="#cb1-2"></a>                      <span class="dt">echo =</span> <span class="ot">TRUE</span>, <span class="dt">message =</span> <span class="ot">FALSE</span>, <span class="dt">warning =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">library</span>(raster)</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">source</span>(<span class="st">&#39;https://raw.githubusercontent.com/oharac/src/master/R/common.R&#39;</span>)</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;common_fxns.R&#39;</span>))</span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="kw">source</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&#39;_setup/api_fxns.R&#39;</span>))</span>
+<span id="cb1-9"><a href="#cb1-9"></a></span>
+<span id="cb1-10"><a href="#cb1-10"></a>dir_bli &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data&#39;</span>, </span>
+<span id="cb1-11"><a href="#cb1-11"></a>                     <span class="st">&#39;birdlife_intl/d2019&#39;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12"></a>dir_shp &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_M, <span class="st">&#39;git-annex/globalprep/_raw_data&#39;</span>, </span>
+<span id="cb1-13"><a href="#cb1-13"></a>                     <span class="st">&#39;iucn_spp/d2020-1&#39;</span>)</span>
+<span id="cb1-14"><a href="#cb1-14"></a>  <span class="co">### in this folder are shapefiles at a taxonomic level, from</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>  <span class="co">### IUCN spatial data download (version 2020-1).</span></span></code></pre></div>
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
 <ul>
@@ -1696,266 +1717,266 @@ div.tocify {
 <div id="create-subpopulation-lookup-to-match-maps-with-iucn-sids-for-subpops" class="section level3">
 <h3><span class="header-section-number">3.1.1</span> Create subpopulation lookup to match maps with IUCN SIDs for subpops</h3>
 <p>From available shapefiles, reclassify subpopulation polygons into subpop ID numbers for matching to risk and trend.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="co">### convert BirdLife Int&#39;l .gdb to shapefile, after filtering to species in the &quot;marine&quot; list.</span></a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="co">### Here we also standardize the column names to match the IUCN column names.</span></a>
-<a class="sourceLine" id="cb2-3" title="3"></a>
-<a class="sourceLine" id="cb2-4" title="4">bli_marine_shp &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bli, <span class="st">&#39;bli_marine_v2018.shp&#39;</span>)</a>
-<a class="sourceLine" id="cb2-5" title="5"></a>
-<a class="sourceLine" id="cb2-6" title="6"><span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(bli_marine_shp)) {</a>
-<a class="sourceLine" id="cb2-7" title="7">  </a>
-<a class="sourceLine" id="cb2-8" title="8">  bli_sf &lt;-<span class="st"> </span><span class="kw">st_read</span>(<span class="kw">file.path</span>(dir_bli, <span class="st">&#39;BOTW.gdb&#39;</span>))</a>
-<a class="sourceLine" id="cb2-9" title="9">  </a>
-<a class="sourceLine" id="cb2-10" title="10">  marine_spp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_from_api_%s.csv&#39;</span>, api_version)),</a>
-<a class="sourceLine" id="cb2-11" title="11">                         <span class="dt">col_types =</span> <span class="st">&#39;dcc&#39;</span>)</a>
-<a class="sourceLine" id="cb2-12" title="12">  </a>
-<a class="sourceLine" id="cb2-13" title="13">  bli_marine_sf &lt;-<span class="st"> </span>bli_sf <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-14" title="14"><span class="st">    </span><span class="kw">clean_df_names</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-15" title="15"><span class="st">    </span><span class="kw">filter</span>(sisid <span class="op">%in%</span><span class="st"> </span>marine_spp<span class="op">$</span>iucn_sid)</a>
-<a class="sourceLine" id="cb2-16" title="16">  </a>
-<a class="sourceLine" id="cb2-17" title="17">  <span class="kw">st_write</span>(bli_marine_sf, bli_marine_shp)</a>
-<a class="sourceLine" id="cb2-18" title="18">  </a>
-<a class="sourceLine" id="cb2-19" title="19">  <span class="co">### clean column names</span></a>
-<a class="sourceLine" id="cb2-20" title="20">  bli_marine_dbf &lt;-<span class="st"> </span><span class="kw">str_replace</span>(bli_marine_shp, <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.shp$&#39;</span>, <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf&#39;</span>)</a>
-<a class="sourceLine" id="cb2-21" title="21">  </a>
-<a class="sourceLine" id="cb2-22" title="22">  att_table &lt;-<span class="st"> </span>foreign<span class="op">::</span><span class="kw">read.dbf</span>(bli_marine_dbf) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-23" title="23"><span class="st">    </span><span class="kw">setNames</span>(<span class="kw">names</span>(bli_marine_sf)[<span class="dv">1</span><span class="op">:</span>(<span class="kw">ncol</span>(bli_marine_sf) <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)]) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-24" title="24"><span class="st">    </span><span class="kw">rename</span>(<span class="dt">iucn_sid =</span> sisid, <span class="dt">binomial =</span> sciname, <span class="dt">year =</span> date, <span class="dt">tax_comm =</span> tax_com) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-25" title="25"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">year =</span> <span class="kw">as.integer</span>(<span class="kw">as.character</span>(year)))</a>
-<a class="sourceLine" id="cb2-26" title="26">    <span class="co">#  [1] &quot;sisid&quot;        &quot;sciname&quot;      &quot;date&quot;         &quot;source&quot;       &quot;presence&quot;     &quot;origin&quot;       &quot;seasonal&quot;    </span></a>
-<a class="sourceLine" id="cb2-27" title="27">    <span class="co">#  [8] &quot;data_sens&quot;    &quot;sens_comm&quot;    &quot;compiler&quot;     &quot;tax_com&quot;      &quot;dist_com&quot;     &quot;reviewers&quot;    &quot;citation&quot;    </span></a>
-<a class="sourceLine" id="cb2-28" title="28">    <span class="co"># [15] &quot;version&quot;      &quot;shape_length&quot; &quot;shape_area&quot;  </span></a>
-<a class="sourceLine" id="cb2-29" title="29">  <span class="co">### from IUCN shapefiles:</span></a>
-<a class="sourceLine" id="cb2-30" title="30">    <span class="co">#  [1] &quot;id_no&quot;      &quot;binomial&quot;   &quot;presence&quot;   &quot;origin&quot;     &quot;seasonal&quot;   &quot;compiler&quot;   &quot;year&quot;       &quot;citation&quot;  </span></a>
-<a class="sourceLine" id="cb2-31" title="31">    <span class="co">#  [9] &quot;source&quot;     &quot;dist_comm&quot;  &quot;island&quot;     &quot;subspecies&quot; &quot;subpop&quot;     &quot;legend&quot;     &quot;tax_comm&quot;   &quot;kingdom&quot;   </span></a>
-<a class="sourceLine" id="cb2-32" title="32">    <span class="co"># [17] &quot;phylum&quot;     &quot;class&quot;      &quot;order_&quot;     &quot;family&quot;     &quot;genus&quot;      &quot;code&quot;       &quot;marine&quot;     &quot;terrestial&quot;</span></a>
-<a class="sourceLine" id="cb2-33" title="33">    <span class="co"># [25] &quot;freshwater&quot; &quot;shape_Leng&quot; &quot;shape_Area&quot;</span></a>
-<a class="sourceLine" id="cb2-34" title="34">  foreign<span class="op">::</span><span class="kw">write.dbf</span>(att_table, bli_marine_dbf)</a>
-<a class="sourceLine" id="cb2-35" title="35">}</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">### convert BirdLife Int&#39;l .gdb to shapefile, after filtering to species in the &quot;marine&quot; list.</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="co">### Here we also standardize the column names to match the IUCN column names.</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>bli_marine_shp &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bli, <span class="st">&#39;bli_marine_v2018.shp&#39;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5"></a></span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(bli_marine_shp)) {</span>
+<span id="cb2-7"><a href="#cb2-7"></a>  </span>
+<span id="cb2-8"><a href="#cb2-8"></a>  bli_sf &lt;-<span class="st"> </span><span class="kw">st_read</span>(<span class="kw">file.path</span>(dir_bli, <span class="st">&#39;BOTW.gdb&#39;</span>))</span>
+<span id="cb2-9"><a href="#cb2-9"></a>  </span>
+<span id="cb2-10"><a href="#cb2-10"></a>  marine_spp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_from_api_%s.csv&#39;</span>, api_version)),</span>
+<span id="cb2-11"><a href="#cb2-11"></a>                         <span class="dt">col_types =</span> <span class="st">&#39;dcc&#39;</span>)</span>
+<span id="cb2-12"><a href="#cb2-12"></a>  </span>
+<span id="cb2-13"><a href="#cb2-13"></a>  bli_marine_sf &lt;-<span class="st"> </span>bli_sf <span class="op">%&gt;%</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="st">    </span><span class="kw">clean_df_names</span>() <span class="op">%&gt;%</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a><span class="st">    </span><span class="kw">filter</span>(sisid <span class="op">%in%</span><span class="st"> </span>marine_spp<span class="op">$</span>iucn_sid)</span>
+<span id="cb2-16"><a href="#cb2-16"></a>  </span>
+<span id="cb2-17"><a href="#cb2-17"></a>  <span class="kw">st_write</span>(bli_marine_sf, bli_marine_shp)</span>
+<span id="cb2-18"><a href="#cb2-18"></a>  </span>
+<span id="cb2-19"><a href="#cb2-19"></a>  <span class="co">### clean column names</span></span>
+<span id="cb2-20"><a href="#cb2-20"></a>  bli_marine_dbf &lt;-<span class="st"> </span><span class="kw">str_replace</span>(bli_marine_shp, <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.shp$&#39;</span>, <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf&#39;</span>)</span>
+<span id="cb2-21"><a href="#cb2-21"></a>  </span>
+<span id="cb2-22"><a href="#cb2-22"></a>  att_table &lt;-<span class="st"> </span>foreign<span class="op">::</span><span class="kw">read.dbf</span>(bli_marine_dbf) <span class="op">%&gt;%</span></span>
+<span id="cb2-23"><a href="#cb2-23"></a><span class="st">    </span><span class="kw">setNames</span>(<span class="kw">names</span>(bli_marine_sf)[<span class="dv">1</span><span class="op">:</span>(<span class="kw">ncol</span>(bli_marine_sf) <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)]) <span class="op">%&gt;%</span></span>
+<span id="cb2-24"><a href="#cb2-24"></a><span class="st">    </span><span class="kw">rename</span>(<span class="dt">iucn_sid =</span> sisid, <span class="dt">binomial =</span> sciname, <span class="dt">year =</span> date, <span class="dt">tax_comm =</span> tax_com) <span class="op">%&gt;%</span></span>
+<span id="cb2-25"><a href="#cb2-25"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">year =</span> <span class="kw">as.integer</span>(<span class="kw">as.character</span>(year)))</span>
+<span id="cb2-26"><a href="#cb2-26"></a>    <span class="co">#  [1] &quot;sisid&quot;        &quot;sciname&quot;      &quot;date&quot;         &quot;source&quot;       &quot;presence&quot;     &quot;origin&quot;       &quot;seasonal&quot;    </span></span>
+<span id="cb2-27"><a href="#cb2-27"></a>    <span class="co">#  [8] &quot;data_sens&quot;    &quot;sens_comm&quot;    &quot;compiler&quot;     &quot;tax_com&quot;      &quot;dist_com&quot;     &quot;reviewers&quot;    &quot;citation&quot;    </span></span>
+<span id="cb2-28"><a href="#cb2-28"></a>    <span class="co"># [15] &quot;version&quot;      &quot;shape_length&quot; &quot;shape_area&quot;  </span></span>
+<span id="cb2-29"><a href="#cb2-29"></a>  <span class="co">### from IUCN shapefiles:</span></span>
+<span id="cb2-30"><a href="#cb2-30"></a>    <span class="co">#  [1] &quot;id_no&quot;      &quot;binomial&quot;   &quot;presence&quot;   &quot;origin&quot;     &quot;seasonal&quot;   &quot;compiler&quot;   &quot;year&quot;       &quot;citation&quot;  </span></span>
+<span id="cb2-31"><a href="#cb2-31"></a>    <span class="co">#  [9] &quot;source&quot;     &quot;dist_comm&quot;  &quot;island&quot;     &quot;subspecies&quot; &quot;subpop&quot;     &quot;legend&quot;     &quot;tax_comm&quot;   &quot;kingdom&quot;   </span></span>
+<span id="cb2-32"><a href="#cb2-32"></a>    <span class="co"># [17] &quot;phylum&quot;     &quot;class&quot;      &quot;order_&quot;     &quot;family&quot;     &quot;genus&quot;      &quot;code&quot;       &quot;marine&quot;     &quot;terrestial&quot;</span></span>
+<span id="cb2-33"><a href="#cb2-33"></a>    <span class="co"># [25] &quot;freshwater&quot; &quot;shape_Leng&quot; &quot;shape_Area&quot;</span></span>
+<span id="cb2-34"><a href="#cb2-34"></a>  foreign<span class="op">::</span><span class="kw">write.dbf</span>(att_table, bli_marine_dbf)</span>
+<span id="cb2-35"><a href="#cb2-35"></a>}</span></code></pre></div>
 <p>Note that there appear to be no subpopulation polygons within the BirdLife International map set; there is no “subpop” column in that attribute table. It appears that the individual files may not have “subpop” column either.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">iucn_dbfs &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_shp, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb3-2" title="2">bli_dbfs  &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_bli, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb3-3" title="3">shps_dbfs &lt;-<span class="st"> </span><span class="kw">c</span>(iucn_dbfs, bli_dbfs)</a>
-<a class="sourceLine" id="cb3-4" title="4"></a>
-<a class="sourceLine" id="cb3-5" title="5"><span class="co">### This is all &quot;marine&quot; species by habitat and system:</span></a>
-<a class="sourceLine" id="cb3-6" title="6">marine_spp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_from_api_%s.csv&#39;</span>, </a>
-<a class="sourceLine" id="cb3-7" title="7">                                             api_version)),</a>
-<a class="sourceLine" id="cb3-8" title="8">                       <span class="dt">col_types =</span> <span class="st">&#39;dcc&#39;</span>)</a>
-<a class="sourceLine" id="cb3-9" title="9"></a>
-<a class="sourceLine" id="cb3-10" title="10"><span class="co">### This is *all* spp from the API, filtered down to those in marine_spp: </span></a>
-<a class="sourceLine" id="cb3-11" title="11">api_spp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn&#39;</span>, </a>
-<a class="sourceLine" id="cb3-12" title="12">                              <span class="kw">sprintf</span>(<span class="st">&#39;spp_info_from_api_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-13" title="13"><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>marine_spp<span class="op">$</span>iucn_sid)</a>
-<a class="sourceLine" id="cb3-14" title="14"></a>
-<a class="sourceLine" id="cb3-15" title="15"><span class="co">### Define helper function to cleanly get the info from DBF files,</span></a>
-<a class="sourceLine" id="cb3-16" title="16"><span class="co">### including colname checks</span></a>
-<a class="sourceLine" id="cb3-17" title="17">get_dbf &lt;-<span class="st"> </span><span class="cf">function</span>(x) { <span class="co">### x &lt;- shps_dbfs[1]</span></a>
-<a class="sourceLine" id="cb3-18" title="18">  spp_dbf_info &lt;-<span class="st"> </span>foreign<span class="op">::</span><span class="kw">read.dbf</span>(x, <span class="dt">as.is =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-19" title="19"><span class="st">    </span><span class="kw">clean_df_names</span>()</a>
-<a class="sourceLine" id="cb3-20" title="20">  </a>
-<a class="sourceLine" id="cb3-21" title="21">  <span class="co">### Individual files call the id number &#39;iucn_sid&#39;; bli has been fixed to</span></a>
-<a class="sourceLine" id="cb3-22" title="22">  <span class="co">### &#39;iucn_sid&#39; as well; Red List Data Download files are &#39;id_no&#39;... So:</span></a>
-<a class="sourceLine" id="cb3-23" title="23">  <span class="co">### fix that here!</span></a>
-<a class="sourceLine" id="cb3-24" title="24">  <span class="kw">names</span>(spp_dbf_info)[<span class="kw">names</span>(spp_dbf_info) <span class="op">==</span><span class="st"> &#39;id_no&#39;</span>] &lt;-<span class="st"> &#39;iucn_sid&#39;</span></a>
-<a class="sourceLine" id="cb3-25" title="25"></a>
-<a class="sourceLine" id="cb3-26" title="26">  <span class="co">### if &#39;binomial&#39;, set to &#39;sciname&#39;</span></a>
-<a class="sourceLine" id="cb3-27" title="27">  <span class="cf">if</span>(<span class="op">!</span><span class="st">&#39;sciname&#39;</span> <span class="op">%in%</span><span class="st"> </span><span class="kw">names</span>(spp_dbf_info)) {</a>
-<a class="sourceLine" id="cb3-28" title="28">    <span class="kw">names</span>(spp_dbf_info)[<span class="kw">names</span>(spp_dbf_info) <span class="op">==</span><span class="st"> &#39;binomial&#39;</span>] &lt;-<span class="st"> &#39;sciname&#39;</span></a>
-<a class="sourceLine" id="cb3-29" title="29">  }</a>
-<a class="sourceLine" id="cb3-30" title="30">  </a>
-<a class="sourceLine" id="cb3-31" title="31">  <span class="co">### Some files (e.g. bli and individual files) don&#39;t have &#39;subpop&#39;:</span></a>
-<a class="sourceLine" id="cb3-32" title="32">  <span class="co">### add it in as NAs.</span></a>
-<a class="sourceLine" id="cb3-33" title="33">  <span class="cf">if</span>(<span class="op">!</span><span class="st">&#39;subpop&#39;</span> <span class="op">%in%</span><span class="st"> </span><span class="kw">names</span>(spp_dbf_info)) spp_dbf_info<span class="op">$</span>subpop &lt;-<span class="st"> </span><span class="ot">NA</span></a>
-<a class="sourceLine" id="cb3-34" title="34">  </a>
-<a class="sourceLine" id="cb3-35" title="35">  <span class="co">### some files don&#39;t have &#39;presence&#39; field: if not present or NA,</span></a>
-<a class="sourceLine" id="cb3-36" title="36">  <span class="co">### set to presence = 1.  Some have presence = 0?</span></a>
-<a class="sourceLine" id="cb3-37" title="37">  <span class="cf">if</span>(<span class="op">!</span><span class="st">&#39;presence&#39;</span> <span class="op">%in%</span><span class="st"> </span><span class="kw">names</span>(spp_dbf_info)) spp_dbf_info<span class="op">$</span>presence &lt;-<span class="st"> </span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb3-38" title="38">  </a>
-<a class="sourceLine" id="cb3-39" title="39">  spp_dbf_info &lt;-<span class="st"> </span>spp_dbf_info <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-40" title="40"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">presence =</span> <span class="kw">ifelse</span>(presence <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="dv">1</span>, presence))</a>
-<a class="sourceLine" id="cb3-41" title="41">  </a>
-<a class="sourceLine" id="cb3-42" title="42">  <span class="kw">return</span>(spp_dbf_info)</a>
-<a class="sourceLine" id="cb3-43" title="43">}</a>
-<a class="sourceLine" id="cb3-44" title="44"></a>
-<a class="sourceLine" id="cb3-45" title="45">shps_df &lt;-<span class="st"> </span><span class="kw">lapply</span>(shps_dbfs, get_dbf) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-46" title="46"><span class="st">  </span><span class="kw">setNames</span>(shps_dbfs) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-47" title="47"><span class="st">  </span><span class="kw">bind_rows</span>(<span class="dt">.id =</span> <span class="st">&#39;dbf_file&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-48" title="48"><span class="st">  </span><span class="kw">select</span>(dbf_file, iucn_sid, sciname, presence, subpop) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-49" title="49"><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>marine_spp<span class="op">$</span>iucn_sid)</a>
-<a class="sourceLine" id="cb3-50" title="50"></a>
-<a class="sourceLine" id="cb3-51" title="51">shp_subpops &lt;-<span class="st"> </span>shps_df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-52" title="52"><span class="st">  </span><span class="kw">select</span>(<span class="dt">shp_iucn_sid =</span> iucn_sid, sciname, <span class="dt">shp_subpop =</span> subpop) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-53" title="53"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(shp_subpop)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-54" title="54"><span class="st">  </span><span class="kw">distinct</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-55" title="55"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">shp_subpop_clean =</span> <span class="kw">str_replace</span>(<span class="kw">tolower</span>(shp_subpop), <span class="st">&#39; subpopulation| ocean&#39;</span>, <span class="st">&#39;&#39;</span>),</a>
-<a class="sourceLine" id="cb3-56" title="56">         <span class="dt">shp_subpop_clean =</span> <span class="kw">str_replace_all</span>(shp_subpop_clean, <span class="st">&#39;[^a-z]+&#39;</span>, <span class="st">&#39; &#39;</span>),</a>
-<a class="sourceLine" id="cb3-57" title="57">         <span class="dt">shp_subpop_clean =</span> <span class="kw">str_trim</span>(shp_subpop_clean),</a>
-<a class="sourceLine" id="cb3-58" title="58">         <span class="dt">shp_subpop_clean =</span> <span class="kw">str_replace</span>(shp_subpop_clean, <span class="st">&#39;noth&#39;</span>, <span class="st">&#39;north&#39;</span>))</a>
-<a class="sourceLine" id="cb3-59" title="59">           <span class="co">### fix typo</span></a>
-<a class="sourceLine" id="cb3-60" title="60"></a>
-<a class="sourceLine" id="cb3-61" title="61">api_subpops &lt;-<span class="st"> </span>api_spp <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-62" title="62"><span class="st">  </span><span class="kw">select</span>(<span class="dt">api_iucn_sid =</span> iucn_sid, sciname, <span class="dt">api_subpop =</span> population) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-63" title="63"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(api_subpop)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-64" title="64"><span class="st">  </span><span class="kw">filter</span>(sciname <span class="op">%in%</span><span class="st"> </span>shp_subpops<span class="op">$</span>sciname) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-65" title="65"><span class="st">  </span><span class="kw">distinct</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-66" title="66"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">api_subpop_clean =</span> <span class="kw">str_replace_all</span>(<span class="kw">tolower</span>(api_subpop), <span class="st">&#39; subpopulation| ocean&#39;</span>, <span class="st">&#39;&#39;</span>),</a>
-<a class="sourceLine" id="cb3-67" title="67">         <span class="dt">api_subpop_clean =</span> <span class="kw">str_replace_all</span>(api_subpop_clean, <span class="st">&#39;[^a-z]+&#39;</span>, <span class="st">&#39; &#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>str_trim)</a>
-<a class="sourceLine" id="cb3-68" title="68"></a>
-<a class="sourceLine" id="cb3-69" title="69">subpops_match_raw &lt;-<span class="st"> </span>shp_subpops <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-70" title="70"><span class="st">  </span><span class="kw">full_join</span>(api_subpops, <span class="dt">by =</span> <span class="st">&#39;sciname&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-71" title="71"><span class="st">  </span><span class="kw">group_by</span>(api_iucn_sid) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-72" title="72"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">subpop_match =</span> <span class="kw">str_detect</span>(shp_subpop_clean, api_subpop_clean),</a>
-<a class="sourceLine" id="cb3-73" title="73">         <span class="dt">n_match =</span> <span class="kw">sum</span>(subpop_match)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-74" title="74"><span class="st">  </span><span class="kw">filter</span>(subpop_match <span class="op">|</span><span class="st"> </span><span class="kw">sum</span>(subpop_match) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-75" title="75"><span class="st">  </span><span class="kw">ungroup</span>()</a>
-<a class="sourceLine" id="cb3-76" title="76"></a>
-<a class="sourceLine" id="cb3-77" title="77">caretta_subpops &lt;-<span class="st"> </span>subpops_match_raw <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-78" title="78"><span class="st">  </span><span class="kw">filter</span>(shp_iucn_sid <span class="op">==</span><span class="st"> </span><span class="dv">3897</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-79" title="79"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">api_subpop_single =</span> <span class="kw">str_split</span>(api_subpop_clean, <span class="st">&#39; &#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-80" title="80"><span class="st">  </span><span class="kw">unnest</span>(api_subpop_single) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-81" title="81"><span class="st">  </span><span class="kw">group_by</span>(api_subpop_clean, shp_subpop_clean) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-82" title="82"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">match =</span> <span class="kw">str_detect</span>(shp_subpop_clean, api_subpop_single),</a>
-<a class="sourceLine" id="cb3-83" title="83">         <span class="dt">n_match =</span> <span class="kw">sum</span>(match),</a>
-<a class="sourceLine" id="cb3-84" title="84">         <span class="dt">n_words =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-85" title="85"><span class="st">  </span><span class="kw">filter</span>(<span class="kw">sum</span>(match) <span class="op">==</span><span class="st"> </span><span class="kw">n</span>()) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-86" title="86"><span class="st">  </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-87" title="87"><span class="st">  </span><span class="kw">select</span>(shp_iucn_sid, sciname, shp_subpop, api_iucn_sid, api_subpop) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-88" title="88"><span class="st">  </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb3-89" title="89"></a>
-<a class="sourceLine" id="cb3-90" title="90">subpops_match &lt;-<span class="st"> </span>subpops_match_raw <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-91" title="91"><span class="st">  </span><span class="kw">filter</span>(shp_iucn_sid <span class="op">!=</span><span class="st"> </span><span class="dv">3897</span> <span class="op">&amp;</span><span class="st"> </span>subpop_match <span class="op">==</span><span class="st"> </span><span class="ot">TRUE</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-92" title="92"><span class="st">  </span><span class="kw">select</span>(shp_iucn_sid, sciname, shp_subpop, api_iucn_sid, api_subpop) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb3-93" title="93"><span class="st">  </span><span class="kw">bind_rows</span>(caretta_subpops)</a>
-<a class="sourceLine" id="cb3-94" title="94"></a>
-<a class="sourceLine" id="cb3-95" title="95"><span class="co">### Check for missed matches:</span></a>
-<a class="sourceLine" id="cb3-96" title="96"></a>
-<a class="sourceLine" id="cb3-97" title="97">api_subpops<span class="op">$</span>api_iucn_sid[<span class="op">!</span>api_subpops<span class="op">$</span>api_iucn_sid <span class="op">%in%</span><span class="st"> </span>subpops_match<span class="op">$</span>api_iucn_sid]</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>iucn_dbfs &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_shp, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb3-2"><a href="#cb3-2"></a>bli_dbfs  &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_bli, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb3-3"><a href="#cb3-3"></a>shps_dbfs &lt;-<span class="st"> </span><span class="kw">c</span>(iucn_dbfs, bli_dbfs)</span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="co">### This is all &quot;marine&quot; species by habitat and system:</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>marine_spp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_from_api_%s.csv&#39;</span>, </span>
+<span id="cb3-7"><a href="#cb3-7"></a>                                             api_version)),</span>
+<span id="cb3-8"><a href="#cb3-8"></a>                       <span class="dt">col_types =</span> <span class="st">&#39;dcc&#39;</span>)</span>
+<span id="cb3-9"><a href="#cb3-9"></a></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="co">### This is *all* spp from the API, filtered down to those in marine_spp: </span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>api_spp &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn&#39;</span>, </span>
+<span id="cb3-12"><a href="#cb3-12"></a>                              <span class="kw">sprintf</span>(<span class="st">&#39;spp_info_from_api_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>marine_spp<span class="op">$</span>iucn_sid)</span>
+<span id="cb3-14"><a href="#cb3-14"></a></span>
+<span id="cb3-15"><a href="#cb3-15"></a><span class="co">### Define helper function to cleanly get the info from DBF files,</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a><span class="co">### including colname checks</span></span>
+<span id="cb3-17"><a href="#cb3-17"></a>get_dbf &lt;-<span class="st"> </span><span class="cf">function</span>(x) { <span class="co">### x &lt;- shps_dbfs[1]</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a>  spp_dbf_info &lt;-<span class="st"> </span>foreign<span class="op">::</span><span class="kw">read.dbf</span>(x, <span class="dt">as.is =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="st">    </span><span class="kw">clean_df_names</span>()</span>
+<span id="cb3-20"><a href="#cb3-20"></a>  </span>
+<span id="cb3-21"><a href="#cb3-21"></a>  <span class="co">### Individual files call the id number &#39;iucn_sid&#39;; bli has been fixed to</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a>  <span class="co">### &#39;iucn_sid&#39; as well; Red List Data Download files are &#39;id_no&#39;... So:</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a>  <span class="co">### fix that here!</span></span>
+<span id="cb3-24"><a href="#cb3-24"></a>  <span class="kw">names</span>(spp_dbf_info)[<span class="kw">names</span>(spp_dbf_info) <span class="op">==</span><span class="st"> &#39;id_no&#39;</span>] &lt;-<span class="st"> &#39;iucn_sid&#39;</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a></span>
+<span id="cb3-26"><a href="#cb3-26"></a>  <span class="co">### if &#39;binomial&#39;, set to &#39;sciname&#39;</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a>  <span class="cf">if</span>(<span class="op">!</span><span class="st">&#39;sciname&#39;</span> <span class="op">%in%</span><span class="st"> </span><span class="kw">names</span>(spp_dbf_info)) {</span>
+<span id="cb3-28"><a href="#cb3-28"></a>    <span class="kw">names</span>(spp_dbf_info)[<span class="kw">names</span>(spp_dbf_info) <span class="op">==</span><span class="st"> &#39;binomial&#39;</span>] &lt;-<span class="st"> &#39;sciname&#39;</span></span>
+<span id="cb3-29"><a href="#cb3-29"></a>  }</span>
+<span id="cb3-30"><a href="#cb3-30"></a>  </span>
+<span id="cb3-31"><a href="#cb3-31"></a>  <span class="co">### Some files (e.g. bli and individual files) don&#39;t have &#39;subpop&#39;:</span></span>
+<span id="cb3-32"><a href="#cb3-32"></a>  <span class="co">### add it in as NAs.</span></span>
+<span id="cb3-33"><a href="#cb3-33"></a>  <span class="cf">if</span>(<span class="op">!</span><span class="st">&#39;subpop&#39;</span> <span class="op">%in%</span><span class="st"> </span><span class="kw">names</span>(spp_dbf_info)) spp_dbf_info<span class="op">$</span>subpop &lt;-<span class="st"> </span><span class="ot">NA</span></span>
+<span id="cb3-34"><a href="#cb3-34"></a>  </span>
+<span id="cb3-35"><a href="#cb3-35"></a>  <span class="co">### some files don&#39;t have &#39;presence&#39; field: if not present or NA,</span></span>
+<span id="cb3-36"><a href="#cb3-36"></a>  <span class="co">### set to presence = 1.  Some have presence = 0?</span></span>
+<span id="cb3-37"><a href="#cb3-37"></a>  <span class="cf">if</span>(<span class="op">!</span><span class="st">&#39;presence&#39;</span> <span class="op">%in%</span><span class="st"> </span><span class="kw">names</span>(spp_dbf_info)) spp_dbf_info<span class="op">$</span>presence &lt;-<span class="st"> </span><span class="dv">1</span></span>
+<span id="cb3-38"><a href="#cb3-38"></a>  </span>
+<span id="cb3-39"><a href="#cb3-39"></a>  spp_dbf_info &lt;-<span class="st"> </span>spp_dbf_info <span class="op">%&gt;%</span></span>
+<span id="cb3-40"><a href="#cb3-40"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">presence =</span> <span class="kw">ifelse</span>(presence <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="dv">1</span>, presence))</span>
+<span id="cb3-41"><a href="#cb3-41"></a>  </span>
+<span id="cb3-42"><a href="#cb3-42"></a>  <span class="kw">return</span>(spp_dbf_info)</span>
+<span id="cb3-43"><a href="#cb3-43"></a>}</span>
+<span id="cb3-44"><a href="#cb3-44"></a></span>
+<span id="cb3-45"><a href="#cb3-45"></a>shps_df &lt;-<span class="st"> </span><span class="kw">lapply</span>(shps_dbfs, get_dbf) <span class="op">%&gt;%</span></span>
+<span id="cb3-46"><a href="#cb3-46"></a><span class="st">  </span><span class="kw">setNames</span>(shps_dbfs) <span class="op">%&gt;%</span></span>
+<span id="cb3-47"><a href="#cb3-47"></a><span class="st">  </span><span class="kw">bind_rows</span>(<span class="dt">.id =</span> <span class="st">&#39;dbf_file&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-48"><a href="#cb3-48"></a><span class="st">  </span><span class="kw">select</span>(dbf_file, iucn_sid, sciname, presence, subpop) <span class="op">%&gt;%</span></span>
+<span id="cb3-49"><a href="#cb3-49"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>marine_spp<span class="op">$</span>iucn_sid)</span>
+<span id="cb3-50"><a href="#cb3-50"></a></span>
+<span id="cb3-51"><a href="#cb3-51"></a>shp_subpops &lt;-<span class="st"> </span>shps_df <span class="op">%&gt;%</span></span>
+<span id="cb3-52"><a href="#cb3-52"></a><span class="st">  </span><span class="kw">select</span>(<span class="dt">shp_iucn_sid =</span> iucn_sid, sciname, <span class="dt">shp_subpop =</span> subpop) <span class="op">%&gt;%</span></span>
+<span id="cb3-53"><a href="#cb3-53"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(shp_subpop)) <span class="op">%&gt;%</span></span>
+<span id="cb3-54"><a href="#cb3-54"></a><span class="st">  </span><span class="kw">distinct</span>() <span class="op">%&gt;%</span></span>
+<span id="cb3-55"><a href="#cb3-55"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">shp_subpop_clean =</span> <span class="kw">str_replace</span>(<span class="kw">tolower</span>(shp_subpop), <span class="st">&#39; subpopulation| ocean&#39;</span>, <span class="st">&#39;&#39;</span>),</span>
+<span id="cb3-56"><a href="#cb3-56"></a>         <span class="dt">shp_subpop_clean =</span> <span class="kw">str_replace_all</span>(shp_subpop_clean, <span class="st">&#39;[^a-z]+&#39;</span>, <span class="st">&#39; &#39;</span>),</span>
+<span id="cb3-57"><a href="#cb3-57"></a>         <span class="dt">shp_subpop_clean =</span> <span class="kw">str_trim</span>(shp_subpop_clean),</span>
+<span id="cb3-58"><a href="#cb3-58"></a>         <span class="dt">shp_subpop_clean =</span> <span class="kw">str_replace</span>(shp_subpop_clean, <span class="st">&#39;noth&#39;</span>, <span class="st">&#39;north&#39;</span>))</span>
+<span id="cb3-59"><a href="#cb3-59"></a>           <span class="co">### fix typo</span></span>
+<span id="cb3-60"><a href="#cb3-60"></a></span>
+<span id="cb3-61"><a href="#cb3-61"></a>api_subpops &lt;-<span class="st"> </span>api_spp <span class="op">%&gt;%</span></span>
+<span id="cb3-62"><a href="#cb3-62"></a><span class="st">  </span><span class="kw">select</span>(<span class="dt">api_iucn_sid =</span> iucn_sid, sciname, <span class="dt">api_subpop =</span> population) <span class="op">%&gt;%</span></span>
+<span id="cb3-63"><a href="#cb3-63"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(api_subpop)) <span class="op">%&gt;%</span></span>
+<span id="cb3-64"><a href="#cb3-64"></a><span class="st">  </span><span class="kw">filter</span>(sciname <span class="op">%in%</span><span class="st"> </span>shp_subpops<span class="op">$</span>sciname) <span class="op">%&gt;%</span></span>
+<span id="cb3-65"><a href="#cb3-65"></a><span class="st">  </span><span class="kw">distinct</span>() <span class="op">%&gt;%</span></span>
+<span id="cb3-66"><a href="#cb3-66"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">api_subpop_clean =</span> <span class="kw">str_replace_all</span>(<span class="kw">tolower</span>(api_subpop), <span class="st">&#39; subpopulation| ocean&#39;</span>, <span class="st">&#39;&#39;</span>),</span>
+<span id="cb3-67"><a href="#cb3-67"></a>         <span class="dt">api_subpop_clean =</span> <span class="kw">str_replace_all</span>(api_subpop_clean, <span class="st">&#39;[^a-z]+&#39;</span>, <span class="st">&#39; &#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>str_trim)</span>
+<span id="cb3-68"><a href="#cb3-68"></a></span>
+<span id="cb3-69"><a href="#cb3-69"></a>subpops_match_raw &lt;-<span class="st"> </span>shp_subpops <span class="op">%&gt;%</span></span>
+<span id="cb3-70"><a href="#cb3-70"></a><span class="st">  </span><span class="kw">full_join</span>(api_subpops, <span class="dt">by =</span> <span class="st">&#39;sciname&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-71"><a href="#cb3-71"></a><span class="st">  </span><span class="kw">group_by</span>(api_iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb3-72"><a href="#cb3-72"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">subpop_match =</span> <span class="kw">str_detect</span>(shp_subpop_clean, api_subpop_clean),</span>
+<span id="cb3-73"><a href="#cb3-73"></a>         <span class="dt">n_match =</span> <span class="kw">sum</span>(subpop_match)) <span class="op">%&gt;%</span></span>
+<span id="cb3-74"><a href="#cb3-74"></a><span class="st">  </span><span class="kw">filter</span>(subpop_match <span class="op">|</span><span class="st"> </span><span class="kw">sum</span>(subpop_match) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-75"><a href="#cb3-75"></a><span class="st">  </span><span class="kw">ungroup</span>()</span>
+<span id="cb3-76"><a href="#cb3-76"></a></span>
+<span id="cb3-77"><a href="#cb3-77"></a>caretta_subpops &lt;-<span class="st"> </span>subpops_match_raw <span class="op">%&gt;%</span></span>
+<span id="cb3-78"><a href="#cb3-78"></a><span class="st">  </span><span class="kw">filter</span>(shp_iucn_sid <span class="op">==</span><span class="st"> </span><span class="dv">3897</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-79"><a href="#cb3-79"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">api_subpop_single =</span> <span class="kw">str_split</span>(api_subpop_clean, <span class="st">&#39; &#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb3-80"><a href="#cb3-80"></a><span class="st">  </span><span class="kw">unnest</span>(api_subpop_single) <span class="op">%&gt;%</span></span>
+<span id="cb3-81"><a href="#cb3-81"></a><span class="st">  </span><span class="kw">group_by</span>(api_subpop_clean, shp_subpop_clean) <span class="op">%&gt;%</span></span>
+<span id="cb3-82"><a href="#cb3-82"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">match =</span> <span class="kw">str_detect</span>(shp_subpop_clean, api_subpop_single),</span>
+<span id="cb3-83"><a href="#cb3-83"></a>         <span class="dt">n_match =</span> <span class="kw">sum</span>(match),</span>
+<span id="cb3-84"><a href="#cb3-84"></a>         <span class="dt">n_words =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></span>
+<span id="cb3-85"><a href="#cb3-85"></a><span class="st">  </span><span class="kw">filter</span>(<span class="kw">sum</span>(match) <span class="op">==</span><span class="st"> </span><span class="kw">n</span>()) <span class="op">%&gt;%</span></span>
+<span id="cb3-86"><a href="#cb3-86"></a><span class="st">  </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></span>
+<span id="cb3-87"><a href="#cb3-87"></a><span class="st">  </span><span class="kw">select</span>(shp_iucn_sid, sciname, shp_subpop, api_iucn_sid, api_subpop) <span class="op">%&gt;%</span></span>
+<span id="cb3-88"><a href="#cb3-88"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb3-89"><a href="#cb3-89"></a></span>
+<span id="cb3-90"><a href="#cb3-90"></a>subpops_match &lt;-<span class="st"> </span>subpops_match_raw <span class="op">%&gt;%</span></span>
+<span id="cb3-91"><a href="#cb3-91"></a><span class="st">  </span><span class="kw">filter</span>(shp_iucn_sid <span class="op">!=</span><span class="st"> </span><span class="dv">3897</span> <span class="op">&amp;</span><span class="st"> </span>subpop_match <span class="op">==</span><span class="st"> </span><span class="ot">TRUE</span>) <span class="op">%&gt;%</span></span>
+<span id="cb3-92"><a href="#cb3-92"></a><span class="st">  </span><span class="kw">select</span>(shp_iucn_sid, sciname, shp_subpop, api_iucn_sid, api_subpop) <span class="op">%&gt;%</span></span>
+<span id="cb3-93"><a href="#cb3-93"></a><span class="st">  </span><span class="kw">bind_rows</span>(caretta_subpops)</span>
+<span id="cb3-94"><a href="#cb3-94"></a></span>
+<span id="cb3-95"><a href="#cb3-95"></a><span class="co">### Check for missed matches:</span></span>
+<span id="cb3-96"><a href="#cb3-96"></a></span>
+<span id="cb3-97"><a href="#cb3-97"></a>api_subpops<span class="op">$</span>api_iucn_sid[<span class="op">!</span>api_subpops<span class="op">$</span>api_iucn_sid <span class="op">%in%</span><span class="st"> </span>subpops_match<span class="op">$</span>api_iucn_sid]</span></code></pre></div>
 <pre><code>## [1]     44187  16369383 123095978</code></pre>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="co">### * API subpop, not matched: 16369383 Tursiops truncatus </span></a>
-<a class="sourceLine" id="cb5-2" title="2"><span class="co">###     * Mediterranean subpopulation</span></a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="co">###     * OK - no polygon for this subpopulation.  Regional assessment?</span></a>
-<a class="sourceLine" id="cb5-4" title="4"><span class="co">### * API subpop, not matched: 44187 Orcaella brevirostris </span></a>
-<a class="sourceLine" id="cb5-5" title="5"><span class="co">###     * Malampaya Sound subpopulation</span></a>
-<a class="sourceLine" id="cb5-6" title="6"><span class="co">###     * Malampaya Sound is Philippines</span></a>
-<a class="sourceLine" id="cb5-7" title="7"><span class="co">###     * Doesn&#39;t look like there is a shape for this subpop... Sorry dude!</span></a>
-<a class="sourceLine" id="cb5-8" title="8"><span class="co">### * API subpop, not matched: 123095978 Orcaella brevirostris </span></a>
-<a class="sourceLine" id="cb5-9" title="9"><span class="co">###     * Iloilo-Guimaras Subpopulation</span></a>
-<a class="sourceLine" id="cb5-10" title="10"><span class="co">###     * Iloilo and Guimaras are Philippines</span></a>
-<a class="sourceLine" id="cb5-11" title="11"><span class="co">###     * Doesn&#39;t look like there is a shape for this subpop... Sorry dude!</span></a>
-<a class="sourceLine" id="cb5-12" title="12"></a>
-<a class="sourceLine" id="cb5-13" title="13"><span class="co"># shp_subpops[!shp_subpops$shp_subpop %in% subpops_match$shp_subpop, ]</span></a>
-<a class="sourceLine" id="cb5-14" title="14"><span class="co">### * Shapefile subpop, not matched: 16285718 Chelonia mydas Hawaiian subpopulation</span></a>
-<a class="sourceLine" id="cb5-15" title="15"><span class="co">###     * OK: the shapefile ID matches the API ID - will match automatically</span></a>
-<a class="sourceLine" id="cb5-16" title="16"><span class="co">### * Dermochelys coriacea Southeast Atlantic is 46967848</span></a>
-<a class="sourceLine" id="cb5-17" title="17"><span class="co">###     * Not in API subpops; Data deficient; ok to drop it</span></a>
-<a class="sourceLine" id="cb5-18" title="18"><span class="co">### * Orcaella brevirostris 15419 </span></a>
-<a class="sourceLine" id="cb5-19" title="19"><span class="co">###     * Chilika Lake (India), Mekong River (Cambodia/Vietnam), Songkhla Lake (Thailand)</span></a>
-<a class="sourceLine" id="cb5-20" title="20"><span class="co">###     * In shapefile, but not showing up in assessments</span></a>
-<a class="sourceLine" id="cb5-21" title="21">subpops_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_setup&#39;</span>, <span class="st">&#39;int&#39;</span>,</a>
-<a class="sourceLine" id="cb5-22" title="22">                    <span class="kw">sprintf</span>(<span class="st">&#39;subpops_match_api_to_shp_%s.csv&#39;</span>, </a>
-<a class="sourceLine" id="cb5-23" title="23">                            api_version))</a>
-<a class="sourceLine" id="cb5-24" title="24"><span class="kw">write_csv</span>(subpops_match, subpops_file)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">### * API subpop, not matched: 16369383 Tursiops truncatus </span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="co">###     * Mediterranean subpopulation</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co">###     * OK - no polygon for this subpopulation.  Regional assessment?</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="co">### * API subpop, not matched: 44187 Orcaella brevirostris </span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="co">###     * Malampaya Sound subpopulation</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="co">###     * Malampaya Sound is Philippines</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="co">###     * Doesn&#39;t look like there is a shape for this subpop... Sorry dude!</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="co">### * API subpop, not matched: 123095978 Orcaella brevirostris </span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="co">###     * Iloilo-Guimaras Subpopulation</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="co">###     * Iloilo and Guimaras are Philippines</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="co">###     * Doesn&#39;t look like there is a shape for this subpop... Sorry dude!</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a></span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="co"># shp_subpops[!shp_subpops$shp_subpop %in% subpops_match$shp_subpop, ]</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a><span class="co">### * Shapefile subpop, not matched: 16285718 Chelonia mydas Hawaiian subpopulation</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="co">###     * OK: the shapefile ID matches the API ID - will match automatically</span></span>
+<span id="cb5-16"><a href="#cb5-16"></a><span class="co">### * Dermochelys coriacea Southeast Atlantic is 46967848</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a><span class="co">###     * Not in API subpops; Data deficient; ok to drop it</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a><span class="co">### * Orcaella brevirostris 15419 </span></span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="co">###     * Chilika Lake (India), Mekong River (Cambodia/Vietnam), Songkhla Lake (Thailand)</span></span>
+<span id="cb5-20"><a href="#cb5-20"></a><span class="co">###     * In shapefile, but not showing up in assessments</span></span>
+<span id="cb5-21"><a href="#cb5-21"></a>subpops_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_setup&#39;</span>, <span class="st">&#39;int&#39;</span>,</span>
+<span id="cb5-22"><a href="#cb5-22"></a>                    <span class="kw">sprintf</span>(<span class="st">&#39;subpops_match_api_to_shp_%s.csv&#39;</span>, </span>
+<span id="cb5-23"><a href="#cb5-23"></a>                            api_version))</span>
+<span id="cb5-24"><a href="#cb5-24"></a><span class="kw">write_csv</span>(subpops_match, subpops_file)</span></code></pre></div>
 </div>
 <div id="get-info-on-comprehensive-assessments" class="section level3">
 <h3><span class="header-section-number">3.1.2</span> get info on comprehensive assessments</h3>
 <p>Not all maps are for species that are included in comprehensively assessed taxonomic groups. Get info on comprehensive assessment status for species from the API.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">comp_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;iucn_comp_assessed_%s.csv&#39;</span>, api_version))</a>
-<a class="sourceLine" id="cb6-2" title="2"><span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(comp_file)) {</a>
-<a class="sourceLine" id="cb6-3" title="3">  comp_gps_url &lt;-<span class="st"> &#39;http://apiv3.iucnredlist.org/api/v3/comp-group/list?token=%s&#39;</span></a>
-<a class="sourceLine" id="cb6-4" title="4">  comp_gps &lt;-<span class="st"> </span><span class="kw">fromJSON</span>(<span class="kw">sprintf</span>(comp_gps_url, api_key)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-5" title="5"><span class="st">    </span>.<span class="op">$</span>result</a>
-<a class="sourceLine" id="cb6-6" title="6">  </a>
-<a class="sourceLine" id="cb6-7" title="7">  comp_spp_url &lt;-<span class="st"> &#39;http://apiv3.iucnredlist.org/api/v3/comp-group/getspecies/%s?token=%s&#39;</span></a>
-<a class="sourceLine" id="cb6-8" title="8">  comp_spp &lt;-<span class="st"> </span><span class="kw">mc_get_from_api</span>(comp_spp_url, comp_gps<span class="op">$</span>group_name, api_key, </a>
-<a class="sourceLine" id="cb6-9" title="9">                              <span class="dt">add_param_val =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-10" title="10"><span class="st">    </span><span class="kw">select</span>(<span class="dt">iucn_sid =</span> taxonid, <span class="dt">sciname =</span> scientific_name, <span class="dt">assess_gp =</span> param_val)</a>
-<a class="sourceLine" id="cb6-11" title="11">  </a>
-<a class="sourceLine" id="cb6-12" title="12">  <span class="co">### </span><span class="al">NOTE</span><span class="co">: sygnathiformes and clupeiformes not included here? wtf</span></a>
-<a class="sourceLine" id="cb6-13" title="13">  <span class="co">### add them in:</span></a>
-<a class="sourceLine" id="cb6-14" title="14">  spp_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn&#39;</span>,</a>
-<a class="sourceLine" id="cb6-15" title="15">                                 <span class="kw">sprintf</span>(<span class="st">&#39;spp_info_from_api_%s.csv&#39;</span>, api_version)))</a>
-<a class="sourceLine" id="cb6-16" title="16">  syngnathids &lt;-<span class="st"> </span>spp_info <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-17" title="17"><span class="st">    </span><span class="kw">filter</span>(<span class="kw">tolower</span>(family) <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;syngnathidae&#39;</span>, <span class="st">&#39;aulostomidae&#39;</span>, </a>
-<a class="sourceLine" id="cb6-18" title="18">                                  <span class="st">&#39;centriscidae&#39;</span>, <span class="st">&#39;fistulariidae&#39;</span>, </a>
-<a class="sourceLine" id="cb6-19" title="19">                                  <span class="st">&#39;pegasidae&#39;</span>, <span class="st">&#39;solenostomidae&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-20" title="20"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">assess_gp =</span> <span class="st">&#39;syngnathiformes&#39;</span>)</a>
-<a class="sourceLine" id="cb6-21" title="21">  clupeids &lt;-<span class="st"> </span>spp_info <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-22" title="22"><span class="st">    </span><span class="kw">filter</span>(<span class="kw">tolower</span>(order) <span class="op">==</span><span class="st"> &#39;clupeiformes&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-23" title="23"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">assess_gp =</span> <span class="st">&#39;clupeiformes&#39;</span>)</a>
-<a class="sourceLine" id="cb6-24" title="24">  <span class="co">### </span><span class="al">NOTE</span><span class="co">: turtles also not included here</span></a>
-<a class="sourceLine" id="cb6-25" title="25">  turtles &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;Dermochelys&#39;</span>, <span class="st">&#39;Caretta&#39;</span>, <span class="st">&#39;Lepidochelys&#39;</span>, </a>
-<a class="sourceLine" id="cb6-26" title="26">               <span class="st">&#39;Natator&#39;</span>, <span class="st">&#39;Chelonia&#39;</span>, <span class="st">&#39;Eretmochelys&#39;</span>)</a>
-<a class="sourceLine" id="cb6-27" title="27">  turtles &lt;-<span class="st"> </span>spp_info <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-28" title="28"><span class="st">    </span><span class="kw">filter</span>(genus <span class="op">%in%</span><span class="st"> </span>turtles) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-29" title="29"><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">assess_gp =</span> <span class="st">&#39;sea_turtles&#39;</span>)</a>
-<a class="sourceLine" id="cb6-30" title="30">    </a>
-<a class="sourceLine" id="cb6-31" title="31">  comp_spp &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(comp_spp, clupeids, syngnathids, turtles) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-32" title="32"><span class="st">    </span><span class="kw">select</span>(iucn_sid, sciname, assess_gp) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb6-33" title="33"><span class="st">    </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb6-34" title="34">  </a>
-<a class="sourceLine" id="cb6-35" title="35">  <span class="kw">write_csv</span>(comp_spp, comp_file)</a>
-<a class="sourceLine" id="cb6-36" title="36">} <span class="cf">else</span> {</a>
-<a class="sourceLine" id="cb6-37" title="37">  <span class="co"># comp_spp &lt;- read_csv(comp_file)</span></a>
-<a class="sourceLine" id="cb6-38" title="38">}</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>comp_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;iucn_comp_assessed_%s.csv&#39;</span>, api_version))</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(comp_file)) {</span>
+<span id="cb6-3"><a href="#cb6-3"></a>  comp_gps_url &lt;-<span class="st"> &#39;http://apiv3.iucnredlist.org/api/v3/comp-group/list?token=%s&#39;</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>  comp_gps &lt;-<span class="st"> </span><span class="kw">fromJSON</span>(<span class="kw">sprintf</span>(comp_gps_url, api_key)) <span class="op">%&gt;%</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="st">    </span>.<span class="op">$</span>result</span>
+<span id="cb6-6"><a href="#cb6-6"></a>  </span>
+<span id="cb6-7"><a href="#cb6-7"></a>  comp_spp_url &lt;-<span class="st"> &#39;http://apiv3.iucnredlist.org/api/v3/comp-group/getspecies/%s?token=%s&#39;</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>  comp_spp &lt;-<span class="st"> </span><span class="kw">mc_get_from_api</span>(comp_spp_url, comp_gps<span class="op">$</span>group_name, api_key, </span>
+<span id="cb6-9"><a href="#cb6-9"></a>                              <span class="dt">add_param_val =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="st">    </span><span class="kw">select</span>(<span class="dt">iucn_sid =</span> taxonid, <span class="dt">sciname =</span> scientific_name, <span class="dt">assess_gp =</span> param_val)</span>
+<span id="cb6-11"><a href="#cb6-11"></a>  </span>
+<span id="cb6-12"><a href="#cb6-12"></a>  <span class="co">### </span><span class="al">NOTE</span><span class="co">: sygnathiformes and clupeiformes not included here? wtf</span></span>
+<span id="cb6-13"><a href="#cb6-13"></a>  <span class="co">### add them in:</span></span>
+<span id="cb6-14"><a href="#cb6-14"></a>  spp_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn&#39;</span>,</span>
+<span id="cb6-15"><a href="#cb6-15"></a>                                 <span class="kw">sprintf</span>(<span class="st">&#39;spp_info_from_api_%s.csv&#39;</span>, api_version)))</span>
+<span id="cb6-16"><a href="#cb6-16"></a>  syngnathids &lt;-<span class="st"> </span>spp_info <span class="op">%&gt;%</span></span>
+<span id="cb6-17"><a href="#cb6-17"></a><span class="st">    </span><span class="kw">filter</span>(<span class="kw">tolower</span>(family) <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;syngnathidae&#39;</span>, <span class="st">&#39;aulostomidae&#39;</span>, </span>
+<span id="cb6-18"><a href="#cb6-18"></a>                                  <span class="st">&#39;centriscidae&#39;</span>, <span class="st">&#39;fistulariidae&#39;</span>, </span>
+<span id="cb6-19"><a href="#cb6-19"></a>                                  <span class="st">&#39;pegasidae&#39;</span>, <span class="st">&#39;solenostomidae&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb6-20"><a href="#cb6-20"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">assess_gp =</span> <span class="st">&#39;syngnathiformes&#39;</span>)</span>
+<span id="cb6-21"><a href="#cb6-21"></a>  clupeids &lt;-<span class="st"> </span>spp_info <span class="op">%&gt;%</span></span>
+<span id="cb6-22"><a href="#cb6-22"></a><span class="st">    </span><span class="kw">filter</span>(<span class="kw">tolower</span>(order) <span class="op">==</span><span class="st"> &#39;clupeiformes&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb6-23"><a href="#cb6-23"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">assess_gp =</span> <span class="st">&#39;clupeiformes&#39;</span>)</span>
+<span id="cb6-24"><a href="#cb6-24"></a>  <span class="co">### </span><span class="al">NOTE</span><span class="co">: turtles also not included here</span></span>
+<span id="cb6-25"><a href="#cb6-25"></a>  turtles &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;Dermochelys&#39;</span>, <span class="st">&#39;Caretta&#39;</span>, <span class="st">&#39;Lepidochelys&#39;</span>, </span>
+<span id="cb6-26"><a href="#cb6-26"></a>               <span class="st">&#39;Natator&#39;</span>, <span class="st">&#39;Chelonia&#39;</span>, <span class="st">&#39;Eretmochelys&#39;</span>)</span>
+<span id="cb6-27"><a href="#cb6-27"></a>  turtles &lt;-<span class="st"> </span>spp_info <span class="op">%&gt;%</span></span>
+<span id="cb6-28"><a href="#cb6-28"></a><span class="st">    </span><span class="kw">filter</span>(genus <span class="op">%in%</span><span class="st"> </span>turtles) <span class="op">%&gt;%</span></span>
+<span id="cb6-29"><a href="#cb6-29"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">assess_gp =</span> <span class="st">&#39;sea_turtles&#39;</span>)</span>
+<span id="cb6-30"><a href="#cb6-30"></a>    </span>
+<span id="cb6-31"><a href="#cb6-31"></a>  comp_spp &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(comp_spp, clupeids, syngnathids, turtles) <span class="op">%&gt;%</span></span>
+<span id="cb6-32"><a href="#cb6-32"></a><span class="st">    </span><span class="kw">select</span>(iucn_sid, sciname, assess_gp) <span class="op">%&gt;%</span></span>
+<span id="cb6-33"><a href="#cb6-33"></a><span class="st">    </span><span class="kw">distinct</span>()</span>
+<span id="cb6-34"><a href="#cb6-34"></a>  </span>
+<span id="cb6-35"><a href="#cb6-35"></a>  <span class="kw">write_csv</span>(comp_spp, comp_file)</span>
+<span id="cb6-36"><a href="#cb6-36"></a>} <span class="cf">else</span> {</span>
+<span id="cb6-37"><a href="#cb6-37"></a>  <span class="co"># comp_spp &lt;- read_csv(comp_file)</span></span>
+<span id="cb6-38"><a href="#cb6-38"></a>}</span></code></pre></div>
 <pre><code>## NULL</code></pre>
 </div>
 <div id="join-map-list-to-subpop-corrected-list-remove-duplicated-spp-ids" class="section level3">
 <h3><span class="header-section-number">3.1.3</span> Join map list to subpop corrected list; remove duplicated spp IDs</h3>
 <p>From the species range map shapefiles, pull map info from the .dbf files. For species listed in multiple files (e.g. sea snakes and reptiles), remove duplicates. For species with polygons differentiated by subpopulation, adjust the iucn_sid to match the subpop info.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">iucn_dbfs  &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_shp, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb8-2" title="2">bli_dbfs   &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_bli, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb8-3" title="3"></a>
-<a class="sourceLine" id="cb8-4" title="4">map_files  &lt;-<span class="st"> </span><span class="kw">c</span>(iucn_dbfs, bli_dbfs)</a>
-<a class="sourceLine" id="cb8-5" title="5"></a>
-<a class="sourceLine" id="cb8-6" title="6"><span class="co"># spp_group_names &lt;- map_files %&gt;%</span></a>
-<a class="sourceLine" id="cb8-7" title="7"><span class="co">#   basename() %&gt;%</span></a>
-<a class="sourceLine" id="cb8-8" title="8"><span class="co">#   str_replace_all(&#39;\\.dbf$|_PART_.+&#39;, &#39;&#39;) %&gt;%</span></a>
-<a class="sourceLine" id="cb8-9" title="9"><span class="co">#   unique()</span></a>
-<a class="sourceLine" id="cb8-10" title="10"></a>
-<a class="sourceLine" id="cb8-11" title="11">map_info_raw &lt;-<span class="st"> </span><span class="kw">lapply</span>(map_files, get_dbf) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-12" title="12"><span class="st">  </span><span class="kw">setNames</span>(shps_dbfs) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-13" title="13"><span class="st">  </span><span class="kw">bind_rows</span>(<span class="dt">.id =</span> <span class="st">&#39;dbf_file&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-14" title="14"><span class="st">  </span><span class="kw">select</span>(<span class="dt">shp_iucn_sid =</span> iucn_sid, sciname, presence, subpop, dbf_file)</a>
-<a class="sourceLine" id="cb8-15" title="15"></a>
-<a class="sourceLine" id="cb8-16" title="16"><span class="co">### Notes on presence, origin, seasonal fields:</span></a>
-<a class="sourceLine" id="cb8-17" title="17"><span class="co">### * presence = 5 is extinct; 4 = probably extinct; others are extant-ish or </span></a>
-<a class="sourceLine" id="cb8-18" title="18"><span class="co">###   uncertain. We will drop field and include all polygons for now.</span></a>
-<a class="sourceLine" id="cb8-19" title="19"><span class="co">### * origin is native, introduced, etc.  We will drop this field and not</span></a>
-<a class="sourceLine" id="cb8-20" title="20"><span class="co">###   worry about origin.</span></a>
-<a class="sourceLine" id="cb8-21" title="21"><span class="co">### * seasonal is breeding/non-breeding/passage.  We will drop this field</span></a>
-<a class="sourceLine" id="cb8-22" title="22"><span class="co">###   and not worry about seasonality.</span></a>
-<a class="sourceLine" id="cb8-23" title="23"></a>
-<a class="sourceLine" id="cb8-24" title="24"><span class="co"># subspp &lt;- map_info %&gt;%</span></a>
-<a class="sourceLine" id="cb8-25" title="25"><span class="co">#   filter(!is.na(subspecies)) %&gt;%</span></a>
-<a class="sourceLine" id="cb8-26" title="26"><span class="co">#   select(id_no, code) %&gt;%</span></a>
-<a class="sourceLine" id="cb8-27" title="27"><span class="co">#   distinct()</span></a>
-<a class="sourceLine" id="cb8-28" title="28"><span class="co">### No subspecies vary by IUCN code; drop field for simplicity</span></a>
-<a class="sourceLine" id="cb8-29" title="29"><span class="co">### and include all at species level</span></a>
-<a class="sourceLine" id="cb8-30" title="30"></a>
-<a class="sourceLine" id="cb8-31" title="31">subpops_match &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_setup&#39;</span>, <span class="st">&#39;int&#39;</span>,</a>
-<a class="sourceLine" id="cb8-32" title="32">                               <span class="kw">sprintf</span>(<span class="st">&#39;subpops_match_api_to_shp_%s.csv&#39;</span>, </a>
-<a class="sourceLine" id="cb8-33" title="33">                                       api_version)))</a>
-<a class="sourceLine" id="cb8-34" title="34"></a>
-<a class="sourceLine" id="cb8-35" title="35">map_info_add_subpops &lt;-<span class="st"> </span>map_info_raw <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-36" title="36"><span class="st">  </span><span class="kw">full_join</span>(subpops_match, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;shp_iucn_sid&#39;</span>, <span class="st">&#39;sciname&#39;</span>, <span class="st">&#39;subpop&#39;</span> =<span class="st"> &#39;shp_subpop&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-37" title="37"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> <span class="kw">ifelse</span>(<span class="kw">is.na</span>(api_iucn_sid), shp_iucn_sid, api_iucn_sid)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-38" title="38"><span class="st">  </span><span class="kw">select</span>(shp_iucn_sid, iucn_sid, sciname, presence, subpop, dbf_file) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-39" title="39"><span class="st">  </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb8-40" title="40"></a>
-<a class="sourceLine" id="cb8-41" title="41"><span class="co">### filter to marine habitat species (to drop terrestrial reptiles e.g.)</span></a>
-<a class="sourceLine" id="cb8-42" title="42">marine_spp_ids &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_from_api_%s.csv&#39;</span>,</a>
-<a class="sourceLine" id="cb8-43" title="43">                                                 api_version))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-44" title="44"><span class="st">  </span><span class="kw">select</span>(iucn_sid, max_depth)</a>
-<a class="sourceLine" id="cb8-45" title="45"></a>
-<a class="sourceLine" id="cb8-46" title="46"><span class="co">### Filter clupeiformes from Caspian sea (found because they result</span></a>
-<a class="sourceLine" id="cb8-47" title="47"><span class="co">### in zero-cell rangefiles despite large polygons):</span></a>
-<a class="sourceLine" id="cb8-48" title="48">caspian_spp &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">135548</span>, <span class="dv">135707</span>, <span class="dv">98468449</span>, <span class="dv">98468550</span>, <span class="dv">98470302</span>, <span class="dv">98471289</span>, <span class="dv">98471433</span>)</a>
-<a class="sourceLine" id="cb8-49" title="49"></a>
-<a class="sourceLine" id="cb8-50" title="50">marine_map_info &lt;-<span class="st"> </span>map_info_add_subpops <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-51" title="51"><span class="st">  </span><span class="kw">inner_join</span>(marine_spp_ids, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb8-52" title="52"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span>iucn_sid <span class="op">%in%</span><span class="st"> </span>caspian_spp)</a>
-<a class="sourceLine" id="cb8-53" title="53"></a>
-<a class="sourceLine" id="cb8-54" title="54"><span class="kw">write_csv</span>(marine_map_info, </a>
-<a class="sourceLine" id="cb8-55" title="55">          <span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_maps_%s.csv&#39;</span>, api_version)))</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>iucn_dbfs  &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_shp, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb8-2"><a href="#cb8-2"></a>bli_dbfs   &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_bli, <span class="dt">pattern =</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">.dbf$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb8-3"><a href="#cb8-3"></a></span>
+<span id="cb8-4"><a href="#cb8-4"></a>map_files  &lt;-<span class="st"> </span><span class="kw">c</span>(iucn_dbfs, bli_dbfs)</span>
+<span id="cb8-5"><a href="#cb8-5"></a></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="co"># spp_group_names &lt;- map_files %&gt;%</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co">#   basename() %&gt;%</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="co">#   str_replace_all(&#39;\\.dbf$|_PART_.+&#39;, &#39;&#39;) %&gt;%</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="co">#   unique()</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a></span>
+<span id="cb8-11"><a href="#cb8-11"></a>map_info_raw &lt;-<span class="st"> </span><span class="kw">lapply</span>(map_files, get_dbf) <span class="op">%&gt;%</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="st">  </span><span class="kw">setNames</span>(shps_dbfs) <span class="op">%&gt;%</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="st">  </span><span class="kw">bind_rows</span>(<span class="dt">.id =</span> <span class="st">&#39;dbf_file&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="st">  </span><span class="kw">select</span>(<span class="dt">shp_iucn_sid =</span> iucn_sid, sciname, presence, subpop, dbf_file)</span>
+<span id="cb8-15"><a href="#cb8-15"></a></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="co">### Notes on presence, origin, seasonal fields:</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a><span class="co">### * presence = 5 is extinct; 4 = probably extinct; others are extant-ish or </span></span>
+<span id="cb8-18"><a href="#cb8-18"></a><span class="co">###   uncertain. We will drop field and include all polygons for now.</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a><span class="co">### * origin is native, introduced, etc.  We will drop this field and not</span></span>
+<span id="cb8-20"><a href="#cb8-20"></a><span class="co">###   worry about origin.</span></span>
+<span id="cb8-21"><a href="#cb8-21"></a><span class="co">### * seasonal is breeding/non-breeding/passage.  We will drop this field</span></span>
+<span id="cb8-22"><a href="#cb8-22"></a><span class="co">###   and not worry about seasonality.</span></span>
+<span id="cb8-23"><a href="#cb8-23"></a></span>
+<span id="cb8-24"><a href="#cb8-24"></a><span class="co"># subspp &lt;- map_info %&gt;%</span></span>
+<span id="cb8-25"><a href="#cb8-25"></a><span class="co">#   filter(!is.na(subspecies)) %&gt;%</span></span>
+<span id="cb8-26"><a href="#cb8-26"></a><span class="co">#   select(id_no, code) %&gt;%</span></span>
+<span id="cb8-27"><a href="#cb8-27"></a><span class="co">#   distinct()</span></span>
+<span id="cb8-28"><a href="#cb8-28"></a><span class="co">### No subspecies vary by IUCN code; drop field for simplicity</span></span>
+<span id="cb8-29"><a href="#cb8-29"></a><span class="co">### and include all at species level</span></span>
+<span id="cb8-30"><a href="#cb8-30"></a></span>
+<span id="cb8-31"><a href="#cb8-31"></a>subpops_match &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_setup&#39;</span>, <span class="st">&#39;int&#39;</span>,</span>
+<span id="cb8-32"><a href="#cb8-32"></a>                               <span class="kw">sprintf</span>(<span class="st">&#39;subpops_match_api_to_shp_%s.csv&#39;</span>, </span>
+<span id="cb8-33"><a href="#cb8-33"></a>                                       api_version)))</span>
+<span id="cb8-34"><a href="#cb8-34"></a></span>
+<span id="cb8-35"><a href="#cb8-35"></a>map_info_add_subpops &lt;-<span class="st"> </span>map_info_raw <span class="op">%&gt;%</span></span>
+<span id="cb8-36"><a href="#cb8-36"></a><span class="st">  </span><span class="kw">full_join</span>(subpops_match, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;shp_iucn_sid&#39;</span>, <span class="st">&#39;sciname&#39;</span>, <span class="st">&#39;subpop&#39;</span> =<span class="st"> &#39;shp_subpop&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb8-37"><a href="#cb8-37"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> <span class="kw">ifelse</span>(<span class="kw">is.na</span>(api_iucn_sid), shp_iucn_sid, api_iucn_sid)) <span class="op">%&gt;%</span></span>
+<span id="cb8-38"><a href="#cb8-38"></a><span class="st">  </span><span class="kw">select</span>(shp_iucn_sid, iucn_sid, sciname, presence, subpop, dbf_file) <span class="op">%&gt;%</span></span>
+<span id="cb8-39"><a href="#cb8-39"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb8-40"><a href="#cb8-40"></a></span>
+<span id="cb8-41"><a href="#cb8-41"></a><span class="co">### filter to marine habitat species (to drop terrestrial reptiles e.g.)</span></span>
+<span id="cb8-42"><a href="#cb8-42"></a>marine_spp_ids &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_from_api_%s.csv&#39;</span>,</span>
+<span id="cb8-43"><a href="#cb8-43"></a>                                                 api_version))) <span class="op">%&gt;%</span></span>
+<span id="cb8-44"><a href="#cb8-44"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, max_depth)</span>
+<span id="cb8-45"><a href="#cb8-45"></a></span>
+<span id="cb8-46"><a href="#cb8-46"></a><span class="co">### Filter clupeiformes from Caspian sea (found because they result</span></span>
+<span id="cb8-47"><a href="#cb8-47"></a><span class="co">### in zero-cell rangefiles despite large polygons):</span></span>
+<span id="cb8-48"><a href="#cb8-48"></a>caspian_spp &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">135548</span>, <span class="dv">135707</span>, <span class="dv">98468449</span>, <span class="dv">98468550</span>, <span class="dv">98470302</span>, <span class="dv">98471289</span>, <span class="dv">98471433</span>)</span>
+<span id="cb8-49"><a href="#cb8-49"></a></span>
+<span id="cb8-50"><a href="#cb8-50"></a>marine_map_info &lt;-<span class="st"> </span>map_info_add_subpops <span class="op">%&gt;%</span></span>
+<span id="cb8-51"><a href="#cb8-51"></a><span class="st">  </span><span class="kw">inner_join</span>(marine_spp_ids, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb8-52"><a href="#cb8-52"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span>iucn_sid <span class="op">%in%</span><span class="st"> </span>caspian_spp)</span>
+<span id="cb8-53"><a href="#cb8-53"></a></span>
+<span id="cb8-54"><a href="#cb8-54"></a><span class="kw">write_csv</span>(marine_map_info, </span>
+<span id="cb8-55"><a href="#cb8-55"></a>          <span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_maps_%s.csv&#39;</span>, api_version)))</span></code></pre></div>
 </div>
 </div>
 <div id="table-of-species-to-include" class="section level2">
@@ -1967,71 +1988,71 @@ div.tocify {
 <li>species extinction risk is threatened or near threatened (i.e. not Least Concern, Extinct, or Data Deficient)</li>
 </ul>
 <p>Note that when processing these down, we will focus on threatened marine species with sensitivity to the particular stressors; additionally, some species listed here may have maps that don’t overlap with ocean area, creating a degenerate range map.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1">marine_map_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>,</a>
-<a class="sourceLine" id="cb9-2" title="2">    <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_maps_%s.csv&#39;</span>, api_version)),</a>
-<a class="sourceLine" id="cb9-3" title="3">    <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;subpop&#39;</span> =<span class="st"> &#39;c&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-4" title="4"><span class="st">  </span><span class="kw">filter</span>(presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-5" title="5"><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>presence) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-6" title="6"><span class="st">  </span><span class="kw">distinct</span>()</a>
-<a class="sourceLine" id="cb9-7" title="7"></a>
-<a class="sourceLine" id="cb9-8" title="8">taxa_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn&#39;</span>, </a>
-<a class="sourceLine" id="cb9-9" title="9">                                <span class="kw">sprintf</span>(<span class="st">&#39;spp_info_from_api_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-10" title="10"><span class="st">  </span><span class="kw">select</span>(iucn_sid, kingdom<span class="op">:</span>family)</a>
-<a class="sourceLine" id="cb9-11" title="11"></a>
-<a class="sourceLine" id="cb9-12" title="12">comp_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(comp_file)</a>
-<a class="sourceLine" id="cb9-13" title="13"></a>
-<a class="sourceLine" id="cb9-14" title="14">cat_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, </a>
-<a class="sourceLine" id="cb9-15" title="15">                          <span class="kw">sprintf</span>(<span class="st">&#39;iucn_risk_current_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-16" title="16"><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat_score) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-17" title="17"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</a>
-<a class="sourceLine" id="cb9-18" title="18"></a>
-<a class="sourceLine" id="cb9-19" title="19">included_maps &lt;-<span class="st"> </span>marine_map_info <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-20" title="20"><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>comp_info<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-21" title="21"><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>cat_info<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-22" title="22"><span class="st">  </span><span class="kw">select</span>(iucn_sid, shp_iucn_sid, subpop, sciname, dbf_file) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-23" title="23"><span class="st">  </span><span class="kw">left_join</span>(taxa_info, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-24" title="24"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">spp_gp =</span> <span class="kw">basename</span>(dbf_file),</a>
-<a class="sourceLine" id="cb9-25" title="25">         <span class="dt">spp_gp =</span> spp_gp <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">tolower</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_replace</span>(<span class="st">&#39;.dbf|_part.+&#39;</span>, <span class="st">&#39;&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-26" title="26"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">kingdom =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(kingdom)),</a>
-<a class="sourceLine" id="cb9-27" title="27">         <span class="dt">phylum  =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(phylum)),</a>
-<a class="sourceLine" id="cb9-28" title="28">         <span class="dt">order   =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(order)),</a>
-<a class="sourceLine" id="cb9-29" title="29">         <span class="dt">class   =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(class)),</a>
-<a class="sourceLine" id="cb9-30" title="30">         <span class="dt">family  =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(family)))</a>
-<a class="sourceLine" id="cb9-31" title="31"></a>
-<a class="sourceLine" id="cb9-32" title="32">all_in_the_fam &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-33" title="33"><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, order, family, spp_gp) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-34" title="34"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</a>
-<a class="sourceLine" id="cb9-35" title="35">            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))  </a>
-<a class="sourceLine" id="cb9-36" title="36"></a>
-<a class="sourceLine" id="cb9-37" title="37">basic_sum &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-38" title="38"><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">str_detect</span>(<span class="kw">tolower</span>(class), <span class="st">&#39;actinopt|mammal|aves|rept&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-39" title="39"><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, spp_gp) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-40" title="40"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</a>
-<a class="sourceLine" id="cb9-41" title="41">            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))</a>
-<a class="sourceLine" id="cb9-42" title="42"></a>
-<a class="sourceLine" id="cb9-43" title="43">nonfish_sum &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-44" title="44"><span class="st">  </span><span class="kw">filter</span>(<span class="kw">str_detect</span>(<span class="kw">tolower</span>(class), <span class="st">&#39;mammal|aves|rept&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-45" title="45"><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, order, spp_gp) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-46" title="46"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</a>
-<a class="sourceLine" id="cb9-47" title="47">            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))</a>
-<a class="sourceLine" id="cb9-48" title="48"></a>
-<a class="sourceLine" id="cb9-49" title="49">fish_sum &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-50" title="50"><span class="st">  </span><span class="kw">filter</span>(<span class="kw">str_detect</span>(<span class="kw">tolower</span>(class), <span class="st">&#39;actinopt&#39;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-51" title="51"><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, order, family, spp_gp) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-52" title="52"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</a>
-<a class="sourceLine" id="cb9-53" title="53">            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))</a>
-<a class="sourceLine" id="cb9-54" title="54"></a>
-<a class="sourceLine" id="cb9-55" title="55">all_sum &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(fish_sum, nonfish_sum, basic_sum) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-56" title="56"><span class="st">  </span><span class="kw">group_by</span>(spp_gp, kingdom, phylum, class, order) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-57" title="57"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">sum</span>(species),</a>
-<a class="sourceLine" id="cb9-58" title="58">            <span class="dt">subpops =</span> <span class="kw">sum</span>(subpops, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-59" title="59"><span class="st">  </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb9-60" title="60"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">subpops =</span> <span class="kw">ifelse</span>(subpops <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="ot">NA</span>, subpops))</a>
-<a class="sourceLine" id="cb9-61" title="61"></a>
-<a class="sourceLine" id="cb9-62" title="62"><span class="kw">write_csv</span>(all_sum, <span class="kw">here</span>(<span class="st">&#39;_output&#39;</span>, <span class="st">&#39;spp_included_summary.csv&#39;</span>))</a>
-<a class="sourceLine" id="cb9-63" title="63"><span class="kw">write_csv</span>(all_in_the_fam, <span class="kw">here</span>(<span class="st">&#39;_output&#39;</span>, <span class="st">&#39;spp_included_by_family.csv&#39;</span>))</a>
-<a class="sourceLine" id="cb9-64" title="64"></a>
-<a class="sourceLine" id="cb9-65" title="65">knitr<span class="op">::</span><span class="kw">kable</span>(all_sum)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>marine_map_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>,</span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="kw">sprintf</span>(<span class="st">&#39;spp_marine_maps_%s.csv&#39;</span>, api_version)),</span>
+<span id="cb9-3"><a href="#cb9-3"></a>    <span class="dt">col_types =</span> <span class="kw">cols</span>(<span class="st">&#39;subpop&#39;</span> =<span class="st"> &#39;c&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="st">  </span><span class="kw">filter</span>(presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>presence) <span class="op">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb9-7"><a href="#cb9-7"></a></span>
+<span id="cb9-8"><a href="#cb9-8"></a>taxa_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;iucn&#39;</span>, </span>
+<span id="cb9-9"><a href="#cb9-9"></a>                                <span class="kw">sprintf</span>(<span class="st">&#39;spp_info_from_api_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, kingdom<span class="op">:</span>family)</span>
+<span id="cb9-11"><a href="#cb9-11"></a></span>
+<span id="cb9-12"><a href="#cb9-12"></a>comp_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(comp_file)</span>
+<span id="cb9-13"><a href="#cb9-13"></a></span>
+<span id="cb9-14"><a href="#cb9-14"></a>cat_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data&#39;</span>, </span>
+<span id="cb9-15"><a href="#cb9-15"></a>                          <span class="kw">sprintf</span>(<span class="st">&#39;iucn_risk_current_%s.csv&#39;</span>, api_version))) <span class="op">%&gt;%</span></span>
+<span id="cb9-16"><a href="#cb9-16"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat_score) <span class="op">%&gt;%</span></span>
+<span id="cb9-17"><a href="#cb9-17"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb9-18"><a href="#cb9-18"></a></span>
+<span id="cb9-19"><a href="#cb9-19"></a>included_maps &lt;-<span class="st"> </span>marine_map_info <span class="op">%&gt;%</span></span>
+<span id="cb9-20"><a href="#cb9-20"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>comp_info<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb9-21"><a href="#cb9-21"></a><span class="st">  </span><span class="kw">filter</span>(iucn_sid <span class="op">%in%</span><span class="st"> </span>cat_info<span class="op">$</span>iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb9-22"><a href="#cb9-22"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, shp_iucn_sid, subpop, sciname, dbf_file) <span class="op">%&gt;%</span></span>
+<span id="cb9-23"><a href="#cb9-23"></a><span class="st">  </span><span class="kw">left_join</span>(taxa_info, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb9-24"><a href="#cb9-24"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">spp_gp =</span> <span class="kw">basename</span>(dbf_file),</span>
+<span id="cb9-25"><a href="#cb9-25"></a>         <span class="dt">spp_gp =</span> spp_gp <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">tolower</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_replace</span>(<span class="st">&#39;.dbf|_part.+&#39;</span>, <span class="st">&#39;&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb9-26"><a href="#cb9-26"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">kingdom =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(kingdom)),</span>
+<span id="cb9-27"><a href="#cb9-27"></a>         <span class="dt">phylum  =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(phylum)),</span>
+<span id="cb9-28"><a href="#cb9-28"></a>         <span class="dt">order   =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(order)),</span>
+<span id="cb9-29"><a href="#cb9-29"></a>         <span class="dt">class   =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(class)),</span>
+<span id="cb9-30"><a href="#cb9-30"></a>         <span class="dt">family  =</span> tools<span class="op">::</span><span class="kw">toTitleCase</span>(<span class="kw">tolower</span>(family)))</span>
+<span id="cb9-31"><a href="#cb9-31"></a></span>
+<span id="cb9-32"><a href="#cb9-32"></a>all_in_the_fam &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></span>
+<span id="cb9-33"><a href="#cb9-33"></a><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, order, family, spp_gp) <span class="op">%&gt;%</span></span>
+<span id="cb9-34"><a href="#cb9-34"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</span>
+<span id="cb9-35"><a href="#cb9-35"></a>            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))  </span>
+<span id="cb9-36"><a href="#cb9-36"></a></span>
+<span id="cb9-37"><a href="#cb9-37"></a>basic_sum &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></span>
+<span id="cb9-38"><a href="#cb9-38"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">str_detect</span>(<span class="kw">tolower</span>(class), <span class="st">&#39;actinopt|mammal|aves|rept&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb9-39"><a href="#cb9-39"></a><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, spp_gp) <span class="op">%&gt;%</span></span>
+<span id="cb9-40"><a href="#cb9-40"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</span>
+<span id="cb9-41"><a href="#cb9-41"></a>            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))</span>
+<span id="cb9-42"><a href="#cb9-42"></a></span>
+<span id="cb9-43"><a href="#cb9-43"></a>nonfish_sum &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></span>
+<span id="cb9-44"><a href="#cb9-44"></a><span class="st">  </span><span class="kw">filter</span>(<span class="kw">str_detect</span>(<span class="kw">tolower</span>(class), <span class="st">&#39;mammal|aves|rept&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb9-45"><a href="#cb9-45"></a><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, order, spp_gp) <span class="op">%&gt;%</span></span>
+<span id="cb9-46"><a href="#cb9-46"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</span>
+<span id="cb9-47"><a href="#cb9-47"></a>            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))</span>
+<span id="cb9-48"><a href="#cb9-48"></a></span>
+<span id="cb9-49"><a href="#cb9-49"></a>fish_sum &lt;-<span class="st"> </span>included_maps <span class="op">%&gt;%</span></span>
+<span id="cb9-50"><a href="#cb9-50"></a><span class="st">  </span><span class="kw">filter</span>(<span class="kw">str_detect</span>(<span class="kw">tolower</span>(class), <span class="st">&#39;actinopt&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb9-51"><a href="#cb9-51"></a><span class="st">  </span><span class="kw">group_by</span>(kingdom, phylum, class, order, family, spp_gp) <span class="op">%&gt;%</span></span>
+<span id="cb9-52"><a href="#cb9-52"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">length</span>(<span class="kw">unique</span>(shp_iucn_sid)),</span>
+<span id="cb9-53"><a href="#cb9-53"></a>            <span class="dt">subpops =</span> <span class="kw">sum</span>(<span class="op">!</span><span class="kw">is.na</span>(subpop)))</span>
+<span id="cb9-54"><a href="#cb9-54"></a></span>
+<span id="cb9-55"><a href="#cb9-55"></a>all_sum &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(fish_sum, nonfish_sum, basic_sum) <span class="op">%&gt;%</span></span>
+<span id="cb9-56"><a href="#cb9-56"></a><span class="st">  </span><span class="kw">group_by</span>(spp_gp, kingdom, phylum, class, order) <span class="op">%&gt;%</span></span>
+<span id="cb9-57"><a href="#cb9-57"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">species =</span> <span class="kw">sum</span>(species),</span>
+<span id="cb9-58"><a href="#cb9-58"></a>            <span class="dt">subpops =</span> <span class="kw">sum</span>(subpops, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb9-59"><a href="#cb9-59"></a><span class="st">  </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></span>
+<span id="cb9-60"><a href="#cb9-60"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">subpops =</span> <span class="kw">ifelse</span>(subpops <span class="op">==</span><span class="st"> </span><span class="dv">0</span>, <span class="ot">NA</span>, subpops))</span>
+<span id="cb9-61"><a href="#cb9-61"></a></span>
+<span id="cb9-62"><a href="#cb9-62"></a><span class="kw">write_csv</span>(all_sum, <span class="kw">here</span>(<span class="st">&#39;_output&#39;</span>, <span class="st">&#39;spp_included_summary.csv&#39;</span>))</span>
+<span id="cb9-63"><a href="#cb9-63"></a><span class="kw">write_csv</span>(all_in_the_fam, <span class="kw">here</span>(<span class="st">&#39;_output&#39;</span>, <span class="st">&#39;spp_included_by_family.csv&#39;</span>))</span>
+<span id="cb9-64"><a href="#cb9-64"></a></span>
+<span id="cb9-65"><a href="#cb9-65"></a>knitr<span class="op">::</span><span class="kw">kable</span>(all_sum)</span></code></pre></div>
 <table>
 <thead>
 <tr class="header">
@@ -2348,7 +2369,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0

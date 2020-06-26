@@ -1,0 +1,199 @@
+---
+title: 'Map richness per taxon'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+```
+
+
+# Summary
+
+To enable percentage/proportion comparisons at the taxa level, we need to know the distribution of richness of threatened/near threatened species in each taxon, including those thr/n-thr spp that are not sensitive to any of our stressors (to match methods at the full spp group level).
+
+# Methods
+
+* Gather species maps by taxonomic group (IUCN comprehensively assessed groups)
+* read in all range maps for spp in the taxonomic group; compute a species richness and range-prioritized spp richness map for each group.
+
+## Match threatened species to taxonomic groups per IUCN
+
+Identify the species included in the impacted list.
+
+```{r identify taxa groups}
+
+### Get inclusion list; keep species with no sensitivities to stressors
+spp_incl <- get_incl_spp() %>%
+  left_join(get_spp_taxon(), by = c('iucn_sid', 'assess_gp')) %>%
+  mutate(taxon = tolower(rank))
+
+### directories for inputs
+spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+
+### directories for outputs
+taxon_rich_map_dir <- here('_output/rasters/taxon_richness_maps')
+### unlink(file.path(taxon_rich_map_dir, '*.*'))
+
+cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+
+```
+
+## Loop over taxonomic groups to create taxa-level richness maps
+    
+```{r set up functions and dataframes}
+
+get_spp_vec <- function(spp_ids, i, subgp_size) {
+  gp_first <- (i - 1) * subgp_size + 1
+  gp_last  <- min(i * subgp_size, length(spp_ids))
+  spp_id_vec <- spp_ids[gp_first:gp_last]
+}
+
+get_spp_rangemap <- function(spp_id) {
+  range_map_filestem <- file.path(spp_range_dir, 'iucn_sid_%s.csv')
+  rangemap <- read_csv(sprintf(range_map_filestem, spp_id),
+                       col_types = 'ii') %>%
+    mutate(iucn_sid = spp_id)
+  return(rangemap)
+}
+
+```
+
+```{r create taxa maps}
+
+### load priorities; without normalizing, priority is dependent only on spp range,
+### not dependent on the set of spp considered (e.g. normalizing by max priority)
+priority_df <- get_spp_priority(risk_wt = FALSE)
+
+taxon_gps <- spp_incl$taxon %>% unique() %>% sort()
+
+reload <- FALSE
+subgp_size <- 24 ### number of spp to process at a time
+
+for(taxon_gp in taxon_gps) {
+  ### taxon_gp <- taxon_gps[1]
+  
+  tx_nspp_f <- file.path(taxon_rich_map_dir,
+    sprintf('taxon_nspp_%s.tif', taxon_gp))
+  tx_priority_sum_f <- file.path(taxon_rich_map_dir,
+    sprintf('taxon_priority_sum_%s.tif', taxon_gp))
+
+  if(any(!file.exists(tx_nspp_f, tx_priority_sum_f)) | reload) {
+    spp_ids_taxa <- spp_incl %>%
+      filter(taxon == taxon_gp) %>%
+      .$iucn_sid %>% 
+      unique() %>% sort()
+    
+    n_subgps <- ceiling(length(spp_ids_taxa) / subgp_size)
+    message('Processing richness for ', taxon_gp, 
+            ': ', length(spp_ids_taxa), 
+            ' species broken into ', n_subgps, ' groups.')
+    
+    if(length(spp_ids_taxa) == 0) {
+      ### uh oh, no species in this taxon affected by this stressor.
+      taxon_rich_df <- data.frame()
+    } else {
+      ### loop over all spp in this taxon affected by this stressor
+      ### initialize a list to store 
+      taxon_rich_list <- vector('list', length = n_subgps)
+      for(i in 1:n_subgps) {
+        # i <- 1
+        message('  processing group ', i)
+        spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
+        
+        ### get spp ranges and join with priority
+        spp_ranges <- parallel::mclapply(spp_id_vec,
+          FUN = get_spp_rangemap,
+          mc.cores = subgp_size) %>%
+          bind_rows() %>%
+          dt_join(priority_df, by = 'iucn_sid', type = 'left') %>%
+          distinct()
+        
+        rich_gp_summary <- spp_ranges %>%
+          group_by(cell_id) %>%
+          summarize(priority_sum = sum(priority, na.rm = TRUE),
+                    n_spp = n()) %>%
+          ungroup()
+        
+        taxon_rich_list[[i]] <- rich_gp_summary
+      } ### end of for loop
+      
+    ### collate all the list element dataframes
+    taxon_rich_df <- bind_rows(taxon_rich_list) %>%
+      group_by(cell_id) %>%
+      summarize(priority_sum = sum(priority_sum, na.rm = TRUE),
+                n_spp = sum(n_spp, na.rm = TRUE)) %>%
+      ungroup() %>%
+      mutate(taxon = taxon_gp)
+    
+    } ### end of if statement for zero-length species vector
+    
+    if(nrow(taxon_rich_df) == 0) {
+      ### means no spp with valid ranges in this list; shouldn't happen here
+      stop('spp group ', taxon_gp, ' has no spp with valid range')
+      taxon_rich_df <- data.frame(cell_id = NA,
+                                   priority_sum = NA,
+                                   n_spp = NA,
+                                   taxon   = taxon_gp)
+    }
+    
+    ### convert to rasters and write out as +/- by count and priority
+
+    nspp_rast <- map_to_rast(taxon_rich_df, cell_val = 'n_spp')
+    priority_rast <- map_to_rast(taxon_rich_df, cell_val = 'priority_sum')
+
+    writeRaster(nspp_rast, tx_nspp_f, overwrite = TRUE)
+    writeRaster(priority_rast, tx_priority_sum_f, overwrite = TRUE)
+
+  } else {
+    message('Files exist... skipping!')
+  }
+}
+```
+
+## Plot taxa richness maps 
+
+
+```{r richness maps by taxa, eval = TRUE}
+
+mapfiles <- list.files(taxon_rich_map_dir, full.names = TRUE)
+
+fstem <- file.path(taxon_rich_map_dir, 'taxon_%s_%s.tif')
+  ### first is type, second is taxon
+
+for(t in taxon_gps) {
+  # t <- taxon_gps[1]
+
+  nspp_map <- raster(sprintf(fstem, 'nspp', t))
+  plot(nspp_map, 
+       col = hcl.colors(n = 20, rev = TRUE),
+       main = sprintf('Spp richness, %s', t))
+  
+  priority_map <- raster(sprintf(fstem, 'priority_sum', t))
+  plot(priority_map, 
+       col = hcl.colors(n = 20, rev = TRUE),
+       main = sprintf('Range-priority richness, %s', t))
+
+}
+```

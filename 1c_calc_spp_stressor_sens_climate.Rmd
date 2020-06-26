@@ -17,6 +17,10 @@ output:
 ---
 
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
@@ -145,7 +149,7 @@ NOTE: These numbers may include a small handful of spp with effectively zero oce
 
 ## Identify species habitat location (shallow vs. deep)
 
-For fishing stressors, we differentiated between demersal and pelagic to predict likely impacts from different gear types.  Here we examine shallow vs. deep species to help parse potential sensitivity to sea surface temperature and UV exposure, and species who rely on intertidal and shore to parse sensitivity to sea level rise.  
+For fishing stressors, we differentiated between demersal and pelagic to predict likely impacts from different gear types.  Here for climate impacts we examine shallow vs. deep species to help parse potential sensitivity to sea surface temperature and UV exposure, and species who rely on intertidal and shore to parse sensitivity to sea level rise.  
 
 * For SST: Shallow habitats include all neritic (9.X), epipelagic (10.1), marine intertidal (12.X), and marine coastal/supratidal (13.X).
 * For SLR: Shoreline habitats include marine intertidal (12.X) and coastal/supratidal (13.X)
@@ -240,6 +244,78 @@ Some frequent word combos:
 * temperatures willis (particularly for corals)
     * based on "Increased coral disease levels on the GBR were correlated with increased ocean temperatures (Willis et al. 2007) supporting the prediction that disease levels will be increasing with higher sea surface temperatures"
 * caution to avoid sand or air temperature combinations!
+
+### identify keywords for sea ice loss
+
+A number of mammals and sea birds are sensitive to sea ice loss, dependent on the ice for reproduction and pupping, haul outs, and protection.  Here examine the full suite of spp to see if other taxa have sea ice dependency (and to avoid it if indirect).
+
+```{r examine sea ice trigrams}
+
+ice_search_string <- 'sea ice'
+
+ice_text_df <- spp_narrs %>%
+  filter(dimension == 'threats') %>%
+  unnest_tokens(output = sentence, input = text, 
+                token = 'sentences', drop = FALSE) %>%
+  ### prefilter to dramatically speed up the trigrams...
+  filter(str_detect(tolower(sentence), ice_search_string)) %>%
+  # group_by(iucn_sid, dimension) %>%
+  unnest_tokens(output = trigram, input = sentence, 
+                token = 'ngrams', n = 3, drop = FALSE) %>%
+  filter(str_detect(trigram, ice_search_string))
+
+
+ice_trigram_df <- ice_text_df %>%
+  filter(!str_detect(trigram, cut_words$to_cut)) %>%
+  group_by(trigram) %>%
+  summarize(instances = n()) %>%
+  ungroup() %>%
+  arrange(desc(instances)) %>%
+  filter(instances > 1)
+
+DT::datatable(ice_trigram_df)
+
+```
+
+Inspecting the results, `sea ice` on its own appears to capture legitimate threats.
+
+### identify keywords for ENSO and global warming
+
+Many shallow water spp e.g. blennies and wrasses indicate a threat from water temperatures/oceanographic changes due to ENSO and global warming.  Many (but not all) use similar phrasing: 
+
+* "Given this species' restricted distribution and shallow water habitat, oceanographic environmental changes, such as those associated with future ENSO events, may have detrimental effects on the survival of this species."
+* "Given this species' potentially restricted distribution and shallow water habitat, localized stochastic events, including future oceanographic environmental changes such as ENSO and global warming, may have detrimental effects on marine ecosystems and the survival of these shallow water regional endemic species."
+
+```{r examine enso trigrams}
+
+enso_search_string <- '(^|[^a-z])enso($|[^a-z])|global warming'
+  ### the regex keeps from 'enso' cueing on 'Tittensor' e.g.
+
+enso_text_df <- spp_narrs %>%
+  filter(dimension == 'threats') %>%
+  unnest_tokens(output = sentence, input = text, 
+                token = 'sentences', drop = FALSE) %>%
+  ### prefilter to dramatically speed up the trigrams...
+  filter(str_detect(tolower(sentence), enso_search_string)) %>%
+  # group_by(iucn_sid, dimension) %>%
+  unnest_tokens(output = trigram, input = sentence, 
+                token = 'ngrams', n = 3, drop = FALSE) %>%
+  filter(str_detect(trigram, enso_search_string))
+
+
+enso_trigram_df <- enso_text_df %>%
+  filter(!str_detect(trigram, cut_words$to_cut)) %>%
+  group_by(trigram) %>%
+  summarize(instances = n()) %>%
+  ungroup() %>%
+  arrange(desc(instances)) %>%
+  filter(instances > 1)
+
+DT::datatable(enso_trigram_df)
+
+```
+
+Inspection of the text indicates that `enso` and `global warming` both capture legitimate instances of threats.
 
 ### identify keywords for ocean acidification
 
@@ -341,6 +417,9 @@ sst_keywords <- c('sea surface temper',
                   'extreme (elevated )?temper',
                   'climate change',
                   'el ni[nñ]o', ### the ñ is not working right...
+                  '(^|[^a-z])enso($|[^a-z])',
+                  'sea ice',
+                  'global warming',
                   'temper[a-z]+ willis') %>%
   paste0(collapse = '|')
 
@@ -556,6 +635,8 @@ tmp_nomatch <- tmp %>%
   filter(taxon != 'sturgeons')
   
 table(tmp_nomatch$taxon)
+
+DT::datatable(tmp_nomatch)
 ```
 
-Note that each of these is listed as being threatened by climate pressures, but no categorization of stressor was found.  That may be legitimate - it may be affected by other impacts of climate other than SLR, SST, and OA.  Inspect each of these to better understand/inform more keywords.
+Note that each of these is listed as being threatened by climate pressures, but no categorization of stressor was found.  That may be legitimate - category 11 includes general impacts from habitat loss so clearly may be affected by other impacts other than SLR, SST, and OA.  Inspect each of these to better understand/inform more keywords.  (Before adding checks for enso, global warming, and sea ice there were 95 spp with a category 11 threat but no match.  Of these, about half seemed legitimate instances of climate threats).
