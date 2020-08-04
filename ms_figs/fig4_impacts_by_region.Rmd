@@ -19,6 +19,7 @@ output:
 ``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
 
 library(sf)
+library(cowplot)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
@@ -210,13 +211,16 @@ eez_to_plot <- eez_top %>%
          stressor = factor(stressor, 
                            levels = c('cumulative', 'fishing', 'ocean', 'climate', 'land-based')))
 
-ggplot(eez_to_plot, aes(x = stressor, y = rgn_label, fill = a_wt_mean_imp_pct)) +
+fig4_heatmap <- ggplot(eez_to_plot, aes(x = stressor, y = rgn_label, fill = a_wt_mean_imp_pct)) +
   ggtheme_plot() +
   geom_tile() +
   scale_fill_viridis_c(na.value = rgb(0, 0, 0, 0)) +
   theme(axis.title = element_blank(),
-        panel.grid.major = element_blank()) +
-  labs(fill = 'mean impact')
+        panel.grid.major = element_blank(),
+        legend.title = element_blank())
+
+fig4_done <- ggdraw() +
+  draw_plot(fig4_heatmap + theme(legend.position = 'none'))
 
 ggsave(here('ms_figs/fig4_impact_by_eez.png'), width = 5, height = 7.5, dpi = 300)
 

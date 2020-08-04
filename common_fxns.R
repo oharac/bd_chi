@@ -27,10 +27,15 @@ message <- function(x, ...) {
 }
 
 ### Get API version
-### * api_key stored on git-annex so outside users can use their own key
-api_file <- file.path(dir_M, 'git-annex/globalprep/spp_ico', 
-                      'api_key.csv')
-api_key <- scan(api_file, what = 'character')
+if(file.exists(dir_M)) {
+  ### * api_key stored on git-annex so outside users can use their own key
+  ### if not Linux, 
+  api_file <- file.path(dir_M, 'git-annex/globalprep/spp_ico', 
+                        'api_key.csv')
+  api_key <- scan(api_file, what = 'character')
+} else {
+  message("Not logged into Mazu, can't access the IUCN API key file.")
+}
 
 api_version_current <- jsonlite::fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
   .$version
