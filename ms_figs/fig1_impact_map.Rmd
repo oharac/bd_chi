@@ -190,7 +190,7 @@ if(!file.exists(figS1_file)) {
 ```{r}
 if(!file.exists(figS1_file)) {
   figS1 <- plot_grid(n_imp_map, nspp_map, align = 'v',
-                    nrow = 2, labels = c('A', 'B'))
+                    nrow = 2, labels = c('A', 'B'), label_size = 9)
   
   ggsave(plot = figS1, filename = figS1_file,
          height = 10, width = 12, units = 'cm', dpi = 300)

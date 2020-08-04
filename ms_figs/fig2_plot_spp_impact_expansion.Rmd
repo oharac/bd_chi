@@ -1,0 +1,392 @@
+---
+title: 'Plot species impact expansion'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+```
+
+
+# Summary
+
+Here we plot species impact expansion - how impacted range area is changing over time.  We can look at this on a stressor-by-stressor basis, and grouped by cumulative stressors by category.  
+
+## Methods summary
+
+Read in all the impact summaries.  Attach taxonomic information and range information.
+
+For each stressor, calculate impact expansion by taxon, by range size, and overall.  
+
+* Impact expansion will be change in percent impacted range? 
+* or absolute?  This devalues small-ranged species.  Perhaps in the range size calculations.
+
+# Methods
+
+## set up for figure 2a: Calculate expansion by taxonomic group
+
+Load the impact summaries, attach info on taxonomic groupings and range quintiles.
+
+```{r assemble data frame}
+
+imp_range_file <- file.path(here('int/impacted_ranges.csv'))
+
+if(!file.exists(imp_range_file)) {
+  # unlink(imp_range_file)
+  spp_incl <- get_incl_spp() %>%
+    # filter(!is.na(stressor)) %>%
+    select(-code) %>%
+    distinct()
+  
+  spp_impact_fstem <- file.path(dir_bd_anx, 'spp_impacts/spp_impacts_%s_%s.csv')
+  spp_ids <- spp_incl$iucn_sid %>% unique() %>% sort()
+  str_cats <- c('all', 'climate', 'fishing', 'land-based', 'ocean')
+  
+  impacts_list <- parallel::mclapply(spp_ids,
+      FUN = function(id) { ### id <- spp_ids[1]
+        message('processing spp ', id)
+        tmp_list<- lapply(str_cats, FUN = function(str_cat) { 
+          ### str_cat <- 'all'
+          f <- sprintf(spp_impact_fstem, id, str_cat)
+          x <- read_csv(f) %>%
+            filter(eez == 0) %>% ### just calculating global here
+            mutate(impacts = str_replace_all(basename(f), '.+[0-9]+_|.csv', ''))
+          return(x)
+        })
+        tmp_df <- bind_rows(tmp_list) %>%
+          distinct()
+        return(tmp_df)
+      }, mc.cores = 40)
+  
+  imp_range_df <- bind_rows(impacts_list) %>%
+    mutate(stressor = ifelse(stressor == 'cumulative', 
+                             paste0('cum_', impacts), stressor)) %>%
+    select(-impacts) %>%
+    filter(iucn_sid %in% spp_incl$iucn_sid) %>%
+    distinct() %>%
+    mutate(pct_impact = impact_km2 / range_km2)
+  
+  write_csv(imp_range_df, imp_range_file)
+} else {
+  imp_range_df <- read_csv(imp_range_file)
+}
+  
+```
+
+
+Calculate trends to estimate future impact footprints (as percent of range) for each species, by stressor and stressor group, across 2003:2013.  Keep only significant trends; non-significant trends (for spp/stressor combo) will be assigned zero.
+
+```{r}
+
+spp_expansion_trend_file <- here('int/spp_expansion_trends.csv')
+# unlink(spp_expansion_trend_file)
+
+if(!file.exists(spp_expansion_trend_file)) {
+  trend_df <- read_csv(imp_range_file) %>%
+    group_by(stressor, iucn_sid) %>%
+    filter(n_distinct(pct_impact, na.rm = TRUE) > 1) %>%
+    do(mdl = lm(pct_impact ~ year, data = .)) %>%
+    broom::tidy(mdl) %>%
+    filter(term == 'year')
+  
+  write_csv(trend_df, spp_expansion_trend_file)
+}
+```
+
+Use trends to predict species impacted range in 2030.
+
+```{r}
+
+trend_df <- read_csv(spp_expansion_trend_file)
+
+imp_range_df <- read_csv(imp_range_file) %>%
+  select(stressor, year, impact_km2, range_km2, iucn_sid, pct_impact) %>%
+  group_by(iucn_sid, stressor) %>%
+  complete(year = 2003:2013) %>%
+  arrange(iucn_sid, stressor, year) %>%
+  fill(pct_impact, .direction = 'downup') %>%
+  ungroup() %>%
+  filter(year %in% c(2003, 2013)) %>%
+  filter(!is.na(pct_impact))
+
+imp_2030_df <- imp_range_df %>%
+  left_join(trend_df, by = c('iucn_sid', 'stressor')) %>%
+  filter(year == 2013) %>%
+  mutate(estimate = ifelse(is.na(estimate), 0, estimate),
+         pct_impact = pct_impact + (2030 - 2013) * estimate,
+         pct_impact = case_when(pct_impact < 0 ~ 0,
+                                pct_impact > 1 ~ 1,
+                                TRUE           ~ pct_impact),
+         year = 2030) %>%
+  ### add in 2003 and 2013 info
+  bind_rows(imp_range_df) %>%
+  select(iucn_sid, year, pct_impact, stressor) %>%
+  filter(!is.na(pct_impact))
+  
+```
+
+```{r}
+
+taxon_df <- get_spp_taxon()
+
+range_summary_all <- imp_2030_df %>%
+  group_by(stressor, year) %>%
+  summarize(mean_pct_imp = mean(pct_impact),
+            sd_pct_imp   = sd(pct_impact)) %>%
+  mutate(desc = 'all spp')
+
+range_summary_taxon <- imp_2030_df %>%
+  left_join(taxon_df, by = 'iucn_sid') %>%
+  group_by(desc, stressor, year) %>%
+  summarize(mean_pct_imp = mean(pct_impact),
+            sd_pct_imp   = sd(pct_impact)) %>%
+  ungroup()
+```
+
+```{r}
+cum_impact_df <- range_summary_all %>%
+  filter(stressor == 'cum_all') %>%
+  bind_rows(range_summary_taxon %>%
+              filter(stressor == 'cum_all') %>%
+              arrange(desc(year), desc(mean_pct_imp))) %>%
+  mutate(desc = fct_inorder(desc) %>% fct_rev(),
+         year = factor(year) %>% fct_rev()) %>%
+  rowwise() %>%
+  mutate(ymin = max(0, mean_pct_imp - sd_pct_imp),
+         ymax = min(1, mean_pct_imp + sd_pct_imp)) %>%
+  ungroup()
+
+write_csv(cum_impact_df, here('ms_figs/fig2a_cum_impact_03_13_30.csv'))
+
+```
+
+## set up for fig 2b: Calculate impact intensification/abatement
+
+Here we are looking only at 2013, and global (eez = 0).
+```{r}
+
+spp_intens_sum_file <- here('ms_figs/fig2b_spp_intens_sum.csv')
+
+if(!file.exists(spp_intens_sum_file)) {
+  spp_incl <- get_incl_spp()
+  
+  spp_sum_list <- parallel::mclapply(spp_incl$iucn_sid %>% unique(),
+      FUN = function(iucn_sid) {
+        # iucn_sid <- spp_sens_gp$iucn_sid[1]
+        fstem <- file.path(dir_bd_anx, 'spp_impacts', 'spp_impacts_%s_all.csv')
+        x <- read_csv(sprintf(fstem, iucn_sid))
+        return(x)
+      }, mc.cores = 24)
+  
+  spp_sum_df <- spp_sum_list %>%
+    bind_rows() %>%
+    filter(year == 2013 | is.na(year)) %>%
+    filter(eez == 0) %>%
+    # group_by(iucn_sid) %>%
+    # mutate(n_str = n_distinct(stressor) - 1) %>%
+    # ungroup() %>%
+    filter(stressor == 'cumulative') %>%
+    mutate(pct_imp = impact_km2 / range_km2,
+           # pct_imp2 = ifelse(n_str > 1, impact_2plus_km2 / range_km2, NA),
+           # pct_imp3 = ifelse(n_str > 2, impact_3plus_km2 / range_km2, NA),
+           pct_incr = ifelse(is.na(incr_km2), 0, incr_km2 / range_km2),
+           pct_decr = ifelse(is.na(decr_km2), 0, decr_km2 / range_km2)) %>%
+    left_join(taxon_df, by = 'iucn_sid') %>%
+    select(iucn_sid, stressor, starts_with('pct'), range_km2, 
+           assess_gp, rank, desc)
+  
+  write_csv(spp_sum_df, spp_intens_sum_file)
+}
+
+spp_sum_df <- read_csv(spp_intens_sum_file)
+
+tax_sum_df <- spp_sum_df %>%
+  group_by(rank, desc) %>%
+  summarize(mean_pct_imp  = mean(pct_imp, na.rm = TRUE),
+            sd_pct_imp    = sd(pct_imp, na.rm = TRUE),
+            mean_pct_incr = mean(pct_incr, na.rm = TRUE),
+            sd_pct_incr   = sd(pct_incr, na.rm = TRUE),
+            mean_pct_decr = mean(pct_decr, na.rm = TRUE),
+            sd_pct_decr   = sd(pct_decr, na.rm = TRUE),
+            mean_range_km2 = mean(range_km2),
+            sd_range_km2  = sd(range_km2)) %>%
+  ungroup()
+
+all_sum_df <- spp_sum_df %>%
+  # group_by(kng, phy, cls) %>%
+  summarize(desc = 'all spp',
+            mean_pct_imp  = mean(pct_imp, na.rm = TRUE),
+            sd_pct_imp    = sd(pct_imp, na.rm = TRUE),
+            mean_pct_incr = mean(pct_incr, na.rm = TRUE),
+            sd_pct_incr   = sd(pct_incr, na.rm = TRUE),
+            mean_pct_decr = mean(pct_decr, na.rm = TRUE),
+            sd_pct_decr   = sd(pct_decr, na.rm = TRUE),
+            mean_range_km2 = mean(range_km2),
+            sd_range_km2  = sd(range_km2)) %>%
+  ungroup()
+
+plot_tax_sum_df <- tax_sum_df %>%
+  arrange(mean_pct_imp) %>%
+  bind_rows(all_sum_df) %>%
+  mutate(desc = fct_inorder(desc)) %>%
+  mutate(mean_pct_nochange = mean_pct_imp - mean_pct_decr - mean_pct_incr) %>%
+  gather(var, val, mean_pct_incr, mean_pct_decr, mean_pct_nochange) %>%
+  mutate(var = case_when(var == 'mean_pct_incr' ~ 'intensifying',
+                         var == 'mean_pct_decr' ~ 'abating',
+                         TRUE ~ 'no change')) %>%
+  mutate(var = factor(var, levels = c('intensifying', 
+                                      'no change', 
+                                      'abating')))
+  
+```
+
+
+
+# Assemble plot
+```{r}
+
+fig2a <- ggplot(cum_impact_df) +
+  ggtheme_plot(base_size = 7) +
+  geom_point(aes(y = mean_pct_imp, x = desc, 
+                 color = year, group = year), 
+             size = .8,
+             position = position_dodge(width = -.6)) +
+  geom_linerange(aes(x = desc, ymin = ymin, ymax = ymax,
+                     color = year, linetype = year, group = year), 
+             position = position_dodge(width = -.6),
+             show.legend = FALSE,
+             size = .25) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
+  scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
+  scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
+  scale_y_continuous(expand = c(0, 0), 
+                     limits = c(-.02, 1.02),
+                     breaks = seq(0, 1, .25),
+                     labels = paste0(seq(0, 100, 25), '%')) +
+  labs(y = 'Percent of range impacted') +
+  coord_flip() +
+  theme(axis.title.y = element_blank(),
+        legend.key.size = unit(.3, 'cm'),
+        legend.background = element_blank(),
+        legend.title = element_blank())
+
+# fig2a
+```
+
+```{r}
+
+n_labels <- get_spp_taxon() %>%
+  filter(iucn_sid %in% imp_range_df$iucn_sid) %>%
+  group_by(desc) %>%
+  summarize(n_spp = n()) %>%
+  bind_rows(get_spp_taxon() %>%
+    filter(iucn_sid %in% imp_range_df$iucn_sid) %>%
+    summarize(n_spp = n()) %>%
+      mutate(desc = 'all spp')) %>%
+  mutate(n_lbl = paste0('n = ', n_spp),
+         desc = factor(desc, levels = levels(plot_tax_sum_df$desc))) %>%
+  arrange(desc)
+
+fig2b <- ggplot(plot_tax_sum_df) +
+  ggtheme_plot(base_size = 7) +
+  geom_col(aes(x = desc, y = val, fill = var), 
+           width = .5) +
+  geom_text(data = n_labels,
+            aes(x = desc, label = n_lbl), y = 1.01,
+            size = 1.9, hjust = 0) +
+  labs(y = 'Percent of range impacted') +
+  scale_y_continuous(expand = c(0, 0), 
+                     limits = c(0, 1.2),
+                     breaks = seq(0, 1, .25),
+                     labels = paste0(seq(0, 100, 25), '%')) +
+  scale_fill_manual(values = c('#d01c8b', 'grey90', '#4dac26')) +
+  coord_flip() +
+  theme(axis.title.y = element_blank(),
+        legend.key.size = unit(.3, 'cm'),
+        legend.background = element_blank(),
+        axis.text.y = element_blank(), ### align with 2a
+        legend.title = element_blank()) 
+
+```
+
+## Combine
+
+```{r}
+legend_2a <- get_legend(fig2a)
+legend_2b <- get_legend(fig2b)
+fig2 <- plot_grid(fig2a + theme(legend.position = 'none'), ### drop legend for manual placement
+                  fig2b + theme(legend.position = 'none'), 
+                  labels = c('A', 'B'), label_size = 9,
+                  rel_widths = c(1.2, 1),
+                  align = 'h', nrow = 1)  +
+  draw_plot(legend_2a, x = .35, y = .2, width = .2, height = .2) +
+  draw_plot(legend_2b, x = .72, y = .2, width = .2, height = .2)
+  
+  
+ggsave(plot = fig2, filename = here('ms_figs/fig2_expand_intens.png'),
+         height = 6, width = 12, units = 'cm', dpi = 300)
+
+knitr::include_graphics(here('ms_figs/fig2_expand_intens.png'))
+```
+
+# Check sharks and rays - why seeming to decline in impacts?
+```{r checking sharks and rays}
+x <- imp_2030_df %>% 
+  left_join(taxon_df)
+
+y <- x %>% 
+  filter(desc == 'sharks and rays' & stressor == 'cum_all')
+z <- y %>% 
+  spread(year, pct_impact)
+zz <- z %>% 
+  mutate(diff_2003_2013 = `2013` - `2003`,
+         diff_2013_2030 = `2030` - `2013`)
+
+mean(zz$diff_2003_2013) # -0.008258862
+mean(zz$diff_2013_2030) # -0.02094585
+
+### Note that from 2013 to 2030, many expanding species expand very little 
+### while many contracting species contract by a lot
+
+### these look suspicious - small increase to 1 from 2003 to 2013, then
+### very large drop.  Check trends between 03 and 13.
+# iucn_sid      2003         2013         2030
+# 161541  0.96531341	1.000000000	 0.330297285
+# 161394  0.95878065	1.000000000	 0.371924815
+check_df <- read_csv(imp_range_file) %>%
+  filter(iucn_sid %in% c(161541, 161394)) %>%
+  select(iucn_sid, year, stressor, pct_impact) %>%
+  filter(!is.na(year))
+tr_df <- check_df %>%
+  group_by(iucn_sid, stressor) %>%
+  do(mdl = lm(pct_impact ~ year, data = .)) %>%
+  broom::tidy(mdl) %>%
+  filter(term == 'year')
+### big drops in cumulative footprint from 2010-2012 (then back to 1) would make for a
+### sizable negative trend, close to 4% per year
+
+```
+
