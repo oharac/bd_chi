@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Wed Jun 17 17:58:12 2020 by ohara" />
+<meta name="author" content="Compiled on Fri Jul 31 18:22:06 2020 by ohara" />
 
 
 <title>Map species stressor intersections</title>
@@ -1282,13 +1282,13 @@ window.initializeCodeFolding = function(show) {
   var currentIndex = 1;
 
   // select all R code blocks
-  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia');
+  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
   rCodeBlocks.each(function() {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show || $(this)[0].classList.contains('fold-show'))
-      div.addClass('in');
+    show = (show || $(this).hasClass('fold-show')) && !$(this).hasClass('fold-hide');
+    if (show) div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
     $(this).before(div);
@@ -1322,6 +1322,22 @@ window.initializeCodeFolding = function(show) {
   });
 
 }
+</script>
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
 </script>
 
 
@@ -1660,7 +1676,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Map species stressor intersections</h1>
-<h4 class="author"><em>Compiled on Wed Jun 17 17:58:12 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Fri Jul 31 18:22:06 2020 by ohara</em></h4>
 
 </div>
 
@@ -1690,9 +1706,9 @@ div.tocify {
 <h1><span class="header-section-number">2</span> Methods</h1>
 <div id="get-the-species-sensitivities" class="section level2">
 <h2><span class="header-section-number">2.1</span> Get the species sensitivities</h2>
-<p>The species sensitivity dataframe is created in script 1: <code>1d_combine_spp_stressor_sensitivities.Rmd</code>. Load this and use it to identify included species and stressors; load the maps file to determine which of these species have range maps as well. Note, the sensitivity file includes non-threatened species, so these will be included in the overall set of intersection maps. Make sure to exclude non-threatened species when aggregating species maps to taxon level!</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>spp_incl_all &lt;-<span class="st"> </span><span class="kw">get_incl_spp</span>(<span class="dt">include_all_risk =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(stressor)) <span class="op">%&gt;%</span></span>
+<p>The species sensitivity dataframe is created in script 1: <code>1d_combine_spp_stressor_sensitivities.Rmd</code>. Load this and use it to identify included species and stressors; load the maps file to determine which of these species have range maps as well. Note, the sensitivity file includes non-threatened species, so these will be included in the overall set of intersection maps.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>spp_incl_all &lt;-<span class="st"> </span><span class="kw">get_incl_spp</span>() <span class="op">%&gt;%</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="st">  </span><span class="co"># filter(!is.na(stressor)) %&gt;% </span><span class="al">###</span><span class="co"> make placeholders for non-impacted spp</span></span>
 <span id="cb2-3"><a href="#cb2-3"></a><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>code) <span class="op">%&gt;%</span></span>
 <span id="cb2-4"><a href="#cb2-4"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
 <span id="cb2-5"><a href="#cb2-5"></a></span>
@@ -1788,9 +1804,9 @@ div.tocify {
 <p>Using this function, loop through each of the included stressors, build the stack, convert to df for easier handling, and then loop over all species to create a map of cell ID and year for all stressor occurrences on the species range. The stressor name will be included in the filename, so no need to include a “stressor” column here… this should save significantly on file size.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>reload &lt;-<span class="st"> </span><span class="ot">FALSE</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="co">### to gut the directory for a fresh start:</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>x &lt;-<span class="st"> </span><span class="kw">list.files</span>(<span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_str_rasts&#39;</span>),</span>
-<span id="cb4-4"><a href="#cb4-4"></a>                <span class="dt">full.names =</span> <span class="ot">TRUE</span>, <span class="dt">recursive =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">unlink</span>(x)</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="co"># x &lt;- list.files(file.path(dir_bd_anx, &#39;spp_str_rasts&#39;),</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="co">#                 full.names = TRUE, recursive = TRUE)</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="co"># unlink(x)</span></span>
 <span id="cb4-6"><a href="#cb4-6"></a></span>
 <span id="cb4-7"><a href="#cb4-7"></a><span class="cf">for</span>(str_name <span class="cf">in</span> str_names) {</span>
 <span id="cb4-8"><a href="#cb4-8"></a>  <span class="co">### str_name &lt;- str_names[13]</span></span>
@@ -1887,59 +1903,59 @@ div.tocify {
 <tbody>
 <tr class="odd">
 <td align="left">art_fish</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="even">
 <td align="left">dem_dest</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="odd">
 <td align="left">dem_nondest_hb</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="even">
 <td align="left">dem_nondest_lb</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="odd">
 <td align="left">direct_human</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="even">
 <td align="left">light</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="odd">
 <td align="left">nutrient</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="even">
 <td align="left">oa</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="odd">
 <td align="left">organic</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="even">
 <td align="left">pel_hb</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="odd">
 <td align="left">pel_lb</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="even">
 <td align="left">shipping</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="odd">
 <td align="left">slr</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 <tr class="even">
 <td align="left">sst</td>
-<td align="right">2410</td>
+<td align="right">2645</td>
 </tr>
 </tbody>
 </table>
@@ -2009,7 +2025,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0

@@ -34,7 +34,7 @@ source(here('common_fxns.R'))
 For the species rasterized in setup script 5b, determine their marine range using cell ocean areas from the ocean raster:
 $$range = \sum_{cell = 1}^C A_{cell}$$
 
-Save these ranges as an output to be used in the main scripts.
+Save these ranges as an output to be used in the main scripts.  This will also include range per EEZ.
 
 For those species listed with zero cells, check their polygon range to verify.  If polygon range is not zero, use this list to manually inspect polygons to make sure the rasterization process isn't dropping ranges.
 
@@ -58,13 +58,15 @@ if(!file.exists(range_from_rasts_file)) {
   dir_mol_map <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
   
   ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
-  cell_km2 <- res(ocean_a_rast)[1]^2 / 1e6
-  ocean_a_df <- data.frame(cell_id = 1:ncell(ocean_a_rast),
-                           a_km2  = values(ocean_a_rast) * cell_km2) %>%
+  eez_rast     <- raster(here('_spatial/eez_mol.tif'))
+  cell_km2     <- res(ocean_a_rast)[1]^2 / 1e6
+  ocean_a_df   <- data.frame(cell_id = 1:ncell(ocean_a_rast),
+                             eez     = values(eez_rast),
+                             a_km2   = values(ocean_a_rast) * cell_km2) %>%
     filter(!is.na(a_km2))
     
-  map_files <- list.files(dir_mol_rast, full.names = TRUE)
-  # f <- file.path(dir_mol_rast, 'iucn_sid_907.csv')
+  map_files <- list.files(dir_mol_map, full.names = TRUE)
+  # f <- file.path(dir_mol_map, 'iucn_sid_10030.csv')
   # file.exists(f)
 
   range_l <- parallel::mclapply(map_files,
@@ -73,11 +75,19 @@ if(!file.exists(range_from_rasts_file)) {
                  id <- str_extract(basename(f), '[0-9]+') %>% as.integer()
                  x <- read_csv(f, col_types = 'ii') %>%
                    filter(presence > 0 & !is.na(presence) & presence != 5) %>%
-                   dt_join(ocean_a_df, by = 'cell_id', type = 'left') %>%
-                   summarize(range_km2 = sum(a_km2, na.rm = TRUE)) %>%
-                   mutate(iucn_sid = id)
+                   dt_join(ocean_a_df, by = 'cell_id', type = 'left') 
                  
-                 return(x)
+                 x_all <- x %>%
+                   summarize(range_km2 = sum(a_km2, na.rm = TRUE)) %>%
+                   mutate(eez = 0)
+                 x_eez <- x %>%
+                   group_by(eez) %>%
+                   summarize(range_km2 = sum(a_km2, na.rm = TRUE)) %>%
+                   ungroup()
+                 
+                 y <- bind_rows(x_all, x_eez) %>%
+                   mutate(iucn_sid = id)
+                 return(y)
                }, mc.cores = 40)
                               
   range_df <- bind_rows(range_l)
@@ -88,7 +98,7 @@ if(!file.exists(range_from_rasts_file)) {
 
 ## Check the ranges from the polygons
 
-Read in the shapefile; calculate area of each of the polygons (`st_area()`) excluding extinct polygons (`filter(presence != 5)`).  Sum them for spp with multiple polygons.  NOTE: This doesn't account for overlapping polygons, but this is only intended as a check - the polygon area is not used for any calculations.
+Read in the shapefile; calculate area of each of the polygons (`st_area()`) excluding extinct polygons (`filter(presence != 5)`).  Sum them for spp with multiple polygons.  NOTE: This doesn't account for overlapping polygons, but this is only intended as a quick sanity check - the polygon area is not used for any calculations.
 
 Note also: this has many more species, but these are coming from non-marine birds, terrestrial mammals, terrestrial reptiles.
 
@@ -144,7 +154,9 @@ if(!file.exists(range_from_polys_file)) {
 ## Combine 
 
 ```{r}
-r_rast <- read_csv(range_from_rasts_file)
+r_rast <- read_csv(range_from_rasts_file) %>%
+  filter(eez == 0) %>%
+  select(-eez)
 r_poly <- read_csv(range_from_polys_file)
 map_info <- read_csv(here('_data/spp_marine_maps_2020-1.csv'))
 spp_risk <- read_csv(here('_data/iucn_risk_current_2020-1.csv')) %>%

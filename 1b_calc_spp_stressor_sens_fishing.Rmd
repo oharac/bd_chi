@@ -562,7 +562,7 @@ drop_check_all <- spp_marine %>%
   left_join(spp_narrs, by = 'iucn_sid') %>%
   left_join(spp_maps, by = 'iucn_sid') %>%
   left_join(spp_comp %>% select(-sciname), by = 'iucn_sid') %>%
-  select(iucn_sid, sciname, dimension, taxon, text) %>%
+  select(iucn_sid, sciname, dimension, assess_gp, text) %>%
   distinct()
 
 drop_check <- drop_check_all %>%
@@ -642,10 +642,10 @@ tmp_nomatch <- tmp %>%
   group_by(iucn_sid) %>%
   summarize(codes = paste(code, collapse = ', ')) %>%
   left_join(spp_comp, by = 'iucn_sid') %>%
-  filter(!is.na(taxon)) %>%
-  filter(taxon != 'sturgeons')
+  filter(!is.na(assess_gp)) %>%
+  filter(assess_gp != 'sturgeons')
   
-table(tmp_nomatch$taxon)
+table(tmp_nomatch$assess_gp)
 
 DT::datatable(tmp_nomatch)
 ```

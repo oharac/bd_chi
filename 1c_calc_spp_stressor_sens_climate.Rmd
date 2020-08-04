@@ -631,10 +631,10 @@ tmp_nomatch <- tmp %>%
   group_by(iucn_sid) %>%
   summarize(codes = paste(code, collapse = ', ')) %>%
   left_join(spp_comp, by = 'iucn_sid') %>%
-  filter(!is.na(taxon)) %>%
-  filter(taxon != 'sturgeons')
+  filter(!is.na(assess_gp)) %>%
+  filter(assess_gp != 'sturgeons')
   
-table(tmp_nomatch$taxon)
+table(tmp_nomatch$assess_gp)
 
 DT::datatable(tmp_nomatch)
 ```

@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Fri Jun 19 09:58:47 2020 by ohara" />
+<meta name="author" content="Compiled on Mon Jul 13 12:37:57 2020 by ohara" />
 
 
 <title>Determine species ranges</title>
@@ -1282,13 +1282,13 @@ window.initializeCodeFolding = function(show) {
   var currentIndex = 1;
 
   // select all R code blocks
-  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia');
+  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
   rCodeBlocks.each(function() {
 
     // create a collapsable div to wrap the code in
     var div = $('<div class="collapse r-code-collapse"></div>');
-    if (show || $(this)[0].classList.contains('fold-show'))
-      div.addClass('in');
+    show = (show || $(this).hasClass('fold-show')) && !$(this).hasClass('fold-hide');
+    if (show) div.addClass('in');
     var id = 'rcode-643E0F36' + currentIndex++;
     div.attr('id', id);
     $(this).before(div);
@@ -1322,6 +1322,22 @@ window.initializeCodeFolding = function(show) {
   });
 
 }
+</script>
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
 </script>
 
 
@@ -1660,7 +1676,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Determine species ranges</h1>
-<h4 class="author"><em>Compiled on Fri Jun 19 09:58:47 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Mon Jul 13 12:37:57 2020 by ohara</em></h4>
 
 </div>
 
@@ -1676,7 +1692,7 @@ div.tocify {
 <div id="summary" class="section level1">
 <h1><span class="header-section-number">1</span> Summary</h1>
 <p>For the species rasterized in setup script 5b, determine their marine range using cell ocean areas from the ocean raster: <span class="math display">\[range = \sum_{cell = 1}^C A_{cell}\]</span></p>
-<p>Save these ranges as an output to be used in the main scripts.</p>
+<p>Save these ranges as an output to be used in the main scripts. This will also include range per EEZ.</p>
 <p>For those species listed with zero cells, check their polygon range to verify. If polygon range is not zero, use this list to manually inspect polygons to make sure the rasterization process isn’t dropping ranges.</p>
 </div>
 <div id="data-sources" class="section level1">
@@ -1698,36 +1714,46 @@ div.tocify {
 <span id="cb2-4"><a href="#cb2-4"></a>  dir_mol_map &lt;-<span class="st"> </span><span class="kw">file.path</span>(dir_bd_anx, <span class="st">&#39;spp_rasts_mol_2020&#39;</span>)</span>
 <span id="cb2-5"><a href="#cb2-5"></a>  </span>
 <span id="cb2-6"><a href="#cb2-6"></a>  ocean_a_rast &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">here</span>(<span class="st">&#39;_spatial/ocean_area_mol.tif&#39;</span>))</span>
-<span id="cb2-7"><a href="#cb2-7"></a>  cell_km2 &lt;-<span class="st"> </span><span class="kw">res</span>(ocean_a_rast)[<span class="dv">1</span>]<span class="op">^</span><span class="dv">2</span> <span class="op">/</span><span class="st"> </span><span class="fl">1e6</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a>  ocean_a_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">cell_id =</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncell</span>(ocean_a_rast),</span>
-<span id="cb2-9"><a href="#cb2-9"></a>                           <span class="dt">a_km2  =</span> <span class="kw">values</span>(ocean_a_rast) <span class="op">*</span><span class="st"> </span>cell_km2) <span class="op">%&gt;%</span></span>
-<span id="cb2-10"><a href="#cb2-10"></a><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(a_km2))</span>
-<span id="cb2-11"><a href="#cb2-11"></a>    </span>
-<span id="cb2-12"><a href="#cb2-12"></a>  map_files &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_mol_rast, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb2-13"><a href="#cb2-13"></a>  <span class="co"># f &lt;- file.path(dir_mol_rast, &#39;iucn_sid_907.csv&#39;)</span></span>
-<span id="cb2-14"><a href="#cb2-14"></a>  <span class="co"># file.exists(f)</span></span>
-<span id="cb2-15"><a href="#cb2-15"></a></span>
-<span id="cb2-16"><a href="#cb2-16"></a>  range_l &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(map_files,</span>
-<span id="cb2-17"><a href="#cb2-17"></a>               <span class="dt">FUN =</span> <span class="cf">function</span>(f) {</span>
-<span id="cb2-18"><a href="#cb2-18"></a>                 <span class="co">### f &lt;- map_files[1]</span></span>
-<span id="cb2-19"><a href="#cb2-19"></a>                 id &lt;-<span class="st"> </span><span class="kw">str_extract</span>(<span class="kw">basename</span>(f), <span class="st">&#39;[0-9]+&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">as.integer</span>()</span>
-<span id="cb2-20"><a href="#cb2-20"></a>                 x &lt;-<span class="st"> </span><span class="kw">read_csv</span>(f, <span class="dt">col_types =</span> <span class="st">&#39;ii&#39;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb2-21"><a href="#cb2-21"></a><span class="st">                   </span><span class="kw">filter</span>(presence <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(presence) <span class="op">&amp;</span><span class="st"> </span>presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></span>
-<span id="cb2-22"><a href="#cb2-22"></a><span class="st">                   </span><span class="kw">dt_join</span>(ocean_a_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>, <span class="dt">type =</span> <span class="st">&#39;left&#39;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb2-23"><a href="#cb2-23"></a><span class="st">                   </span><span class="kw">summarize</span>(<span class="dt">range_km2 =</span> <span class="kw">sum</span>(a_km2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb2-24"><a href="#cb2-24"></a><span class="st">                   </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> id)</span>
+<span id="cb2-7"><a href="#cb2-7"></a>  eez_rast     &lt;-<span class="st"> </span><span class="kw">raster</span>(<span class="kw">here</span>(<span class="st">&#39;_spatial/eez_mol.tif&#39;</span>))</span>
+<span id="cb2-8"><a href="#cb2-8"></a>  cell_km2     &lt;-<span class="st"> </span><span class="kw">res</span>(ocean_a_rast)[<span class="dv">1</span>]<span class="op">^</span><span class="dv">2</span> <span class="op">/</span><span class="st"> </span><span class="fl">1e6</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>  ocean_a_df   &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">cell_id =</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncell</span>(ocean_a_rast),</span>
+<span id="cb2-10"><a href="#cb2-10"></a>                             <span class="dt">eez     =</span> <span class="kw">values</span>(eez_rast),</span>
+<span id="cb2-11"><a href="#cb2-11"></a>                             <span class="dt">a_km2   =</span> <span class="kw">values</span>(ocean_a_rast) <span class="op">*</span><span class="st"> </span>cell_km2) <span class="op">%&gt;%</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(a_km2))</span>
+<span id="cb2-13"><a href="#cb2-13"></a>    </span>
+<span id="cb2-14"><a href="#cb2-14"></a>  map_files &lt;-<span class="st"> </span><span class="kw">list.files</span>(dir_mol_map, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb2-15"><a href="#cb2-15"></a>  <span class="co"># f &lt;- file.path(dir_mol_map, &#39;iucn_sid_10030.csv&#39;)</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a>  <span class="co"># file.exists(f)</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a></span>
+<span id="cb2-18"><a href="#cb2-18"></a>  range_l &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(map_files,</span>
+<span id="cb2-19"><a href="#cb2-19"></a>               <span class="dt">FUN =</span> <span class="cf">function</span>(f) {</span>
+<span id="cb2-20"><a href="#cb2-20"></a>                 <span class="co">### f &lt;- map_files[1]</span></span>
+<span id="cb2-21"><a href="#cb2-21"></a>                 id &lt;-<span class="st"> </span><span class="kw">str_extract</span>(<span class="kw">basename</span>(f), <span class="st">&#39;[0-9]+&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">as.integer</span>()</span>
+<span id="cb2-22"><a href="#cb2-22"></a>                 x &lt;-<span class="st"> </span><span class="kw">read_csv</span>(f, <span class="dt">col_types =</span> <span class="st">&#39;ii&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb2-23"><a href="#cb2-23"></a><span class="st">                   </span><span class="kw">filter</span>(presence <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(presence) <span class="op">&amp;</span><span class="st"> </span>presence <span class="op">!=</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span></span>
+<span id="cb2-24"><a href="#cb2-24"></a><span class="st">                   </span><span class="kw">dt_join</span>(ocean_a_df, <span class="dt">by =</span> <span class="st">&#39;cell_id&#39;</span>, <span class="dt">type =</span> <span class="st">&#39;left&#39;</span>) </span>
 <span id="cb2-25"><a href="#cb2-25"></a>                 </span>
-<span id="cb2-26"><a href="#cb2-26"></a>                 <span class="kw">return</span>(x)</span>
-<span id="cb2-27"><a href="#cb2-27"></a>               }, <span class="dt">mc.cores =</span> <span class="dv">40</span>)</span>
-<span id="cb2-28"><a href="#cb2-28"></a>                              </span>
-<span id="cb2-29"><a href="#cb2-29"></a>  range_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(range_l)</span>
-<span id="cb2-30"><a href="#cb2-30"></a>  </span>
-<span id="cb2-31"><a href="#cb2-31"></a>  <span class="kw">write_csv</span>(range_df, range_from_rasts_file)</span>
-<span id="cb2-32"><a href="#cb2-32"></a>}</span></code></pre></div>
+<span id="cb2-26"><a href="#cb2-26"></a>                 x_all &lt;-<span class="st"> </span>x <span class="op">%&gt;%</span></span>
+<span id="cb2-27"><a href="#cb2-27"></a><span class="st">                   </span><span class="kw">summarize</span>(<span class="dt">range_km2 =</span> <span class="kw">sum</span>(a_km2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb2-28"><a href="#cb2-28"></a><span class="st">                   </span><span class="kw">mutate</span>(<span class="dt">eez =</span> <span class="dv">0</span>)</span>
+<span id="cb2-29"><a href="#cb2-29"></a>                 x_eez &lt;-<span class="st"> </span>x <span class="op">%&gt;%</span></span>
+<span id="cb2-30"><a href="#cb2-30"></a><span class="st">                   </span><span class="kw">group_by</span>(eez) <span class="op">%&gt;%</span></span>
+<span id="cb2-31"><a href="#cb2-31"></a><span class="st">                   </span><span class="kw">summarize</span>(<span class="dt">range_km2 =</span> <span class="kw">sum</span>(a_km2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb2-32"><a href="#cb2-32"></a><span class="st">                   </span><span class="kw">ungroup</span>()</span>
+<span id="cb2-33"><a href="#cb2-33"></a>                 </span>
+<span id="cb2-34"><a href="#cb2-34"></a>                 y &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(x_all, x_eez) <span class="op">%&gt;%</span></span>
+<span id="cb2-35"><a href="#cb2-35"></a><span class="st">                   </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> id)</span>
+<span id="cb2-36"><a href="#cb2-36"></a>                 <span class="kw">return</span>(y)</span>
+<span id="cb2-37"><a href="#cb2-37"></a>               }, <span class="dt">mc.cores =</span> <span class="dv">40</span>)</span>
+<span id="cb2-38"><a href="#cb2-38"></a>                              </span>
+<span id="cb2-39"><a href="#cb2-39"></a>  range_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(range_l)</span>
+<span id="cb2-40"><a href="#cb2-40"></a>  </span>
+<span id="cb2-41"><a href="#cb2-41"></a>  <span class="kw">write_csv</span>(range_df, range_from_rasts_file)</span>
+<span id="cb2-42"><a href="#cb2-42"></a>}</span></code></pre></div>
 </div>
 <div id="check-the-ranges-from-the-polygons" class="section level2">
 <h2><span class="header-section-number">3.2</span> Check the ranges from the polygons</h2>
-<p>Read in the shapefile; calculate area of each of the polygons (<code>st_area()</code>) excluding extinct polygons (<code>filter(presence != 5)</code>). Sum them for spp with multiple polygons. NOTE: This doesn’t account for overlapping polygons, but this is only intended as a check - the polygon area is not used for any calculations.</p>
+<p>Read in the shapefile; calculate area of each of the polygons (<code>st_area()</code>) excluding extinct polygons (<code>filter(presence != 5)</code>). Sum them for spp with multiple polygons. NOTE: This doesn’t account for overlapping polygons, but this is only intended as a quick sanity check - the polygon area is not used for any calculations.</p>
 <p>Note also: this has many more species, but these are coming from non-marine birds, terrestrial mammals, terrestrial reptiles.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>range_from_polys_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="st">&#39;_setup/int/range_from_polys.csv&#39;</span>)</span>
 <span id="cb3-2"><a href="#cb3-2"></a></span>
@@ -1778,33 +1804,35 @@ div.tocify {
 </div>
 <div id="combine" class="section level2">
 <h2><span class="header-section-number">3.3</span> Combine</h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>r_rast &lt;-<span class="st"> </span><span class="kw">read_csv</span>(range_from_rasts_file)</span>
-<span id="cb4-2"><a href="#cb4-2"></a>r_poly &lt;-<span class="st"> </span><span class="kw">read_csv</span>(range_from_polys_file)</span>
-<span id="cb4-3"><a href="#cb4-3"></a>map_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data/spp_marine_maps_2020-1.csv&#39;</span>))</span>
-<span id="cb4-4"><a href="#cb4-4"></a>spp_risk &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data/iucn_risk_current_2020-1.csv&#39;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat, cat_score) <span class="op">%&gt;%</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
-<span id="cb4-7"><a href="#cb4-7"></a></span>
-<span id="cb4-8"><a href="#cb4-8"></a>x &lt;-<span class="st"> </span>r_rast <span class="op">%&gt;%</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a><span class="st">  </span><span class="kw">left_join</span>(map_info, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a><span class="st">  </span><span class="kw">left_join</span>(r_poly, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;shp_iucn_sid&#39;</span> =<span class="st"> &#39;iucn_sid&#39;</span>, <span class="st">&#39;subpop&#39;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">gp =</span> <span class="kw">tolower</span>(<span class="kw">basename</span>(dbf_file)) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_replace</span>(<span class="st">&#39;.dbf&#39;</span>, <span class="st">&#39;&#39;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb4-12"><a href="#cb4-12"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, subpop, sciname, gp, range_km2, poly_km2) <span class="op">%&gt;%</span></span>
-<span id="cb4-13"><a href="#cb4-13"></a><span class="st">  </span><span class="kw">left_join</span>(spp_risk, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb4-14"><a href="#cb4-14"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb4-15"><a href="#cb4-15"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
-<span id="cb4-16"><a href="#cb4-16"></a></span>
-<span id="cb4-17"><a href="#cb4-17"></a>small_range_df &lt;-<span class="st"> </span>x <span class="op">%&gt;%</span></span>
-<span id="cb4-18"><a href="#cb4-18"></a><span class="st">  </span><span class="kw">filter</span>(range_km2 <span class="op">&lt;</span><span class="st"> </span><span class="dv">10</span>) <span class="op">%&gt;%</span></span>
-<span id="cb4-19"><a href="#cb4-19"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">poly_km2 =</span> <span class="kw">as.integer</span>(poly_km2)) <span class="op">%&gt;%</span></span>
-<span id="cb4-20"><a href="#cb4-20"></a><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>subpop) <span class="op">%&gt;%</span></span>
-<span id="cb4-21"><a href="#cb4-21"></a><span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(poly_km2))</span>
-<span id="cb4-22"><a href="#cb4-22"></a></span>
-<span id="cb4-23"><a href="#cb4-23"></a>legit_small &lt;-<span class="st"> </span>small_range_df <span class="op">%&gt;%</span></span>
-<span id="cb4-24"><a href="#cb4-24"></a><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&lt;</span><span class="st"> </span><span class="dv">100</span>)</span>
-<span id="cb4-25"><a href="#cb4-25"></a></span>
-<span id="cb4-26"><a href="#cb4-26"></a>problem_small &lt;-<span class="st"> </span>small_range_df <span class="op">%&gt;%</span></span>
-<span id="cb4-27"><a href="#cb4-27"></a><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&gt;=</span><span class="st"> </span><span class="dv">100</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>r_rast &lt;-<span class="st"> </span><span class="kw">read_csv</span>(range_from_rasts_file) <span class="op">%&gt;%</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="st">  </span><span class="kw">filter</span>(eez <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>eez)</span>
+<span id="cb4-4"><a href="#cb4-4"></a>r_poly &lt;-<span class="st"> </span><span class="kw">read_csv</span>(range_from_polys_file)</span>
+<span id="cb4-5"><a href="#cb4-5"></a>map_info &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data/spp_marine_maps_2020-1.csv&#39;</span>))</span>
+<span id="cb4-6"><a href="#cb4-6"></a>spp_risk &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">here</span>(<span class="st">&#39;_data/iucn_risk_current_2020-1.csv&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, cat, cat_score) <span class="op">%&gt;%</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb4-9"><a href="#cb4-9"></a></span>
+<span id="cb4-10"><a href="#cb4-10"></a>x &lt;-<span class="st"> </span>r_rast <span class="op">%&gt;%</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="st">  </span><span class="kw">left_join</span>(map_info, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="st">  </span><span class="kw">left_join</span>(r_poly, <span class="dt">by =</span> <span class="kw">c</span>(<span class="st">&#39;shp_iucn_sid&#39;</span> =<span class="st"> &#39;iucn_sid&#39;</span>, <span class="st">&#39;subpop&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">gp =</span> <span class="kw">tolower</span>(<span class="kw">basename</span>(dbf_file)) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_replace</span>(<span class="st">&#39;.dbf&#39;</span>, <span class="st">&#39;&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="st">  </span><span class="kw">select</span>(iucn_sid, subpop, sciname, gp, range_km2, poly_km2) <span class="op">%&gt;%</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a><span class="st">  </span><span class="kw">left_join</span>(spp_risk, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(cat_score) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span>cat_score <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a><span class="st">  </span><span class="kw">distinct</span>()</span>
+<span id="cb4-18"><a href="#cb4-18"></a></span>
+<span id="cb4-19"><a href="#cb4-19"></a>small_range_df &lt;-<span class="st"> </span>x <span class="op">%&gt;%</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a><span class="st">  </span><span class="kw">filter</span>(range_km2 <span class="op">&lt;</span><span class="st"> </span><span class="dv">10</span>) <span class="op">%&gt;%</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">poly_km2 =</span> <span class="kw">as.integer</span>(poly_km2)) <span class="op">%&gt;%</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a><span class="st">  </span><span class="kw">select</span>(<span class="op">-</span>subpop) <span class="op">%&gt;%</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a><span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(poly_km2))</span>
+<span id="cb4-24"><a href="#cb4-24"></a></span>
+<span id="cb4-25"><a href="#cb4-25"></a>legit_small &lt;-<span class="st"> </span>small_range_df <span class="op">%&gt;%</span></span>
+<span id="cb4-26"><a href="#cb4-26"></a><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&lt;</span><span class="st"> </span><span class="dv">100</span>)</span>
+<span id="cb4-27"><a href="#cb4-27"></a></span>
+<span id="cb4-28"><a href="#cb4-28"></a>problem_small &lt;-<span class="st"> </span>small_range_df <span class="op">%&gt;%</span></span>
+<span id="cb4-29"><a href="#cb4-29"></a><span class="st">  </span><span class="kw">filter</span>(poly_km2 <span class="op">&gt;=</span><span class="st"> </span><span class="dv">100</span>)</span></code></pre></div>
 <div id="check-small-ranged-species" class="section level3">
 <h3><span class="header-section-number">3.3.1</span> Check small-ranged species</h3>
 <table>
@@ -1940,7 +1968,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0

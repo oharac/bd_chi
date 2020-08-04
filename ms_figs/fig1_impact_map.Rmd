@@ -1,0 +1,137 @@
+---
+title: 'Fig 1: impacts and intensification maps'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+library(animation)
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Create figure 1 for manuscript.  1A: map of impacted species by pct; 1B: map of intensification by pct.
+
+Also create figure for SI: map of impacted spp by count, map of # of species.
+
+# Methods
+
+## Fig. 1A
+
+Load rasters of impacted spp and species count for 2013; generate impacted spp by pct; make a cool map.
+
+``` {r figure 1a}
+
+imp_count  <- raster(here('_output/rasters/impact_maps/impact_all_2013.tif'))
+nspp <- raster(here('_output/rasters/n_spp_map.tif')) 
+
+imp_pct <- imp_count / nspp
+
+imp_pct_df <- rasterToPoints(imp_pct) %>%
+  as.data.frame() %>%
+  rename(imp_pct = layer)
+
+zero_imp <- imp_pct_df %>%
+  filter(imp_pct == 0)
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(imp_pct))
+
+impact_map <- ggplot() +
+  ggtheme_map() +
+  geom_tile(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
+  # geom_raster(data = zero_imp, aes(x, y), fill = 'orange') +
+  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  scale_fill_viridis_c(breaks = seq(0, 1, .25), labels = paste0(seq(0, 100, 25), '%')) +
+  theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(fill = 'Impacts')
+
+print(impact_map)
+```
+
+## Fig. 1B
+
+Load rasters of intensification by count and species count for 2013; generate intensifying spp by pct; make a cool map.
+
+``` {r figure 1b}
+
+incr <- raster(here('_output/rasters/intens_maps/intens_all_incr.tif'))
+decr <- raster(here('_output/rasters/intens_maps/intens_all_decr.tif'))
+nspp <- raster(here('_output/rasters/n_spp_map.tif')) 
+
+int_pct <- (incr - decr) / nspp
+
+int_pct_df <- rasterToPoints(int_pct) %>%
+  as.data.frame() %>%
+  rename(int_pct = layer)
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(int_pct))
+
+intens_map <- ggplot() +
+  ggtheme_map() +
+  geom_tile(data = int_pct_df, aes(x, y, fill = int_pct), size = .1) +
+  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  scale_fill_gradient2(low = '#4dac26', mid = '#f7f7f7', high = '#d01c8b',
+                    breaks = seq(-1, 1, .5), 
+                    labels = paste0(seq(-100, 100, 50), '%')) +
+  theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(fill = 'Intensification')
+
+print(intens_map)
+```
+
+## Combine into one figure
+
+```{r}
+fig1 <- plot_grid(impact_map, intens_map, align = 'v',
+                  nrow = 2, labels = c('A', 'B'))
+
+plot_file <- here('ms_figs/fig1_impact_intensification.png')
+ggsave(plot = fig1, filename = plot_file,
+       height = 4, width = 5, dpi = 300)
+
+knitr::include_graphics(plot_file)
+```
+
+
+
+
+
+
+
+
+
+
+

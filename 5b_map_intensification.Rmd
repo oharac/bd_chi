@@ -64,16 +64,16 @@ ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
 spp_rich_rast <- raster(here('_output/rasters/n_spp_map.tif'))
 values(spp_rich_rast)[values(spp_rich_rast) == 0] <- NA
 
-priority_sum_rast <- raster(here('_output/rasters/priority_sum_map.tif'))
-values(priority_sum_rast)[values(priority_sum_rast) == 0] <- NA
+# priority_sum_rast <- raster(here('_output/rasters/priority_sum_map.tif'))
+# values(priority_sum_rast)[values(priority_sum_rast) == 0] <- NA
 
 ```
 
-See the impact map script for comparisons of summed priority to summed species count...
+<!-- See the impact map script for comparisons of summed priority to summed species count... -->
 
 ## Setup for mapping across all taxa
 
-For each impact category, sum increasing and decreasing stressor locations for both count and priority:
+For each impact category, sum increasing and decreasing stressor locations for count:
 
 * gather all taxa-level map files for increasing or decreasing stressors into a raster stack
 * collapse the stack using `calc(fun = sum, na.rm = TRUE)`
@@ -134,7 +134,7 @@ for(str_cat in str_cats) {
 <!-- ### Calculate intensification trends by priority-weighted count -->
 
 
-```{r priority-weighted trend all species by stressor category, eval = TRUE}
+```{r priority-weighted trend all species by stressor category, eval = FALSE}
 
 ### Set up filename stems for this run (priority)
 tr_map_stem <- 'taxon_priority_trend_.+_%s_%s.tif'
@@ -187,7 +187,7 @@ infile_stem <- here('_output/rasters/intens_maps/intens_%s_%s.tif')
   ### stressor category, incr/decr
 
 for(str_cat in str_cats) {
-  # str_cat <- str_cats[1]
+  # str_cat <- str_cats[5]
 
   incr <- raster(sprintf(infile_stem, str_cat, 'incr'))
   decr <- raster(sprintf(infile_stem, str_cat, 'decr'))
@@ -252,6 +252,8 @@ for(str_cat in str_cats) {
 
 ## Plot bivariate maps?
 
+NOTE: bivariate on ocean stressors (only shipping) won't work - no cell can have both intensifying and abating - all one or the other (or nothing).  So limit to just the other four.
+
 ```{r}
 # install.packages("remotes")
 # remotes::install_github("slu-openGIS/biscale")
@@ -263,13 +265,15 @@ ocean_a_df <- data.frame(prop = values(ocean_a_rast),
                          cell_id = 1:ncell(ocean_a_rast)) %>%
   mutate(a = prop * (res(ocean_a_rast)[1])^2 / 1e6)
 
-str_cats <- c('fishing', 'ocean', 'land-based', 'climate', 'all')
+### skip ocean - only one stressor, no spp can simultaneously be increasing
+### and decreasing
+str_cats <- c('fishing', 'land-based', 'climate', 'all')
 
 infile_stem <- here('_output/rasters/intens_maps/intens_%s_%s.tif')
 outfile_stem <- here('figs/intens_biplot_%s.png')
 
 for(str_cat in str_cats) {
-  # str_cat <- str_cats[5] ### 5 = all
+  # str_cat <- str_cats[4] ### 4 = all
   outfile <- sprintf(outfile_stem, str_cat)
   
   if(!file.exists(outfile)) {
@@ -286,11 +290,10 @@ for(str_cat in str_cats) {
       mutate(incr_pct = incr / nspp,
              decr_pct = decr / nspp)
              
-  
-  ### create classes: three of intensification (incr), and three of abatement (decr).
-  ### types: "quantile" (default), "equal", "fisher", and "jenks".
-  ### apparently use "fisher" instead of "jenks" for larger datasets
-    data <- bi_class(df, x = incr_pct, y = decr_pct, 
+    ### create classes: three of intensification (incr), and three of abatement (decr).
+    ### types: "quantile" (default), "equal", "fisher", and "jenks".
+    ### apparently use "fisher" instead of "jenks" for larger datasets
+    data <- bi_class(df, x = incr_pct, y = decr_pct,
                      style = "fisher", dim = 3) %>%
       mutate(bi_class = factor(bi_class),
              bi_int = as.integer(bi_class))
@@ -300,9 +303,24 @@ for(str_cat in str_cats) {
     ### using fisher:
     #     1-1     1-2     1-3     2-1     2-2     2-3     3-1     3-2     3-3 
     # 2140894   39477   26031 1005903   12893    1254  248652    1841      99 
-  ### Quantiles fails b/c non-unique values (in the function).
-    quantile(df$incr_pct, seq(1/6, 1, 1/6))
-    quantile(df$decr_pct, seq(.05, 1, .05)) ### little of the ocean is decreasing!
+    ### Quantiles fails b/c non-unique values (in the function).
+    # quantile(df$incr_pct, seq(1/6, 1, 1/6))
+    # quantile(df$decr_pct, seq(.05, 1, .05)) ### little of the ocean is decreasing!
+    # incr_cutoff <- quantile(df$incr_pct[df$incr_pct != 0], .25)
+    # decr_cutoff <- quantile(df$decr_pct[df$decr_pct != 0], .25)
+    # data <- df %>%
+    #   mutate(x = case_when(incr_pct == 0 ~ '1',
+    #                        incr_pct <= incr_cutoff ~ '2',
+    #                        incr_pct <= 1 ~ '3',
+    #                        TRUE ~ 'error'),
+    #          y = case_when(decr_pct == 0 ~ '1',
+    #                        decr_pct <= decr_cutoff ~ '2',
+    #                        decr_pct <= 1 ~ '3',
+    #                        TRUE ~ 'error')) %>%
+    #   mutate(bi_class = paste(x, y, sep = '-'),
+    #          bi_class = factor(bi_class),
+    #          bi_int = as.integer(bi_class))
+    ### table(data$bi_class)
   
     bi_pcts <- data %>%
       left_join(ocean_a_df, by = 'cell_id') %>%

@@ -1,0 +1,1281 @@
+iucn_sid,code,title,timing,scope,severity,score,invasive,score_num,desc,stressor,category,sciname
+2472,11.1,Habitat shifting & alteration,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Balaena mysticetus
+2472,4.3,Shipping lanes,Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Balaena mysticetus
+2472,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Balaena mysticetus
+2472,5.4.2,Intentional use: (large scale) [harvest],"Past, Unlikely to Return",Whole (>90%),Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Balaena mysticetus
+2472,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Balaena mysticetus
+2477,11.1,Habitat shifting & alteration,Future,Majority (50-90%),"Slow, Significant Declines",Low Impact: 4,NA,4,NA,NA,NA,Balaenoptera musculus
+2477,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Balaenoptera musculus
+2477,5.4.2,Intentional use: (large scale) [harvest],"Past, Unlikely to Return",Whole (>90%),Very Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Balaenoptera musculus
+3764,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster rapaensis
+3764,11.3,Temperature extremes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster rapaensis
+3855,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.5,Persecution/control,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+3855,5.4.5,Persecution/control,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharodon carcharias
+4292,4.3,Shipping lanes,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Cetorhinus maximus
+4292,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Cetorhinus maximus
+4292,5.4.1,Intentional use: (subsistence/small scale) [harvest],"Past, Unlikely to Return",Minority (<50%),Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Cetorhinus maximus
+4292,5.4.2,Intentional use: (large scale) [harvest],"Past, Unlikely to Return",Minority (<50%),Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Cetorhinus maximus
+4292,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Cetorhinus maximus
+4292,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Cetorhinus maximus
+4982,1.1,Housing & urban areas,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Clinus spatulatus
+4982,1.2,Commercial & industrial areas,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Clinus spatulatus
+4982,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Clinus spatulatus
+4982,9.1.1,Sewage,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Clinus spatulatus
+4982,9.1.2,Run-off,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Clinus spatulatus
+4982,9.1.2,Run-off,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Clinus spatulatus
+4982,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Clinus spatulatus
+4982,9.3.1,Nutrient loads,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Clinus spatulatus
+4982,9.3.2,"Soil erosion, sedimentation",Ongoing,Whole (>90%),No decline,Medium Impact: 6,NA,6,NA,NA,NA,Clinus spatulatus
+5272,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus nobrei
+5272,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus nobrei
+5272,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus nobrei
+5272,9.2.1,Oil spills,Future,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus nobrei
+5659,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Crocodylus acutus
+5659,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Crocodylus acutus
+5659,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Crocodylus acutus
+5659,2.4,Marine & freshwater aquaculture,NA,NA,NA,NA,NA,NA,NA,NA,NA,Crocodylus acutus
+5659,2.4.3,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Scale Unknown/Unrecorded,nutrient,land-based,Crocodylus acutus
+5659,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Crocodylus acutus
+5659,5.1.1,Intentional use (species is the target),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Crocodylus acutus
+5659,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Crocodylus acutus
+5659,8.2.2,Named species (Canis familiaris),Ongoing,NA,NA,Low Impact: 3,Canis familiaris,3,NA,NA,NA,Crocodylus acutus
+10056,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Hippocampus capensis
+10056,11.3,Temperature extremes,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,11.4,Storms & flooding,Ongoing,Unknown,Very Rapid Declines,Unknown,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Hippocampus capensis
+10056,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Hippocampus capensis
+10056,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,6.1,Recreational activities,Ongoing,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Hippocampus capensis
+10056,7.2,Dams & water management/use,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,7.2.1,Abstraction of surface water (domestic use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Hippocampus capensis
+10056,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Hippocampus capensis
+10056,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Hippocampus capensis
+10056,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus capensis
+10056,9.3.1,Nutrient loads,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Hippocampus capensis
+10056,9.3.2,"Soil erosion, sedimentation",Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus capensis
+10066,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Hippocampus erectus
+10066,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Hippocampus erectus
+10066,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Hippocampus erectus
+10066,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus erectus
+10066,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus erectus
+10066,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus erectus
+10066,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus erectus
+10066,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Hippocampus erectus
+10066,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Hippocampus erectus
+10066,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Hippocampus erectus
+10066,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus erectus
+10066,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Hippocampus erectus
+10066,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus erectus
+10072,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Hippocampus ingens
+10072,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Hippocampus ingens
+10072,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Hippocampus ingens
+10072,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus ingens
+10072,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus ingens
+10072,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus ingens
+10072,6.1,Recreational activities,Ongoing,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Hippocampus ingens
+10082,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Hippocampus reidi
+10082,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Hippocampus reidi
+10082,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Hippocampus reidi
+10082,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus reidi
+10082,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus reidi
+10082,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus reidi
+10082,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus reidi
+10087,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus trimaculatus
+10087,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus trimaculatus
+10087,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus trimaculatus
+10087,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus trimaculatus
+10087,5.4.6,Motivation Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus trimaculatus
+12137,11.2,Droughts,Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,11.3,Temperature extremes,Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2,Dams & water management/use,NA,NA,NA,NA,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2.1,Abstraction of surface water (domestic use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2.10,Large dams,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2.11,Dams (size unknown),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2.2,Abstraction of surface water (commercial use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2.3,Abstraction of surface water (agricultural use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2.8,Abstraction of ground water (unknown use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+12137,7.2.9,Small dams,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus lithognathus
+19950,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Scarus guacamaia
+19950,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Scarus guacamaia
+19950,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Scarus guacamaia
+19950,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Scarus guacamaia
+19950,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Scarus guacamaia
+19950,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Scarus guacamaia
+19950,7.3,Other ecosystem modifications,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Scarus guacamaia
+39328,5.3,Logging & wood harvesting,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina californica
+39328,5.3.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Squatina californica
+39328,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina californica
+39328,5.4.2,Intentional use: (large scale) [harvest],"Past, Unlikely to Return",Unknown,Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Squatina californica
+39328,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Squatina californica
+39329,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina argentina
+39329,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina argentina
+39329,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina argentina
+39331,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina occulta
+39331,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina occulta
+39331,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina occulta
+39331,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina occulta
+39332,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Squatina squatina
+39332,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Squatina squatina
+39332,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Squatina squatina
+39332,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Squatina squatina
+39332,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Squatina squatina
+39332,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Squatina squatina
+39332,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Squatina squatina
+39332,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Squatina squatina
+39332,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Squatina squatina
+39332,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina squatina
+39332,6.1,Recreational activities,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Squatina squatina
+39332,6.1,Recreational activities,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Squatina squatina
+39332,6.1,Recreational activities,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Squatina squatina
+39335,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Brachaelurus colcloughi
+39335,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Brachaelurus colcloughi
+39335,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Brachaelurus colcloughi
+39335,7.3,Other ecosystem modifications,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Brachaelurus colcloughi
+39375,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Carcharhinus melanopterus
+39375,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Carcharhinus melanopterus
+39413,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Urogymnus asperrimus
+39413,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus asperrimus
+39413,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus asperrimus
+39413,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus asperrimus
+39413,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus asperrimus
+39415,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetobatus narinari
+39415,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus narinari
+39415,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus narinari
+39415,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus narinari
+39415,5.4.5,Persecution/control,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Aetobatus narinari
+41007,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus algiricus
+41007,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus algiricus
+41007,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus algiricus
+41007,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus algiricus
+41007,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Hippocampus algiricus
+41007,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus algiricus
+41007,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Hippocampus algiricus
+41007,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Hippocampus algiricus
+41007,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus algiricus
+41010,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus kelloggi
+41010,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus kelloggi
+41010,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus kelloggi
+41010,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus kelloggi
+41030,11.2,Droughts,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Syngnathus watermeyeri
+41030,11.4,Storms & flooding,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Syngnathus watermeyeri
+41030,7.2,Dams & water management/use,NA,NA,NA,NA,NA,NA,NA,NA,NA,Syngnathus watermeyeri
+41030,7.2.11,Dams (size unknown),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Syngnathus watermeyeri
+41711,4.3,Shipping lanes,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Eubalaena japonica
+41711,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Eubalaena japonica
+41711,5.4.2,Intentional use: (large scale) [harvest],"Past, Unlikely to Return",Whole (>90%),Very Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Eubalaena japonica
+41711,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Eubalaena japonica
+41840,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Oxynotus bruniensis
+41840,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Oxynotus bruniensis
+41861,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squalus rancureli
+41861,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Squalus rancureli
+41861,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Squalus rancureli
+41872,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chiloscyllium punctatum
+41872,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Chiloscyllium punctatum
+41872,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Chiloscyllium punctatum
+41872,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Chiloscyllium punctatum
+41872,5.4.4,Unintentional effects: (large scale) [harvest],Unknown,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Chiloscyllium punctatum
+41875,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hemiscyllium hallstromi
+41875,5.4.1,Intentional use: (subsistence/small scale) [harvest],Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hemiscyllium hallstromi
+41875,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hemiscyllium hallstromi
+41875,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hemiscyllium hallstromi
+41875,9.1.1,Sewage,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Hemiscyllium hallstromi
+41875,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hemiscyllium hallstromi
+41875,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Hemiscyllium hallstromi
+41876,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Odontaspis ferox
+41876,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Odontaspis ferox
+41876,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Odontaspis ferox
+41876,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Odontaspis ferox
+44228,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Bythaelurus hispidus
+44228,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Bythaelurus hispidus
+44228,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Bythaelurus hispidus
+44673,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Epinephelus fuscoguttatus
+44673,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Epinephelus fuscoguttatus
+44673,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Epinephelus fuscoguttatus
+44673,5.4.2,Intentional use: (large scale) [harvest],Ongoing,NA,Unknown,Unknown,NA,NA,NA,NA,NA,Epinephelus fuscoguttatus
+44996,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina africana
+44996,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina africana
+44996,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina africana
+60085,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Trygonoptera testacea
+60085,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Trygonoptera testacea
+60085,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Trygonoptera testacea
+60118,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dipturus crosnieri
+60118,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Dipturus crosnieri
+60119,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetobatus flagellum
+60119,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus flagellum
+60119,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus flagellum
+60120,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetomylaeus maculatus
+60120,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus maculatus
+60120,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus maculatus
+60121,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetomylaeus vespertilio
+60121,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus vespertilio
+60121,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus vespertilio
+60124,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Myliobatis hamlyni
+60124,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Myliobatis hamlyni
+60124,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Myliobatis hamlyni
+60150,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Neotrygon annotata
+60150,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Neotrygon annotata
+60162,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Taeniurops meyeni
+60162,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Taeniurops meyeni
+60162,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Taeniurops meyeni
+60162,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Taeniurops meyeni
+60162,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Taeniurops meyeni
+60179,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aptychotrema timorensis
+60179,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Aptychotrema timorensis
+61405,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Leucoraja melitensis
+61405,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Leucoraja melitensis
+63100,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dipturus oxyrinchus
+63100,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Dipturus oxyrinchus
+63100,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Dipturus oxyrinchus
+64442,3.2,Mining & quarrying,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Zearaja maugeana
+64442,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Zearaja maugeana
+64442,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Zearaja maugeana
+64442,6.1,Recreational activities,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Zearaja maugeana
+154700,3.2,Mining & quarrying,Ongoing,NA,NA,Unknown,NA,NA,NA,NA,NA,Enneapterygius namarrgon
+154763,11.3,Temperature extremes,Ongoing,NA,NA,Unknown,NA,NA,NA,NA,NA,Axoclinus multicinctus
+154817,11.3,Temperature extremes,Ongoing,NA,NA,Unknown,NA,NA,NA,NA,NA,Malacoctenus zonogaster
+154986,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Paraclinus magdalenae
+154986,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Paraclinus magdalenae
+154986,3.2,Mining & quarrying,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Paraclinus magdalenae
+154986,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Paraclinus magdalenae
+154986,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Paraclinus magdalenae
+154986,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Paraclinus magdalenae
+154986,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Paraclinus magdalenae
+161339,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Raja radula
+161339,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Raja radula
+161339,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Raja radula
+161426,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Chiloscyllium arabicum
+161426,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Chiloscyllium arabicum
+161426,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chiloscyllium arabicum
+161426,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Chiloscyllium arabicum
+161426,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Chiloscyllium arabicum
+161426,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Chiloscyllium arabicum
+161426,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chiloscyllium arabicum
+161426,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Chiloscyllium arabicum
+161426,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Chiloscyllium arabicum
+161426,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chiloscyllium arabicum
+161426,9.2.1,Oil spills,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Chiloscyllium arabicum
+161431,1.2,Commercial & industrial areas,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Urogymnus granulatus
+161431,2.4,Marine & freshwater aquaculture,NA,NA,NA,NA,NA,NA,NA,NA,NA,Urogymnus granulatus
+161431,2.4.2,Industrial aquaculture,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,land-based,Urogymnus granulatus
+161431,5.3,Logging & wood harvesting,NA,NA,NA,NA,NA,NA,NA,NA,NA,Urogymnus granulatus
+161431,5.3.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus granulatus
+161431,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Urogymnus granulatus
+161431,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus granulatus
+161431,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus granulatus
+161431,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Urogymnus granulatus
+161459,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Raja maderensis
+161459,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Raja maderensis
+161459,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Raja maderensis
+161480,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Mustelus mosis
+161480,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Mustelus mosis
+161480,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Mustelus mosis
+161480,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Mustelus mosis
+161480,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Mustelus mosis
+161526,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Carcharhinus albimarginatus
+161526,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharhinus albimarginatus
+161526,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharhinus albimarginatus
+161526,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharhinus albimarginatus
+161526,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Carcharhinus albimarginatus
+161535,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dipturus gudgeri
+161535,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Dipturus gudgeri
+161613,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Torpedo suessii
+161613,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Torpedo suessii
+161613,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Torpedo suessii
+161615,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pateobatis fai
+161615,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pateobatis fai
+161615,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pateobatis fai
+161615,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pateobatis fai
+161667,1.2,Commercial & industrial areas,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Haploblepharus kistnasamyi
+161667,1.3,Tourism & recreation areas,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Haploblepharus kistnasamyi
+161667,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Haploblepharus kistnasamyi
+161667,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Haploblepharus kistnasamyi
+161667,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Haploblepharus kistnasamyi
+161667,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Haploblepharus kistnasamyi
+161667,9.1.3,Type Unknown/Unrecorded,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Haploblepharus kistnasamyi
+161692,2.4,Marine & freshwater aquaculture,NA,NA,NA,NA,NA,NA,NA,NA,NA,Himantura uarnak
+161692,2.4.2,Industrial aquaculture,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,land-based,Himantura uarnak
+161692,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Himantura uarnak
+161692,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Himantura uarnak
+161692,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Himantura uarnak
+161692,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Himantura uarnak
+161692,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Himantura uarnak
+161744,5.3,Logging & wood harvesting,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pateobatis jenkinsii
+161744,5.3.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pateobatis jenkinsii
+161744,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pateobatis jenkinsii
+161744,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pateobatis jenkinsii
+161744,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pateobatis jenkinsii
+161744,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pateobatis jenkinsii
+165658,11.5,Other impacts,Future,NA,NA,No/Negligible Impact: 1,NA,1,NA,NA,NA,Prognathodes carlhubbsi
+165712,11.3,Temperature extremes,Ongoing,Unknown,Rapid Declines,Unknown,NA,NA,NA,NA,NA,Chaetodon trifascialis
+165712,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chaetodon trifascialis
+165712,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chaetodon trifascialis
+165823,11.3,Temperature extremes,Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Centropyge nahackyi
+167006,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Takifugu ocellatus
+167006,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,11.3,Temperature extremes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,11.4,Storms & flooding,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Takifugu ocellatus
+167006,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Takifugu ocellatus
+167006,2.1,Annual & perennial non-timber crops,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,2.1.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,2.2,Wood & pulp plantations,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,2.2.3,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,2.3,Livestock farming & ranching,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,2.3.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,2.4,Marine & freshwater aquaculture,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,2.4.3,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Scale Unknown/Unrecorded,nutrient,land-based,Takifugu ocellatus
+167006,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,7.2,Dams & water management/use,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,7.2.1,Abstraction of surface water (domestic use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,7.3,Other ecosystem modifications,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,8.2,Problematic native species/diseases,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,8.3,Introduced genetic material,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Takifugu ocellatus
+167006,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Takifugu ocellatus
+167006,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Takifugu ocellatus
+167006,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Takifugu ocellatus
+167006,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Takifugu ocellatus
+167006,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Takifugu ocellatus
+167006,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Takifugu ocellatus
+167006,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+167006,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu ocellatus
+170046,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Palinurus charlestoni
+170046,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Palinurus charlestoni
+170161,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Cheimerius matsubarai
+170161,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Cheimerius matsubarai
+170170,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chrysoblephus laticeps
+170170,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus laticeps
+170170,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus laticeps
+170179,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Acanthopagrus chinshira
+170179,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Acanthopagrus chinshira
+170179,7.3,Other ecosystem modifications,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Acanthopagrus chinshira
+170183,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chrysoblephus cristiceps
+170183,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus cristiceps
+170183,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus cristiceps
+170184,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Polysteganus praeorbitalis
+170184,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Polysteganus praeorbitalis
+170184,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Polysteganus praeorbitalis
+170194,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chrysoblephus anglicus
+170194,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus anglicus
+170194,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus anglicus
+170200,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Lithognathus aureti
+170200,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus aureti
+170200,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Lithognathus aureti
+170204,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Cymatoceps nasutus
+170204,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Cymatoceps nasutus
+170204,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Cymatoceps nasutus
+170206,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Polysteganus undulosus
+170206,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Polysteganus undulosus
+170208,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pachymetopon grande
+170208,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pachymetopon grande
+170208,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pachymetopon grande
+170208,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pachymetopon grande
+170208,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pachymetopon grande
+170208,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pachymetopon grande
+170208,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pachymetopon grande
+170225,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Rhabdosargus globiceps
+170225,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Rhabdosargus globiceps
+170225,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Rhabdosargus globiceps
+170225,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Rhabdosargus globiceps
+170225,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Rhabdosargus globiceps
+170225,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Rhabdosargus globiceps
+170226,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Sparodon durbanensis
+170226,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Sparodon durbanensis
+170226,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Sparodon durbanensis
+170231,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Argyrozona argyrozona
+170231,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Argyrozona argyrozona
+170231,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Argyrozona argyrozona
+170244,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pagellus bogaraveo
+170244,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pagellus bogaraveo
+170244,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pagellus bogaraveo
+170244,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pagellus bogaraveo
+170244,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pagellus bogaraveo
+170244,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pagellus bogaraveo
+170245,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dentex dentex
+170245,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Dentex dentex
+170245,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Dentex dentex
+170245,6.1,Recreational activities,Ongoing,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Dentex dentex
+170245,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dentex dentex
+170245,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Dentex dentex
+170245,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Dentex dentex
+170245,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dentex dentex
+170245,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Dentex dentex
+170247,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Petrus rupestris
+170247,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Petrus rupestris
+170247,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Petrus rupestris
+170256,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus gibbiceps
+170256,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Chrysoblephus gibbiceps
+170256,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chrysoblephus gibbiceps
+170256,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus gibbiceps
+170256,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chrysoblephus gibbiceps
+170256,6.1,Recreational activities,Ongoing,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Chrysoblephus gibbiceps
+177966,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Acanthurus chronixis
+177966,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Acanthurus chronixis
+178938,6.2,"War, civil unrest & military exercises",Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Enneanectes smithi
+178938,7.3,Other ecosystem modifications,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Enneanectes smithi
+178938,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Enneanectes smithi
+178938,8.1.2,Named species (Pterois volitans),Future,Unknown,Unknown,Unknown,Pterois volitans,NA,NA,NA,NA,Enneanectes smithi
+178938,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Enneanectes smithi
+178938,9.2.1,Oil spills,Future,NA,NA,No/Negligible Impact: 1,NA,1,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Enneanectes smithi
+178999,1.2,Commercial & industrial areas,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Clinus latipennis
+178999,1.3,Tourism & recreation areas,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Clinus latipennis
+179081,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Springeratus polyporatus
+179081,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Springeratus polyporatus
+179081,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Springeratus polyporatus
+180123,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Ecsenius kurti
+180123,5.4.1,Intentional use: (subsistence/small scale) [harvest],Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Ecsenius kurti
+185144,1.1,Housing & urban areas,NA,NA,NA,No/Negligible Impact: 0,NA,0,Residential & commercial development: Housing & urban areas,direct_human,land-based,Scartella springeri
+185144,1.2,Commercial & industrial areas,NA,NA,NA,No/Negligible Impact: 0,NA,0,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Scartella springeri
+185144,1.3,Tourism & recreation areas,NA,NA,NA,No/Negligible Impact: 0,NA,0,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Scartella springeri
+185147,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Scartella poiti
+185147,9.2.1,Oil spills,Future,NA,NA,No/Negligible Impact: 1,NA,1,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Scartella poiti
+185163,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Scartella nuchifilis
+185163,9.2.1,Oil spills,Future,NA,NA,No/Negligible Impact: 1,NA,1,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Scartella nuchifilis
+187392,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Coris bulbifrons
+187392,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Coris bulbifrons
+187425,3.1,Oil & gas drilling,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conniella apterygia
+187435,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Halichoeres socialis
+187435,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Halichoeres socialis
+187435,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Halichoeres socialis
+187435,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Halichoeres socialis
+187435,8.2.2,Named species (Pterois volitans),Ongoing,Whole (>90%),Rapid Declines,High Impact: 8,Pterois volitans,8,NA,NA,NA,Halichoeres socialis
+187479,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Tautoga onitis
+187479,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Tautoga onitis
+187479,6.1,Recreational activities,Ongoing,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Tautoga onitis
+187495,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Bodianus scrofa
+187495,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Bodianus scrofa
+187495,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Bodianus scrofa
+187506,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Bodianus frenchii
+187506,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Bodianus frenchii
+187506,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Bodianus frenchii
+187520,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Achoerodus gouldii
+187520,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Achoerodus gouldii
+187520,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Achoerodus gouldii
+187572,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Achoerodus viridis
+187572,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Achoerodus viridis
+187572,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Achoerodus viridis
+187608,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Halichoeres burekae
+187608,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Halichoeres burekae
+187608,8.1.2,Named species (Pterois volitans),Ongoing,Unknown,Unknown,Unknown,Pterois volitans,NA,NA,NA,NA,Halichoeres burekae
+187608,8.6,Diseases of unknown cause,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Halichoeres burekae
+187608,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Halichoeres burekae
+187608,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Halichoeres burekae
+187608,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Halichoeres burekae
+187608,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Halichoeres burekae
+187608,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Halichoeres burekae
+187608,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Halichoeres burekae
+187608,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Halichoeres burekae
+187608,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Halichoeres burekae
+187608,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Halichoeres burekae
+187654,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Labrus viridis
+187654,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Labrus viridis
+187654,7.3,Other ecosystem modifications,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Labrus viridis
+189747,1.1,Housing & urban areas,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Enneapterygius leucopunctatus
+189747,1.2,Commercial & industrial areas,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Enneapterygius leucopunctatus
+189747,1.3,Tourism & recreation areas,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Enneapterygius leucopunctatus
+190711,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Chlorurus bowersi
+190711,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Chlorurus bowersi
+190748,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Scarus trispinosus
+190748,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Scarus trispinosus
+190761,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Scarus hypselopterus
+190761,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Scarus hypselopterus
+192256,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Conus explorator
+192256,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus explorator
+192256,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus explorator
+192256,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus explorator
+192256,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus explorator
+192256,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus explorator
+192256,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Conus explorator
+192256,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus explorator
+192272,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus gauguini
+192272,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus gauguini
+192314,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus jeanmartini
+192314,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],NA,NA,NA,(Not specified),NA,NA,NA,NA,NA,Conus jeanmartini
+192314,5.4.4,Unintentional effects: (large scale) [harvest],NA,NA,NA,(Not specified),NA,NA,NA,NA,NA,Conus jeanmartini
+192348,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus curralensis
+192348,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus curralensis
+192349,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus terryni
+192349,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus terryni
+192354,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus kersteni
+192354,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,No decline,Unknown,NA,NA,NA,NA,NA,Conus kersteni
+192354,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus kersteni
+192354,9.1.1,Sewage,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus kersteni
+192354,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus kersteni
+192354,9.2.1,Oil spills,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus kersteni
+192358,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus dorotheae
+192358,9.2.1,Oil spills,Future,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus dorotheae
+192368,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus evorai
+192368,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus evorai
+192388,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus duffyi
+192388,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus duffyi
+192403,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Conus cuneolus
+192403,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cuneolus
+192403,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus cuneolus
+192403,6.1,Recreational activities,Future,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Conus cuneolus
+192412,1.3,Tourism & recreation areas,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Conus henckesi
+192412,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus henckesi
+192412,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus henckesi
+192429,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus nielsenae
+192429,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Conus nielsenae
+192429,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Conus nielsenae
+192435,11.3,Temperature extremes,"Past, Likely to Return",Unknown,Unknown,No/Negligible Impact: 0,NA,0,NA,NA,NA,Conus compressus
+192437,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Conus hennequini
+192437,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus hennequini
+192437,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus hennequini
+192485,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus navarroi
+192485,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus navarroi
+192487,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus echinophilus
+192487,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus echinophilus
+192487,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus echinophilus
+192487,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus echinophilus
+192487,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus echinophilus
+192497,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus mercator
+192497,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus mercator
+192497,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus mercator
+192497,9.1.1,Sewage,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus mercator
+192497,9.1.2,Run-off,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Conus mercator
+192497,9.1.2,Run-off,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Conus mercator
+192497,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus mercator
+192497,9.2.1,Oil spills,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus mercator
+192497,9.4,Garbage & solid waste,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus mercator
+192499,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus taslei
+192499,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus taslei
+192503,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus thevenardensis
+192503,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus thevenardensis
+192503,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus thevenardensis
+192503,9.2.1,Oil spills,Future,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus thevenardensis
+192522,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus bruguieresi
+192522,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus bruguieresi
+192522,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus bruguieresi
+192522,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus bruguieresi
+192522,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Conus bruguieresi
+192522,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Conus bruguieresi
+192522,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus bruguieresi
+192522,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus bruguieresi
+192522,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus bruguieresi
+192532,1.1,Housing & urban areas,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Conus stearnsii
+192532,1.2,Commercial & industrial areas,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Conus stearnsii
+192532,1.3,Tourism & recreation areas,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Conus stearnsii
+192535,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus curassaviensis
+192535,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus curassaviensis
+192535,7.3,Other ecosystem modifications,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus curassaviensis
+192556,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus belairensis
+192556,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus belairensis
+192556,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus belairensis
+192556,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus belairensis
+192556,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus belairensis
+192556,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus belairensis
+192584,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus diminutus
+192584,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus diminutus
+192584,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus diminutus
+192584,9.2.1,Oil spills,Future,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus diminutus
+192594,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus allaryi
+192594,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus allaryi
+192594,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus allaryi
+192594,9.1.1,Sewage,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus allaryi
+192594,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus allaryi
+192594,9.2.1,Oil spills,Future,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus allaryi
+192594,9.4,Garbage & solid waste,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus allaryi
+192610,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus saragasae
+192610,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus saragasae
+192613,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus guinaicus
+192613,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus guinaicus
+192613,6.1,Recreational activities,Ongoing,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Conus guinaicus
+192613,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus guinaicus
+192613,9.1.1,Sewage,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus guinaicus
+192613,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus guinaicus
+192613,9.2.1,Oil spills,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus guinaicus
+192613,9.4,Garbage & solid waste,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus guinaicus
+192643,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Conus kirkandersi
+192643,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus kirkandersi
+192643,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus kirkandersi
+192658,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus richardbinghami
+192658,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus richardbinghami
+192658,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus richardbinghami
+192684,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus anabathrum
+192684,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus anabathrum
+192684,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus anabathrum
+192684,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Conus anabathrum
+192684,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Conus anabathrum
+192684,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus anabathrum
+192684,9.3.1,Nutrient loads,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Conus anabathrum
+192687,4.3,Shipping lanes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus cloveri
+192687,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cloveri
+192687,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus cloveri
+192687,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cloveri
+192687,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus cloveri
+192687,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Conus cloveri
+192687,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Conus cloveri
+192687,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cloveri
+192687,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus cloveri
+192687,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus cloveri
+192698,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Conus rawaiensis
+192709,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus hybridus
+192709,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus hybridus
+192709,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus hybridus
+192709,9.1.1,Sewage,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus hybridus
+192709,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus hybridus
+192709,9.2.1,Oil spills,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus hybridus
+192709,9.4,Garbage & solid waste,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus hybridus
+192715,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus melvilli
+192715,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus melvilli
+192715,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus melvilli
+192715,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus melvilli
+192715,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus melvilli
+192716,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus aurantius
+192716,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus aurantius
+192744,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus ateralbus
+192744,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus ateralbus
+192744,6.1,Recreational activities,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Conus ateralbus
+192748,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus unifasciatus
+192748,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus unifasciatus
+192748,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus unifasciatus
+192748,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus unifasciatus
+192748,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Conus unifasciatus
+192748,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Conus unifasciatus
+192748,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus unifasciatus
+192768,1.3,Tourism & recreation areas,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Conus hieroglyphus
+192768,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus hieroglyphus
+192768,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus hieroglyphus
+192795,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus boschorum
+192795,5.1.1,Intentional use (species is the target),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus boschorum
+192795,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus boschorum
+192795,9.1.1,Sewage,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus boschorum
+192795,9.1.2,Run-off,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Conus boschorum
+192795,9.1.2,Run-off,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Conus boschorum
+192795,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus boschorum
+192795,9.2.1,Oil spills,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus boschorum
+192852,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus ardisiaceus
+192852,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus ardisiaceus
+192852,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus ardisiaceus
+192852,9.1.3,Type Unknown/Unrecorded,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus ardisiaceus
+192852,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus ardisiaceus
+192852,9.2.1,Oil spills,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus ardisiaceus
+192871,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cardinalis
+192871,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus cardinalis
+192871,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cardinalis
+192871,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Conus cardinalis
+192878,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cuvieri
+192878,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Conus cuvieri
+192878,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Conus cuvieri
+192878,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Conus cuvieri
+192878,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cuvieri
+192878,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Conus cuvieri
+193598,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,7.2,Dams & water management/use,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,7.2.1,Abstraction of surface water (domestic use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,7.3,Other ecosystem modifications,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,8.2,Problematic native species/diseases,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,8.3,Introduced genetic material,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Takifugu vermicularis
+193598,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Takifugu vermicularis
+193598,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Takifugu vermicularis
+193598,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Takifugu vermicularis
+193598,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Takifugu vermicularis
+193598,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Takifugu vermicularis
+193598,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Takifugu vermicularis
+193598,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193598,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu vermicularis
+193612,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Takifugu rubripes
+193612,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,11.3,Temperature extremes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,11.4,Storms & flooding,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Takifugu rubripes
+193612,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Takifugu rubripes
+193612,2.1,Annual & perennial non-timber crops,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,2.1.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,2.2,Wood & pulp plantations,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,2.2.3,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,2.3,Livestock farming & ranching,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,2.3.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,2.4,Marine & freshwater aquaculture,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,2.4.1,Subsistence/artisinal aquaculture,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Subsistence/artisanal aquaculture,nutrient,land-based,Takifugu rubripes
+193612,2.4.2,Industrial aquaculture,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,land-based,Takifugu rubripes
+193612,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,7.2,Dams & water management/use,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,7.2.1,Abstraction of surface water (domestic use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,7.2.3,Abstraction of surface water (agricultural use),Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,8.2,Problematic native species/diseases,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,8.3,Introduced genetic material,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Takifugu rubripes
+193612,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Takifugu rubripes
+193612,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Takifugu rubripes
+193612,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Takifugu rubripes
+193612,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Takifugu rubripes
+193612,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Takifugu rubripes
+193612,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Takifugu rubripes
+193612,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193612,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu rubripes
+193654,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Takifugu plagiocellatus
+193654,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,11.3,Temperature extremes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,11.4,Storms & flooding,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Takifugu plagiocellatus
+193654,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Takifugu plagiocellatus
+193654,2.1,Annual & perennial non-timber crops,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,2.1.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,2.2,Wood & pulp plantations,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,2.2.3,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,2.3,Livestock farming & ranching,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,2.3.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,2.4,Marine & freshwater aquaculture,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,2.4.1,Subsistence/artisinal aquaculture,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Subsistence/artisanal aquaculture,nutrient,land-based,Takifugu plagiocellatus
+193654,2.4.2,Industrial aquaculture,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,land-based,Takifugu plagiocellatus
+193654,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,8.2,Problematic native species/diseases,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,8.3,Introduced genetic material,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Takifugu plagiocellatus
+193654,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Takifugu plagiocellatus
+193654,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Takifugu plagiocellatus
+193654,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Takifugu plagiocellatus
+193654,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Takifugu plagiocellatus
+193654,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Takifugu plagiocellatus
+193654,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193654,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Takifugu plagiocellatus
+193654,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu plagiocellatus
+193666,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Takifugu flavidus
+193666,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,11.3,Temperature extremes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,11.4,Storms & flooding,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Takifugu flavidus
+193666,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Takifugu flavidus
+193666,2.1,Annual & perennial non-timber crops,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,2.1.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,2.2,Wood & pulp plantations,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,2.2.3,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,2.3,Livestock farming & ranching,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,2.3.4,Scale Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,2.4,Marine & freshwater aquaculture,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,2.4.1,Subsistence/artisinal aquaculture,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Subsistence/artisanal aquaculture,nutrient,land-based,Takifugu flavidus
+193666,2.4.2,Industrial aquaculture,Ongoing,Unknown,Unknown,Unknown,NA,NA,Agriculture & aquaculture: Marine & freshwater aquaculture: Industrial aquaculture,nutrient,land-based,Takifugu flavidus
+193666,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,5.4.6,Motivation Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,8.3,Introduced genetic material,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Takifugu flavidus
+193666,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Takifugu flavidus
+193666,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Takifugu flavidus
+193666,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Takifugu flavidus
+193666,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Takifugu flavidus
+193666,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Takifugu flavidus
+193666,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Takifugu flavidus
+193666,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193666,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Takifugu flavidus
+193751,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Canthigaster cyanetron
+193751,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,11.3,Temperature extremes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Canthigaster cyanetron
+193751,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Canthigaster cyanetron
+193751,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Canthigaster cyanetron
+193751,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Canthigaster cyanetron
+193751,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Canthigaster cyanetron
+193751,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Canthigaster cyanetron
+193751,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Canthigaster cyanetron
+193751,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Canthigaster cyanetron
+193751,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Canthigaster cyanetron
+193751,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193751,9.4,Garbage & solid waste,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster cyanetron
+193786,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Arothron inconditus
+193786,11.1,Habitat shifting & alteration,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Arothron inconditus
+193786,11.3,Temperature extremes,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Arothron inconditus
+193786,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Arothron inconditus
+193786,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Arothron inconditus
+193786,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Arothron inconditus
+193786,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Arothron inconditus
+193786,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Arothron inconditus
+193786,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Arothron inconditus
+193786,9.1.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Arothron inconditus
+193786,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Arothron inconditus
+193786,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Arothron inconditus
+193786,9.2.2,Seepage from mining,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Seepage from mining,organic,land-based,Arothron inconditus
+193786,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Arothron inconditus
+193786,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Arothron inconditus
+193786,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Arothron inconditus
+193786,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Arothron inconditus
+193786,9.3.3,Herbicides and pesticides,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Herbicides and pesticides,organic,land-based,Arothron inconditus
+193786,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Arothron inconditus
+193786,9.4,Garbage & solid waste,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Arothron inconditus
+193802,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Canthigaster sanctaehelenae
+193802,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Canthigaster sanctaehelenae
+193802,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Canthigaster sanctaehelenae
+193802,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster sanctaehelenae
+193802,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Canthigaster sanctaehelenae
+193802,9.2.1,Oil spills,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Canthigaster sanctaehelenae
+193802,9.2.3,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster sanctaehelenae
+193802,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Canthigaster sanctaehelenae
+193802,9.3.4,Type Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Canthigaster sanctaehelenae
+195438,3.2,Mining & quarrying,"Past, Unlikely to Return",Unknown,Causing/Could cause fluctuations,Past Impact,NA,NA,NA,NA,NA,Hemiscyllium michaeli
+195438,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hemiscyllium michaeli
+195438,9.3.2,"Soil erosion, sedimentation",Unknown,Unknown,Causing/Could cause fluctuations,Unknown,NA,NA,NA,NA,NA,Hemiscyllium michaeli
+195446,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Dipturus endeavouri
+195446,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Dipturus endeavouri
+196016,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Eptatretus burgeri
+196016,5.4.2,Intentional use: (large scale) [harvest],Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Eptatretus burgeri
+196056,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Myxine garmani
+196056,5.4.2,Intentional use: (large scale) [harvest],Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Myxine garmani
+196084,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Paramyxine nelsoni
+196084,5.4.4,Unintentional effects: (large scale) [harvest],NA,NA,NA,No/Negligible Impact: 0,NA,0,NA,NA,NA,Paramyxine nelsoni
+196674,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Neoopisthopterus cubanus
+196674,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Neoopisthopterus cubanus
+196674,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Neoopisthopterus cubanus
+196674,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Neoopisthopterus cubanus
+198921,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Mobula birostris
+198921,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Mobula birostris
+198921,4.3,Shipping lanes,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Mobula birostris
+198921,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Mobula birostris
+198921,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Mobula birostris
+198921,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Mobula birostris
+198921,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Mobula birostris
+198921,6.1,Recreational activities,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Mobula birostris
+198921,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Mobula birostris
+198921,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Mobula birostris
+198921,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Mobula birostris
+198921,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Mobula birostris
+15307967,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus denizi
+15307967,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Conus denizi
+15307977,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cacao
+15307977,9.1.3,Type Unknown/Unrecorded,Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,NA,7,NA,NA,NA,Conus cacao
+15307977,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Conus cacao
+15307977,9.2.3,Type Unknown/Unrecorded,Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,NA,7,NA,NA,NA,Conus cacao
+22694607,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Sterna striata
+22694607,8.1.2,Named species (Erinaceus europaeus),Ongoing,Minority (<50%),Unknown,Unknown,Erinaceus europaeus,NA,NA,NA,NA,Sterna striata
+22694607,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Felis catus,5,NA,NA,NA,Sterna striata
+22694607,8.1.2,Named species (Mustela erminea),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Mustela erminea,5,NA,NA,NA,Sterna striata
+22694607,8.1.2,Named species (Unspecified Rattus),Ongoing,Minority (<50%),Unknown,Unknown,Unspecified Rattus,NA,NA,NA,NA,Sterna striata
+22694607,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Sterna striata
+22694607,8.2.2,Named species (Macronectes halli),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,Macronectes halli,4,NA,NA,NA,Sterna striata
+22694641,11.4,Storms & flooding,Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,NA,5,NA,NA,NA,Sterna virgata
+22694641,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Sterna virgata
+22694641,8.1.2,Named species (Felis catus),Future,Majority (50-90%),Rapid Declines,Low Impact: 5,Felis catus,5,NA,NA,NA,Sterna virgata
+22694641,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Sterna virgata
+22694641,8.2.2,Named species (Catharacta antarctica),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Catharacta antarctica,5,NA,NA,NA,Sterna virgata
+22696649,11.1,Habitat shifting & alteration,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,11.4,Storms & flooding,"Past, Likely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,1.2,Commercial & industrial areas,Future,Minority (<50%),Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Papasula abbotti
+22696649,3.2,Mining & quarrying,"Past, Likely to Return",Majority (50-90%),Very Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,4.1,Roads & railroads,"Past, Likely to Return",Majority (50-90%),Very Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,5.1.1,Intentional use (species is the target),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,NA,4,NA,NA,NA,Papasula abbotti
+22696649,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,8.1.1,Unspecified species,Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,NA,7,NA,NA,NA,Papasula abbotti
+22696649,8.1.2,Named species (Anoplolepis gracilipes),Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,Anoplolepis gracilipes,7,NA,NA,NA,Papasula abbotti
+22696649,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Papasula abbotti
+22696649,9.2.3,Type Unknown/Unrecorded,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Papasula abbotti
+22696840,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Leucocarbo campbelli
+22696840,8.1.2,Named species (Felis catus),"Past, Unlikely to Return",Majority (50-90%),Negligible declines,Past Impact,Felis catus,NA,NA,NA,NA,Leucocarbo campbelli
+22696840,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Leucocarbo campbelli
+22696840,8.2.2,Named species (Catharacta antarctica),Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,Catharacta antarctica,5,NA,NA,NA,Leucocarbo campbelli
+22696869,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Leucocarbo colensoi
+22696869,8.1.2,Named species (Bos taurus),"Past, Unlikely to Return",Minority (<50%),Negligible declines,Past Impact,Bos taurus,NA,NA,NA,NA,Leucocarbo colensoi
+22696869,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,Felis catus,4,NA,NA,NA,Leucocarbo colensoi
+22696869,8.1.2,Named species (Oryctolagus cuniculus),"Past, Unlikely to Return",Minority (<50%),Negligible declines,Past Impact,Oryctolagus cuniculus,NA,NA,NA,NA,Leucocarbo colensoi
+22696869,8.1.2,Named species (Sus domesticus),Ongoing,Minority (<50%),No decline,Low Impact: 4,Sus domesticus,4,NA,NA,NA,Leucocarbo colensoi
+22696876,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Leucocarbo ranfurlyi
+22696876,11.4,Storms & flooding,Future,Minority (<50%),"Slow, Significant Declines",Low Impact: 3,NA,3,NA,NA,NA,Leucocarbo ranfurlyi
+22696876,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Leucocarbo ranfurlyi
+22696876,8.2.2,Named species (Arctocephalus forsteri),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Arctocephalus forsteri,6,NA,NA,NA,Leucocarbo ranfurlyi
+22696907,11.3,Temperature extremes,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Phalacrocorax featherstoni
+22696907,11.4,Storms & flooding,Future,Minority (<50%),"Slow, Significant Declines",Low Impact: 3,NA,3,NA,NA,NA,Phalacrocorax featherstoni
+22696907,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Phalacrocorax featherstoni
+22696907,5.1.3,Persecution/control,Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,NA,4,NA,NA,NA,Phalacrocorax featherstoni
+22696907,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Phalacrocorax featherstoni
+22696907,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,NA,6,NA,NA,NA,Phalacrocorax featherstoni
+22696907,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Phalacrocorax featherstoni
+22696907,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Felis catus,6,NA,NA,NA,Phalacrocorax featherstoni
+22696907,8.1.2,Named species (Gallirallus australis),Ongoing,Minority (<50%),No decline,Low Impact: 4,Gallirallus australis,4,NA,NA,NA,Phalacrocorax featherstoni
+22696907,8.1.2,Named species (Rattus norvegicus),Ongoing,Minority (<50%),Unknown,Unknown,Rattus norvegicus,NA,NA,NA,NA,Phalacrocorax featherstoni
+22696907,8.1.2,Named species (Rattus rattus),Ongoing,Minority (<50%),Unknown,Unknown,Rattus rattus,NA,NA,NA,NA,Phalacrocorax featherstoni
+22696907,8.1.2,Named species (Trichosurus vulpecula),Ongoing,Minority (<50%),Unknown,Unknown,Trichosurus vulpecula,NA,NA,NA,NA,Phalacrocorax featherstoni
+22697789,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,11.3,Temperature extremes,Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,NA,7,NA,NA,NA,Eudyptes sclateri
+22697789,11.3,Temperature extremes,Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,NA,7,NA,NA,NA,Eudyptes sclateri
+22697789,11.3,Temperature extremes,Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,NA,7,NA,NA,NA,Eudyptes sclateri
+22697789,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697789,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Eudyptes sclateri
+22697913,2.1,Annual & perennial non-timber crops,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pseudobulweria becki
+22697913,2.1,Annual & perennial non-timber crops,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pseudobulweria becki
+22697913,2.1.2,Small-holder farming,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pseudobulweria becki
+22697913,2.1.2,Small-holder farming,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pseudobulweria becki
+22697913,3.2,Mining & quarrying,Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,NA,6,NA,NA,NA,Pseudobulweria becki
+22697913,3.2,Mining & quarrying,Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,NA,6,NA,NA,NA,Pseudobulweria becki
+22697913,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pseudobulweria becki
+22697913,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pseudobulweria becki
+22697913,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),Unknown,Unknown,Felis catus,NA,NA,NA,NA,Pseudobulweria becki
+22697913,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),Unknown,Unknown,Felis catus,NA,NA,NA,NA,Pseudobulweria becki
+22697913,8.1.2,Named species (Sus domesticus),Ongoing,Minority (<50%),Unknown,Unknown,Sus domesticus,NA,NA,NA,NA,Pseudobulweria becki
+22697913,8.1.2,Named species (Sus domesticus),Ongoing,Minority (<50%),Unknown,Unknown,Sus domesticus,NA,NA,NA,NA,Pseudobulweria becki
+22697913,8.1.2,Named species (Unspecified Rattus),Ongoing,Majority (50-90%),Unknown,Unknown,Unspecified Rattus,NA,NA,NA,NA,Pseudobulweria becki
+22697913,8.1.2,Named species (Unspecified Rattus),Ongoing,Majority (50-90%),Unknown,Unknown,Unspecified Rattus,NA,NA,NA,NA,Pseudobulweria becki
+22697935,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),Rapid Declines,Medium Impact: 7,Felis catus,7,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,8.1.2,Named species (Rattus exulans),Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,Rattus exulans,5,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,8.1.2,Named species (Rattus norvegicus),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,Rattus norvegicus,4,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,8.1.2,Named species (Rattus rattus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Rattus rattus,6,NA,NA,NA,Pseudobulweria macgillivrayi
+22697935,8.1.2,Named species (Sus domesticus),Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,Sus domesticus,6,NA,NA,NA,Pseudobulweria macgillivrayi
+22697949,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma axillaris
+22697949,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma axillaris
+22697949,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Majority (50-90%),Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Pterodroma axillaris
+22697949,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma axillaris
+22697949,8.1.2,Named species (Canis familiaris),Ongoing,Minority (<50%),No decline,Low Impact: 4,Canis familiaris,4,NA,NA,NA,Pterodroma axillaris
+22697949,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),No decline,Low Impact: 4,Felis catus,4,NA,NA,NA,Pterodroma axillaris
+22697949,8.1.2,Named species (Sus domesticus),Ongoing,Minority (<50%),No decline,Low Impact: 4,Sus domesticus,4,NA,NA,NA,Pterodroma axillaris
+22697949,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma axillaris
+22697949,8.2.2,Named species (Pachyptila vittata),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Pachyptila vittata,6,NA,NA,NA,Pterodroma axillaris
+22697957,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma cervicalis
+22697957,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma cervicalis
+22697957,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Minority (<50%),Unknown,Past Impact,NA,NA,NA,NA,NA,Pterodroma cervicalis
+22697957,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma cervicalis
+22697957,8.1.2,Named species (Capra hircus),"Past, Unlikely to Return",Majority (50-90%),Unknown,Past Impact,Capra hircus,NA,NA,NA,NA,Pterodroma cervicalis
+22697957,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Felis catus,6,NA,NA,NA,Pterodroma cervicalis
+22697957,8.1.2,Named species (Oryctolagus cuniculus),"Past, Unlikely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,Oryctolagus cuniculus,NA,NA,NA,NA,Pterodroma cervicalis
+22697957,8.1.2,Named species (Rattus exulans),Ongoing,Minority (<50%),No decline,Low Impact: 4,Rattus exulans,4,NA,NA,NA,Pterodroma cervicalis
+22697957,8.1.2,Named species (Rattus norvegicus),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Rattus norvegicus,5,NA,NA,NA,Pterodroma cervicalis
+22697957,8.1.2,Named species (Sus domesticus),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Sus domesticus,5,NA,NA,NA,Pterodroma cervicalis
+22697957,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma cervicalis
+22697957,8.2.1,Unspecified species,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma cervicalis
+22697975,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma cookii
+22697975,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Felis catus,5,NA,NA,NA,Pterodroma cookii
+22697975,8.1.2,Named species (Gallirallus australis),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Gallirallus australis,5,NA,NA,NA,Pterodroma cookii
+22697975,8.1.2,Named species (Rattus exulans),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Rattus exulans,5,NA,NA,NA,Pterodroma cookii
+22697975,8.1.2,Named species (Rattus rattus),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,Rattus rattus,5,NA,NA,NA,Pterodroma cookii
+22697984,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma pycrofti
+22697984,8.1.2,Named species (Rattus exulans),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,Rattus exulans,4,NA,NA,NA,Pterodroma pycrofti
+22697987,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma brevipes
+22697987,5.1.1,Intentional use (species is the target),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,NA,4,NA,NA,NA,Pterodroma brevipes
+22697987,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma brevipes
+22697987,8.1.2,Named species (Canis familiaris),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Canis familiaris,6,NA,NA,NA,Pterodroma brevipes
+22697987,8.1.2,Named species (Capra hircus),Ongoing,Minority (<50%),Unknown,Unknown,Capra hircus,NA,NA,NA,NA,Pterodroma brevipes
+22697987,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Felis catus,6,NA,NA,NA,Pterodroma brevipes
+22697987,8.1.2,Named species (Herpestes auropunctatus),Ongoing,Majority (50-90%),Rapid Declines,Medium Impact: 7,Herpestes auropunctatus,7,NA,NA,NA,Pterodroma brevipes
+22697987,8.1.2,Named species (Sus domesticus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Sus domesticus,6,NA,NA,NA,Pterodroma brevipes
+22697987,8.1.2,Named species (Unspecified Rattus),Ongoing,Majority (50-90%),Rapid Declines,Medium Impact: 7,Unspecified Rattus,7,NA,NA,NA,Pterodroma brevipes
+22697990,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma defilippiana
+22697990,8.1.2,Named species (Capra hircus),Ongoing,Minority (<50%),Unknown,Unknown,Capra hircus,NA,NA,NA,NA,Pterodroma defilippiana
+22697990,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Felis catus,6,NA,NA,NA,Pterodroma defilippiana
+22697990,8.1.2,Named species (Nasua nasua),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Nasua nasua,6,NA,NA,NA,Pterodroma defilippiana
+22697990,8.1.2,Named species (Unspecified Rattus),Ongoing,Minority (<50%),Unknown,Unknown,Unspecified Rattus,NA,NA,NA,NA,Pterodroma defilippiana
+22697997,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma longirostris
+22697997,11.4,Storms & flooding,"Past, Likely to Return",Minority (<50%),Unknown,Past Impact,NA,NA,NA,NA,NA,Pterodroma longirostris
+22697997,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma longirostris
+22697997,8.1.2,Named species (Bos taurus),Ongoing,Minority (<50%),No decline,Low Impact: 4,Bos taurus,4,NA,NA,NA,Pterodroma longirostris
+22697997,8.1.2,Named species (Capra hircus),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Capra hircus,6,NA,NA,NA,Pterodroma longirostris
+22697997,8.1.2,Named species (Felis catus),Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,Felis catus,7,NA,NA,NA,Pterodroma longirostris
+22697997,8.1.2,Named species (Mus musculus),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Mus musculus,6,NA,NA,NA,Pterodroma longirostris
+22697997,8.1.2,Named species (Rattus norvegicus),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Rattus norvegicus,6,NA,NA,NA,Pterodroma longirostris
+22697997,8.1.2,Named species (Rattus rattus),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Rattus rattus,6,NA,NA,NA,Pterodroma longirostris
+22698001,1.2,Commercial & industrial areas (Anoplolepis gracilipes),Future,Minority (<50%),Unknown,Unknown,Anoplolepis gracilipes,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Pterodroma alba
+22698001,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma alba
+22698001,5.1.1,Intentional use (species is the target) (Felis catus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Felis catus,6,NA,NA,NA,Pterodroma alba
+22698001,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma alba
+22698001,8.1.2,Named species (Anoplolepis gracilipes),Future,Minority (<50%),"Slow, Significant Declines",Low Impact: 3,Anoplolepis gracilipes,3,NA,NA,NA,Pterodroma alba
+22698001,8.1.2,Named species (Canis familiaris),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,Canis familiaris,4,NA,NA,NA,Pterodroma alba
+22698001,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),Rapid Declines,Medium Impact: 7,Felis catus,7,NA,NA,NA,Pterodroma alba
+22698001,8.1.2,Named species (Oryctolagus cuniculus),"Past, Unlikely to Return",Minority (<50%),Negligible declines,Past Impact,Oryctolagus cuniculus,NA,NA,NA,NA,Pterodroma alba
+22698001,8.1.2,Named species (Rattus exulans),Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,Rattus exulans,6,NA,NA,NA,Pterodroma alba
+22698001,8.1.2,Named species (Rattus rattus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Rattus rattus,6,NA,NA,NA,Pterodroma alba
+22698042,11.4,Storms & flooding,Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,NA,5,NA,NA,NA,Pterodroma solandri
+22698042,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma solandri
+22698042,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Pterodroma solandri
+22698042,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma solandri
+22698042,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,NA,5,NA,NA,NA,Pterodroma solandri
+22698042,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma solandri
+22698042,8.1.2,Named species (Capra hircus),"Past, Unlikely to Return",Majority (50-90%),No decline,Past Impact,Capra hircus,NA,NA,NA,NA,Pterodroma solandri
+22698042,8.1.2,Named species (Rattus rattus),Ongoing,Majority (50-90%),No decline,Low Impact: 5,Rattus rattus,5,NA,NA,NA,Pterodroma solandri
+22698042,8.1.2,Named species (Sus domesticus),"Past, Unlikely to Return",Majority (50-90%),No decline,Past Impact,Sus domesticus,NA,NA,NA,NA,Pterodroma solandri
+22698042,8.1.2,Named species (Tyto novaehollandiae),Ongoing,Majority (50-90%),No decline,Low Impact: 5,Tyto novaehollandiae,5,NA,NA,NA,Pterodroma solandri
+22698042,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma solandri
+22698042,8.2.2,Named species (Ardenna pacifica),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,Ardenna pacifica,4,NA,NA,NA,Pterodroma solandri
+22698042,8.2.2,Named species (Hypotaenidia sylvestris),Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,Hypotaenidia sylvestris,5,NA,NA,NA,Pterodroma solandri
+22698042,9.4,Garbage & solid waste,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma solandri
+22698097,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma caribbaea
+22698097,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma caribbaea
+22698097,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Pterodroma caribbaea
+22698097,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma caribbaea
+22698097,8.1.2,Named species (Canis familiaris),Ongoing,Majority (50-90%),Unknown,Unknown,Canis familiaris,NA,NA,NA,NA,Pterodroma caribbaea
+22698097,8.1.2,Named species (Herpestes auropunctatus),Ongoing,Majority (50-90%),Unknown,Unknown,Herpestes auropunctatus,NA,NA,NA,NA,Pterodroma caribbaea
+22698097,8.1.2,Named species (Sus domesticus),Ongoing,Majority (50-90%),Unknown,Unknown,Sus domesticus,NA,NA,NA,NA,Pterodroma caribbaea
+22698097,8.1.2,Named species (Unspecified Rattus),Ongoing,Majority (50-90%),Unknown,Unknown,Unspecified Rattus,NA,NA,NA,NA,Pterodroma caribbaea
+22698136,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Bulweria fallax
+22698136,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Bulweria fallax
+22698136,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Bulweria fallax
+22698136,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,Felis catus,5,NA,NA,NA,Bulweria fallax
+22698136,8.1.2,Named species (Unspecified Rattus),Ongoing,Majority (50-90%),Negligible declines,Low Impact: 5,Unspecified Rattus,5,NA,NA,NA,Bulweria fallax
+22698136,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Bulweria fallax
+22698136,9.2.1,Oil spills,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Bulweria fallax
+22698272,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus bannermani
+22698272,8.1.2,Named species (Rattus rattus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Rattus rattus,6,NA,NA,NA,Puffinus bannermani
+22698272,9.6,Excess energy,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus bannermani
+22698272,9.6.1,Light pollution,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Excess energy: Light pollution,light,land-based,Puffinus bannermani
+22698277,3.2,Mining & quarrying,Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Puffinus heinrothi
+22698277,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus heinrothi
+22698277,8.1.2,Named species (Canis familiaris),Ongoing,Majority (50-90%),Unknown,Unknown,Canis familiaris,NA,NA,NA,NA,Puffinus heinrothi
+22698277,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),Unknown,Unknown,Felis catus,NA,NA,NA,NA,Puffinus heinrothi
+22698277,8.1.2,Named species (Unspecified Rattus),Ongoing,Majority (50-90%),Unknown,Unknown,Unspecified Rattus,NA,NA,NA,NA,Puffinus heinrothi
+22698393,11.4,Storms & flooding,"Past, Likely to Return",Whole (>90%),Causing/Could cause fluctuations,Past Impact,NA,NA,NA,NA,NA,Thalassarche eremita
+22698393,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Thalassarche eremita
+22698393,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Minority (<50%),Negligible declines,Past Impact,NA,NA,NA,NA,NA,Thalassarche eremita
+22698393,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Thalassarche eremita
+22698393,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Thalassarche eremita
+22698393,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Thalassarche eremita
+22698471,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Nesofregetta fuliginosa
+22698471,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Nesofregetta fuliginosa
+22698471,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Nesofregetta fuliginosa
+22698471,8.1.2,Named species (Felis catus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Felis catus,6,NA,NA,NA,Nesofregetta fuliginosa
+22698471,8.1.2,Named species (Rattus exulans),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Rattus exulans,6,NA,NA,NA,Nesofregetta fuliginosa
+22698471,8.1.2,Named species (Rattus rattus),Ongoing,Minority (<50%),Rapid Declines,Medium Impact: 6,Rattus rattus,6,NA,NA,NA,Nesofregetta fuliginosa
+22698530,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hydrobates macrodactylus
+22698530,8.1.2,Named species (Canis familiaris),Ongoing,Whole (>90%),Unknown,Unknown,Canis familiaris,NA,NA,NA,NA,Hydrobates macrodactylus
+22698530,8.1.2,Named species (Capra hircus),"Past, Unlikely to Return",Whole (>90%),"Slow, Significant Declines",Past Impact,Capra hircus,NA,NA,NA,NA,Hydrobates macrodactylus
+22698530,8.1.2,Named species (Felis catus),Ongoing,Whole (>90%),Very Rapid Declines,High Impact: 9,Felis catus,9,NA,NA,NA,Hydrobates macrodactylus
+22698548,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hydrobates matsudairae
+22698548,8.1.2,Named species (Rattus rattus),Ongoing,Minority (<50%),Very Rapid Declines,Medium Impact: 7,Rattus rattus,7,NA,NA,NA,Hydrobates matsudairae
+22698567,3.2,Mining & quarrying,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Hydrobates hornbyi
+22698567,3.3,Renewable energy,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Hydrobates hornbyi
+22698567,4.1,Roads & railroads,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Hydrobates hornbyi
+22698567,4.2,Utility & service lines,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,NA,NA,NA,Hydrobates hornbyi
+22698567,9.6,Excess energy,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hydrobates hornbyi
+22698567,9.6.1,Light pollution,Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,Pollution: Excess energy: Light pollution,light,land-based,Hydrobates hornbyi
+22728011,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma feae
+22728011,5.1.1,Intentional use (species is the target),Ongoing,Minority (<50%),"Slow, Significant Declines",Low Impact: 5,NA,5,NA,NA,NA,Pterodroma feae
+22728011,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma feae
+22728011,8.1.2,Named species (Capra hircus),Ongoing,Majority (50-90%),Unknown,Unknown,Capra hircus,NA,NA,NA,NA,Pterodroma feae
+22728011,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),Rapid Declines,Medium Impact: 7,Felis catus,7,NA,NA,NA,Pterodroma feae
+22728011,8.1.2,Named species (Unspecified Rattus),Ongoing,Majority (50-90%),Unknown,Unknown,Unspecified Rattus,NA,NA,NA,NA,Pterodroma feae
+22728442,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma atrata
+22728442,11.1,Habitat shifting & alteration,Future,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Pterodroma atrata
+22728442,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma atrata
+22728442,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma atrata
+22728442,8.1.2,Named species (Rattus exulans),Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,Rattus exulans,7,NA,NA,NA,Pterodroma atrata
+22728442,8.1.2,Named species (Rattus exulans),Ongoing,Whole (>90%),"Slow, Significant Declines",Medium Impact: 7,Rattus exulans,7,NA,NA,NA,Pterodroma atrata
+22728442,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma atrata
+22728442,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma atrata
+22728442,8.2.2,Named species (Unspecified Coenobita),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Unspecified Coenobita,6,NA,NA,NA,Pterodroma atrata
+22728442,8.2.2,Named species (Unspecified Coenobita),Ongoing,Whole (>90%),Negligible declines,Medium Impact: 6,Unspecified Coenobita,6,NA,NA,NA,Pterodroma atrata
+22728808,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Fregetta maoriana
+22728808,8.1.2,Named species (Felis catus),"Past, Unlikely to Return",Unknown,Unknown,Past Impact,Felis catus,NA,NA,NA,NA,Fregetta maoriana
+22728808,8.1.2,Named species (Rattus exulans),"Past, Unlikely to Return",Unknown,Unknown,Past Impact,Rattus exulans,NA,NA,NA,NA,Fregetta maoriana
+22729421,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Calonectris edwardsii
+22729421,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Calonectris edwardsii
+22729421,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Calonectris edwardsii
+22729421,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Calonectris edwardsii
+22729421,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Calonectris edwardsii
+22729421,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Calonectris edwardsii
+22729421,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,Felis catus,6,NA,NA,NA,Calonectris edwardsii
+22729421,8.1.2,Named species (Felis catus),Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,Felis catus,6,NA,NA,NA,Calonectris edwardsii
+22736135,11.4,Storms & flooding,Ongoing,Majority (50-90%),Causing/Could cause fluctuations,Medium Impact: 6,NA,6,NA,NA,NA,Pterodroma deserta
+22736135,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma deserta
+22736135,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Whole (>90%),Negligible declines,Past Impact,NA,NA,NA,NA,NA,Pterodroma deserta
+22736135,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma deserta
+22736135,8.1.2,Named species (Capra hircus),"Past, Unlikely to Return",Minority (<50%),Negligible declines,Past Impact,Capra hircus,NA,NA,NA,NA,Pterodroma deserta
+22736135,8.1.2,Named species (Felis catus),"Past, Unlikely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,Felis catus,NA,NA,NA,NA,Pterodroma deserta
+22736135,8.1.2,Named species (Oryctolagus cuniculus),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,Oryctolagus cuniculus,NA,NA,NA,NA,Pterodroma deserta
+22736135,8.1.2,Named species (Unspecified Mus),"Past, Unlikely to Return",Minority (<50%),No decline,Past Impact,Unspecified Mus,NA,NA,NA,NA,Pterodroma deserta
+22736135,8.2,Problematic native species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pterodroma deserta
+22736135,8.2.2,Named species (Larus michahellis),Ongoing,Minority (<50%),Negligible declines,Low Impact: 4,Larus michahellis,4,NA,NA,NA,Pterodroma deserta
+42566169,5.3,Logging & wood harvesting,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetobatus ocellatus
+42566169,5.3.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus ocellatus
+42566169,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetobatus ocellatus
+42566169,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus ocellatus
+42566169,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus ocellatus
+42566169,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetobatus ocellatus
+45354718,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus bryani
+45354718,8.1.2,Named species (Rattus rattus),Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,Rattus rattus,6,NA,NA,NA,Puffinus bryani
+45354718,9.6,Excess energy,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus bryani
+45354718,9.6.1,Light pollution,Ongoing,Minority (<50%),Unknown,Unknown,NA,NA,Pollution: Excess energy: Light pollution,light,land-based,Puffinus bryani
+47137303,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Archosargus pourtalesii
+47137303,11.4,Storms & flooding,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Archosargus pourtalesii
+47137515,11.1,Habitat shifting & alteration,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Calamus taurinus
+48342108,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus aurosplendidus
+48342108,9.1.1,Sewage,Future,NA,NA,NA,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Omobranchus aurosplendidus
+48342108,9.1.3,Type Unknown/Unrecorded,Future,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus aurosplendidus
+48342108,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus aurosplendidus
+48342108,9.3.4,Type Unknown/Unrecorded,Future,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus aurosplendidus
+48342120,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Oman ypsilon
+48342120,9.2.1,Oil spills,Future,NA,NA,No/Negligible Impact: 1,NA,1,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Oman ypsilon
+48342221,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Entomacrodus solus
+48342221,9.1.1,Sewage,Ongoing,NA,NA,NA,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Entomacrodus solus
+48342221,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Entomacrodus solus
+48342221,9.2.1,Oil spills,Ongoing,NA,NA,NA,NA,NA,Pollution: Industrial & military effluents: Oil spills,organic,land-based,Entomacrodus solus
+48342221,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Entomacrodus solus
+48342221,9.3.2,"Soil erosion, sedimentation",Ongoing,NA,NA,NA,NA,NA,NA,NA,NA,Entomacrodus solus
+48342236,3.1,Oil & gas drilling,Future,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Meiacanthus naevius
+48342284,9.2,Industrial & military effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus smithi
+48342284,9.2.3,Type Unknown/Unrecorded,Ongoing,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus smithi
+48342284,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus smithi
+48342284,9.3.2,"Soil erosion, sedimentation",Ongoing,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus smithi
+48342284,9.3.4,Type Unknown/Unrecorded,Ongoing,NA,NA,NA,NA,NA,NA,NA,NA,Omobranchus smithi
+48342328,3.2,Mining & quarrying,Ongoing,NA,NA,NA,NA,NA,NA,NA,NA,Ecsenius randalli
+48342342,11.4,Storms & flooding,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Praealticus natalis
+48342342,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Praealticus natalis
+48342342,8.1.1,Unspecified species,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Praealticus natalis
+48342357,11.4,Storms & flooding,Ongoing,NA,NA,Low Impact: 3,NA,3,NA,NA,NA,Mimoblennius lineathorax
+59034974,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Evynnis cardinalis
+59034974,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Evynnis cardinalis
+59034974,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Evynnis cardinalis
+65365349,1.1,Housing & urban areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Housing & urban areas,direct_human,land-based,Cosmocampus balli
+65365349,11.1,Habitat shifting & alteration,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,11.3,Temperature extremes,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,11.4,Storms & flooding,Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Cosmocampus balli
+65365349,1.3,Tourism & recreation areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Tourism & recreation areas,direct_human,land-based,Cosmocampus balli
+65365349,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,6.1,Recreational activities,Ongoing,Unknown,Unknown,Unknown,NA,NA,Human intrusions & disturbance: Recreational activities,direct_human,land-based,Cosmocampus balli
+65365349,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,8.1.1,Unspecified species,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,9.1,Domestic & urban waste water,NA,NA,NA,NA,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,9.1.1,Sewage,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Sewage,nutrient,land-based,Cosmocampus balli
+65365349,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,nutrient,land-based,Cosmocampus balli
+65365349,9.1.2,Run-off,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Domestic & urban waste water: Run-off,organic,land-based,Cosmocampus balli
+65365349,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Cosmocampus balli
+65365349,9.3.1,Nutrient loads,Ongoing,Unknown,Unknown,Unknown,NA,NA,Pollution: Agricultural & forestry effluents: Nutrient loads,nutrient,land-based,Cosmocampus balli
+65365349,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Cosmocampus balli
+75154879,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Sardinella lemuru
+75154879,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Sardinella lemuru
+75154879,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Sardinella lemuru
+84784918,5.3,Logging & wood harvesting,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetomylaeus nichofii
+84784918,5.3.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus nichofii
+84784918,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Aetomylaeus nichofii
+84784918,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus nichofii
+84784918,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus nichofii
+84784918,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Aetomylaeus nichofii
+98842673,1.2,Commercial & industrial areas,Ongoing,Unknown,Unknown,Unknown,NA,NA,Residential & commercial development: Commercial & industrial areas,direct_human,land-based,Tenualosa macrura
+98842673,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Tenualosa macrura
+98842673,5.4.2,Intentional use: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Tenualosa macrura
+98842673,9.3,Agricultural & forestry effluents,NA,NA,NA,NA,NA,NA,NA,NA,NA,Tenualosa macrura
+98842673,9.3.2,"Soil erosion, sedimentation",Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Tenualosa macrura
+104062579,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Mus musculus),Ongoing,Majority (50-90%),Very Rapid Declines,High Impact: 8,Mus musculus,8,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Mus musculus),Ongoing,Majority (50-90%),Very Rapid Declines,High Impact: 8,Mus musculus,8,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Mus musculus),Ongoing,Majority (50-90%),Very Rapid Declines,High Impact: 8,Mus musculus,8,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Unspecified Falco),"Past, Likely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,Unspecified Falco,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Unspecified Falco),"Past, Likely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,Unspecified Falco,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Unspecified Falco),"Past, Likely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,Unspecified Falco,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Unspecified Rattus),"Past, Unlikely to Return",Minority (<50%),Very Rapid Declines,Past Impact,Unspecified Rattus,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Unspecified Rattus),"Past, Unlikely to Return",Minority (<50%),Very Rapid Declines,Past Impact,Unspecified Rattus,NA,NA,NA,NA,Pachyptila macgillivrayi
+104062579,8.1.2,Named species (Unspecified Rattus),"Past, Unlikely to Return",Minority (<50%),Very Rapid Declines,Past Impact,Unspecified Rattus,NA,NA,NA,NA,Pachyptila macgillivrayi
+107259870,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hippocampus spinosissimus
+107259870,5.4.1,Intentional use: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus spinosissimus
+107259870,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus spinosissimus
+107259870,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus spinosissimus
+107259870,5.4.6,Motivation Unknown/Unrecorded,Ongoing,Unknown,Unknown,Unknown,NA,NA,NA,NA,NA,Hippocampus spinosissimus
+116880357,5.4,Fishing & harvesting aquatic resources,NA,NA,NA,NA,NA,NA,NA,NA,NA,Squatina david
+116880357,5.4.3,Unintentional effects: (subsistence/small scale) [harvest],Ongoing,Whole (>90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina david
+116880357,5.4.4,Unintentional effects: (large scale) [harvest],Ongoing,Majority (50-90%),Unknown,Unknown,NA,NA,NA,NA,NA,Squatina david
+132441735,6.3,Work & other activities,Unknown,Minority (<50%),Negligible declines,Unknown,NA,NA,Human intrusions & disturbance: Work & other activities,direct_human,land-based,Hydrobates cheimomnestes
+132441735,8.4,Problematic species/disease of unknown origin,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hydrobates cheimomnestes
+132441735,8.4.2,Named species (Felis catus),"Past, Unlikely to Return",Majority (50-90%),Rapid Declines,Past Impact,Felis catus,NA,NA,NA,NA,Hydrobates cheimomnestes
+132441735,8.4.2,Named species (Mus musculus),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,Mus musculus,NA,NA,NA,NA,Hydrobates cheimomnestes
+132450926,6.3,Work & other activities,Unknown,Minority (<50%),Negligible declines,Unknown,NA,NA,Human intrusions & disturbance: Work & other activities,direct_human,land-based,Hydrobates socorroensis
+132450926,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Hydrobates socorroensis
+132450926,8.1.1,Unspecified species,"Past, Unlikely to Return",Majority (50-90%),Rapid Declines,Past Impact,NA,NA,NA,NA,NA,Hydrobates socorroensis
+132450926,8.1.2,Named species (Felis catus),Ongoing,Unknown,Negligible declines,Unknown,Felis catus,NA,NA,NA,NA,Hydrobates socorroensis
+132450926,8.1.2,Named species (Mus musculus),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,Mus musculus,NA,NA,NA,NA,Hydrobates socorroensis
+132468585,2.3,Livestock farming & ranching,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,2.3,Livestock farming & ranching,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,2.3.2,"Small-holder grazing, ranching or farming","Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,2.3.2,"Small-holder grazing, ranching or farming","Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,5.1,Hunting & trapping terrestrial animals,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,5.1.1,Intentional use (species is the target),"Past, Unlikely to Return",Minority (<50%),"Slow, Significant Declines",Past Impact,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,8.1,Invasive non-native/alien species/diseases,NA,NA,NA,NA,NA,NA,NA,NA,NA,Puffinus myrtae
+132468585,8.1.2,Named species (Capra hircus),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,Capra hircus,NA,NA,NA,NA,Puffinus myrtae
+132468585,8.1.2,Named species (Capra hircus),"Past, Unlikely to Return",Majority (50-90%),"Slow, Significant Declines",Past Impact,Capra hircus,NA,NA,NA,NA,Puffinus myrtae
+132468585,8.1.2,Named species (Felis catus),"Past, Unlikely to Return",Whole (>90%),Rapid Declines,Past Impact,Felis catus,NA,NA,NA,NA,Puffinus myrtae
+132468585,8.1.2,Named species (Felis catus),"Past, Unlikely to Return",Whole (>90%),Rapid Declines,Past Impact,Felis catus,NA,NA,NA,NA,Puffinus myrtae
+132468585,8.1.2,Named species (Rattus exulans),Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,Rattus exulans,6,NA,NA,NA,Puffinus myrtae
+132468585,8.1.2,Named species (Rattus exulans),Ongoing,Majority (50-90%),"Slow, Significant Declines",Medium Impact: 6,Rattus exulans,6,NA,NA,NA,Puffinus myrtae

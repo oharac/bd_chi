@@ -49,12 +49,12 @@ Note that the intersection cells include only those cells where the species AND 
 
 ## Get the species sensitivities
 
-The species sensitivity dataframe is created in script 1: `1d_combine_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors; load the maps file to determine which of these species have range maps as well.  Note, the sensitivity file includes non-threatened species, so these will be included in the overall set of intersection maps.  Make sure to exclude non-threatened species when aggregating species maps to taxon level!
+The species sensitivity dataframe is created in script 1: `1d_combine_spp_stressor_sensitivities.Rmd`.  Load this and use it to identify included species and stressors; load the maps file to determine which of these species have range maps as well.  Note, the sensitivity file includes non-threatened species, so these will be included in the overall set of intersection maps.
 
 ```{r}
 
-spp_incl_all <- get_incl_spp(include_all_risk = TRUE) %>%
-  filter(!is.na(stressor)) %>%
+spp_incl_all <- get_incl_spp() %>%
+  # filter(!is.na(stressor)) %>% ### make placeholders for non-impacted spp
   select(-code) %>%
   distinct()
 
@@ -159,9 +159,9 @@ Using this function, loop through each of the included stressors, build the stac
 
 reload <- FALSE
 ### to gut the directory for a fresh start:
-x <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
-                full.names = TRUE, recursive = TRUE)
-unlink(x)
+# x <- list.files(file.path(dir_bd_anx, 'spp_str_rasts'),
+#                 full.names = TRUE, recursive = TRUE)
+# unlink(x)
 
 for(str_name in str_names) {
   ### str_name <- str_names[13]
