@@ -53,8 +53,7 @@ Identify the species included in the impacted list (using the IUCN species IDs o
 ### Get inclusion list; drop species with no sensitivities to stressors
 spp_sens <- get_incl_spp() %>%
   filter(!is.na(stressor)) %>%
-  left_join(get_spp_taxon(), by = c('iucn_sid', 'assess_gp')) %>%
-  mutate(taxon = tolower(rank))
+  mutate(taxon = str_replace_all(desc, ' ', ''))
 
 ### directories for inputs
 spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
@@ -72,10 +71,6 @@ ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
 
 These maps count up the number of species with increasing impacts by the aggregated stressor group (land-based, ocean, climate, fishing, and all); similarly for species with decreasing impacts.
 
-We will also map species trend counts using the priority weights from script 3b, i.e.
-$$\text{priority} = \frac{\text{% range impacted}}{\ln (\text{spp range, km}^2)}$$
-Note that priority is based on mean impact over last three impacted years.
-
 For a given taxon:
 
 * identify full list of impacted species
@@ -84,7 +79,6 @@ For a given taxon:
     * flatten all spp trend maps to increasing or decreasing or neutral
     * clip trend map to footprint for 2013
     * add all maps for each category group: by cell/year per stressor
-    * also weight by priority values for each cell/year per stressor
 * for all subgroups in a taxa, add them up.
     
 ```{r set up functions and dataframes}
@@ -141,10 +135,6 @@ get_pace_df <- function() {
 ### Trend files are rasters of value (trend slope) and p_val.
 pace_df <- get_pace_df()
 
-### load priorities; without normalizing, priority is dependent only on spp range,
-### not dependent on the set of spp considered (e.g. normalizing by max priority)
-priority_df <- get_spp_priority(risk_wt = FALSE) 
-
 ### get the stressor footprints for 2013 as a dataframe
 str_ft_df <- get_str_footprint()
 
@@ -158,18 +148,14 @@ for(str_cat in str_cats) {
   # str_cat <- str_cats[3]
   
   for(taxon_gp in taxon_gps) {
-    ### taxon_gp <- taxon_gps[2]
+    ### taxon_gp <- taxon_gps[1]
     
     tx_incr_f <- file.path(taxon_trend_map_dir,
       sprintf('taxon_trend_%s_%s_incr.tif', taxon_gp, str_cat))
-    tx_pr_incr_f <- file.path(taxon_trend_map_dir, 
-      sprintf('taxon_priority_trend_%s_%s_incr.tif', taxon_gp, str_cat))
     tx_decr_f <- file.path(taxon_trend_map_dir, 
       sprintf('taxon_trend_%s_%s_decr.tif', taxon_gp, str_cat))
-    tx_pr_decr_f <- file.path(taxon_trend_map_dir, 
-      sprintf('taxon_priority_trend_%s_%s_decr.tif', taxon_gp, str_cat))
-    
-    if(any(!file.exists(tx_incr_f, tx_decr_f, tx_pr_incr_f, tx_pr_decr_f)) | reload) {
+
+    if(any(!file.exists(tx_incr_f, tx_decr_f)) | reload) {
       spp_ids_taxa <- spp_sens %>%
         filter(taxon == taxon_gp) %>%
         filter(str_cat == 'all' | category == str_cat) %>%
@@ -177,7 +163,7 @@ for(str_cat in str_cats) {
         unique() %>% sort()
       
       n_subgps <- ceiling(length(spp_ids_taxa) / subgp_size)
-      message('Processing ', str_cat, ' impacts for ', taxon_gp, 
+      message('Processing ', str_cat, ' intensification for ', taxon_gp, 
               ': ', length(spp_ids_taxa), 
               ' species broken into ', n_subgps, ' groups.')
       
@@ -200,9 +186,9 @@ for(str_cat in str_cats) {
             distinct()
             
           spp_ranges <- parallel::mclapply(
-            spp_id_vec,
-            FUN = get_spp_rangemap,
-            mc.cores = subgp_size) %>%
+              spp_id_vec,
+              FUN = get_spp_rangemap,
+              mc.cores = subgp_size) %>%
             bind_rows()
           
           trend_gp <- spp_ranges %>%
@@ -210,19 +196,16 @@ for(str_cat in str_cats) {
             # left_join(pace_df, by = 'cell_id')
             dt_join(pace_df, by = c('cell_id', 'stressor'), type = 'inner') %>%
               ### inner join drops non-intensifying/deintensifying cells
-            dt_join(priority_df, by = 'iucn_sid', type = 'left') %>%
             dt_join(str_ft_df, by = c('cell_id', 'stressor'), type = 'inner')
               ### inner join drops all cells where stressor is not "present"
               ### according to 95% contour volume
           
           trend_gp_summary <- trend_gp %>%
-            group_by(cell_id, iucn_sid, priority) %>%
+            group_by(cell_id, iucn_sid) %>%
             summarize(incr = any(pace == +1) & !any(pace == -1),
                       decr = any(pace == -1) & !any(pace == +1)) %>%
             group_by(cell_id) %>%
-            summarize(priority_incr_spp = sum(priority * incr, na.rm = TRUE),
-                      priority_decr_spp = sum(priority * decr, na.rm = TRUE),
-                      n_incr_spp = sum(incr, na.rm = TRUE),
+            summarize(n_incr_spp = sum(incr, na.rm = TRUE),
                       n_decr_spp = sum(decr, na.rm = TRUE)) %>%
             ungroup()
           
@@ -232,9 +215,7 @@ for(str_cat in str_cats) {
       ### collate all the list element dataframes
       taxon_trend_df <- bind_rows(taxon_trend_list) %>%
         group_by(cell_id) %>%
-        summarize(priority_incr_spp = sum(priority_incr_spp, na.rm = TRUE),
-                  priority_decr_spp = sum(priority_decr_spp, na.rm = TRUE),
-                  n_incr_spp = sum(n_incr_spp, na.rm = TRUE),
+        summarize(n_incr_spp = sum(n_incr_spp, na.rm = TRUE),
                   n_decr_spp = sum(n_decr_spp, na.rm = TRUE)) %>%
         ungroup() %>%
         mutate(taxon = taxon_gp)
@@ -244,8 +225,6 @@ for(str_cat in str_cats) {
       if(nrow(taxon_trend_df) == 0) {
         ### either no species in the list, or no trend for any of the spp
         taxon_trend_df <- data.frame(cell_id = NA,
-                                     priority_incr_spp = NA,
-                                     priority_decr_spp = NA,
                                      n_incr_spp = NA,
                                      n_decr_spp = NA,
                                      taxon   = taxon_gp)
@@ -255,14 +234,10 @@ for(str_cat in str_cats) {
 
       nspp_incr_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_incr_spp')
       nspp_decr_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_decr_spp')
-      priority_incr_rast <- map_to_rast(taxon_trend_df, cell_val = 'priority_incr_spp')
-      priority_decr_rast <- map_to_rast(taxon_trend_df, cell_val = 'priority_decr_spp')
-      
+ 
       writeRaster(nspp_incr_rast, tx_incr_f, overwrite = TRUE)
       writeRaster(nspp_decr_rast, tx_decr_f, overwrite = TRUE)
-      writeRaster(priority_incr_rast, tx_pr_incr_f, overwrite = TRUE)
-      writeRaster(priority_decr_rast, tx_pr_decr_f, overwrite = TRUE)
-      
+
     } else {
       message('Files exist... skipping!')
     }
@@ -274,7 +249,7 @@ for(str_cat in str_cats) {
 
 Plot taxa maps species experiencing intensifying/deintensifying impacts.  Here we plot only the trends for fishing stressors, climate stressors, and all cumulative stressors, for a subset of taxa.  We plot the count only (not priority-weighted).
 
-```{r trend maps by taxa, eval = TRUE}
+```{r trend maps by taxa, eval = FALSE}
 
 mapfiles <- list.files(taxon_trend_map_dir, full.names = TRUE)
 

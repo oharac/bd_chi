@@ -62,17 +62,18 @@ if(!file.exists(fig1_file)) {
   land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
     st_transform(crs(imp_pct))
   
-  impact_map <- ggplot() +
+  fig1a_impact_map <- ggplot() +
     ggtheme_map(base_size = 7) +
-    geom_tile(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
+    geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
     # geom_raster(data = zero_imp, aes(x, y), fill = 'orange') +
     geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
     scale_fill_viridis_c(breaks = seq(0, 1, .25), labels = paste0(seq(0, 100, 25), '%')) +
-    theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
+    theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+          legend.key.width = unit(.25, 'cm'),
+          legend.title = element_blank()) +
     coord_sf(datum = NA) + ### ditch graticules
     scale_x_continuous(expand = c(0, 0)) +
-    scale_y_continuous(expand = c(0, 0)) +
-    labs(fill = 'Impacts')
+    scale_y_continuous(expand = c(0, 0))
   
   # print(impact_map)
 }
@@ -98,20 +99,21 @@ if(!file.exists(fig1_file)) {
   land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
     st_transform(crs(int_pct))
   
-  intens_map <- ggplot() +
+  fig1b_intens_map <- ggplot() +
     ggtheme_map(base_size = 7) +
-    geom_tile(data = int_pct_df, aes(x, y, fill = int_pct), size = .1) +
+    geom_raster(data = int_pct_df, aes(x, y, fill = int_pct), size = .1) +
     geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
     scale_fill_gradient2(low = '#4dac26', mid = '#f7f7f7', high = '#d01c8b',
                       breaks = seq(-1, 1, .5), 
                       labels = paste0(seq(-100, 100, 50), '%')) +
-    theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
+    theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+          legend.key.width = unit(.25, 'cm'),
+          legend.title = element_blank()) +
     coord_sf(datum = NA) + ### ditch graticules
     scale_x_continuous(expand = c(0, 0)) +
-    scale_y_continuous(expand = c(0, 0)) +
-    labs(fill = 'Intensification')
+    scale_y_continuous(expand = c(0, 0))
   
-  # print(intens_map)
+  # print(fig1b_intens_map)
 }
 ```
 
@@ -119,15 +121,30 @@ if(!file.exists(fig1_file)) {
 
 ```{r}
 if(!file.exists(fig1_file)) {
-  fig1 <- plot_grid(impact_map, intens_map, 
-                    align = 'v', nrow = 2, 
-                    labels = c('A', 'B'), label_size = 9)
   
+  fig1a_panel <- get_panel(fig1a_impact_map)
+  fig1b_panel <- get_panel(fig1b_intens_map)
+  fig1a_legend <- get_legend(fig1a_impact_map)
+  fig1b_legend <- get_legend(fig1b_intens_map)
+  map_width <- .9
+  fig1 <- ggdraw() +
+    draw_plot(fig1a_panel,  x = .01, y = 0.51, width = .88, height = .48) +
+    draw_plot(fig1b_panel,  x = .01, y = 0.01, width = .88, height = .48) +
+    draw_plot(fig1a_legend, x = .9, y = 0.5, width = .1, height = .5) +
+    draw_plot(fig1b_legend, x = .9, y = 0,   width = .1, height = .5) +
+    draw_label('A', x = .05, y = .95, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
+    draw_label('B', x = .05, y = .45, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
+    draw_label('Impact score', x = .935, y = .93, hjust = 1, vjust = 1, 
+               size = 7, color = 'grey20', fontface = 'bold') +
+    draw_label('Intensification', x = .93, y = .43, hjust = 1, vjust = 1, 
+               size = 7, color = 'grey20', fontface = 'bold')
+    
   ggsave(plot = fig1, filename = fig1_file,
          height = 10, width = 12, units = 'cm', dpi = 300)
 }
 
 knitr::include_graphics(fig1_file)
+# unlink(fig1_file)
 ```
 
 
@@ -159,10 +176,11 @@ if(!file.exists(figS1_file)) {
   
   n_imp_map <- ggplot() +
     ggtheme_map(base_size = 7) +
-    geom_tile(data = imp_ct_df, aes(x, y, fill = n)) +
+    geom_raster(data = imp_ct_df, aes(x, y, fill = n)) +
     geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
     scale_fill_viridis_c(breaks = lgd_brks, labels = lgd_brks) +
-    theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
+    theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+          legend.key.width = unit(.25, 'cm')) +
     coord_sf(datum = NA) + ### ditch graticules
     scale_x_continuous(expand = c(0, 0)) +
     scale_y_continuous(expand = c(0, 0)) +
@@ -172,10 +190,11 @@ if(!file.exists(figS1_file)) {
   
   nspp_map <- ggplot() +
     ggtheme_map(base_size = 7) +
-    geom_tile(data = nspp_df, aes(x, y, fill = nspp), size = .1) +
+    geom_raster(data = nspp_df, aes(x, y, fill = nspp), size = .1) +
     geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
     scale_fill_viridis_c(breaks = lgd_brks, labels = lgd_brks) +
-    theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
+    theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+          legend.key.width = unit(.25, 'cm')) +
     coord_sf(datum = NA) + ### ditch graticules
     scale_x_continuous(expand = c(0, 0)) +
     scale_y_continuous(expand = c(0, 0)) +

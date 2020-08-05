@@ -1,0 +1,370 @@
+---
+title: 'Examine co-occurrence of impacted taxonomic groups'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+library(widyr) ### for function: pairwise_count()
+library(ggforce) ### for geom_arc_bar()
+library(cowplot)
+
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Examine co-occurrence of impacts on taxonomic groups for each stressor category.  For each group, identify cells with significant impacts (e.g. greater than 25% of spp in the group are impacted), convert to a presence/absence of significant impacts, and then create a pairwise plot to show which taxonomic groups co-occur (in pairs).
+
+Do the same for intensification maps (don't worry about abatement?)
+
+# Methods
+
+For each stressor category:
+
+* pull in impact rasters for all taxonomic groups for 2013.
+* flatten to "significantly impacted" by taxon.
+* combine into a dataframe; join with ocean area.
+* calculate pairwise impacted area for each taxon pair.
+
+## Helper functions
+
+* Function `get_taxon_impacts()` to read in a taxon map and convert to a data.frame with impacted spp, total spp, and pct impacted.
+* Function `flatten_impacts()` to get taxon impacts (using the function above) and return only those cell IDs that meet or exceed a given threshold.
+
+```{r}
+dir_tx_imp  <- file.path(dir_bd_anx, 'taxon_impact_rasts')
+dir_tx_nspp <- here('_output/rasters/taxon_richness_maps')
+
+get_taxon_impacts <- function(tx, str_cat) {
+  ### tx <- taxa_gps[1]; str_cat <- 'all'
+  tx_short <- str_replace_all(tx, ' ', '')
+  imp_f  <- file.path(dir_tx_imp,  sprintf('taxon_impact_%s_2013_%s.tif', tx_short, str_cat))
+  nspp_f <- file.path(dir_tx_nspp, sprintf('taxon_nspp_%s.tif', tx_short))
+  
+  imp_r  <- raster(imp_f)
+  nspp_r <- raster(nspp_f)
+  imp_df <- data.frame(cell_id = 1:ncell(imp_r),
+                       imp  = values(imp_r),
+                       nspp = values(nspp_r)) %>%
+    filter(!is.na(imp) & !is.na(nspp)) %>%
+    mutate(desc = tx)
+}
+
+flatten_impacts <- function(tx, str_cat, thresh) {
+  sig_imp_df <- get_taxon_impacts(tx, str_cat) %>%
+    filter((imp / nspp) >= thresh) %>%
+    select(cell_id, desc) %>%
+    mutate(stressor = str_cat)
+}
+```
+
+```{r pairwise plot for stressor categories}
+
+ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+ocean_a_df <- data.frame(cell_id = 1:ncell(ocean_a_rast),
+                         a_prop = values(ocean_a_rast)) %>%
+  filter(!is.na(a_prop)) %>%
+  mutate(a_km2 = a_prop * res(ocean_a_rast)[1]^2 / 1e6)
+
+spp_sens <- get_incl_spp() %>%
+  filter(!is.na(stressor))
+
+taxa_gps <- spp_sens$desc %>% unique() %>% sort()
+str_cats <- c('all', 'climate', 'ocean', 'fishing', 'land-based')
+
+### first assemble df for full-ocean impacts using 25% threshold
+pairwise_results_file <- here('_output/taxa_pairwise_results.csv')
+
+if(!file.exists(pairwise_results_file)) {
+  results_df <- data.frame()
+  for(str_cat in str_cats) {
+    ### str_cat <- 'climate'
+    
+    tx_str_df <- parallel::mclapply( # tx <- taxa_gps[1]
+      taxa_gps, FUN = function(tx) {
+        df <- flatten_impacts(tx, str_cat, thresh = .25)
+      }, mc.cores = 10) %>%
+      bind_rows() %>%
+      dt_join(ocean_a_df, by = 'cell_id', type = 'left')
+    
+    tmp_df <- pairwise_count(tx_str_df,
+                                item = desc, feature = cell_id, wt = a_km2,
+                                sort = TRUE, diag = TRUE) %>%
+      rename(tx1 = item1, tx2 = item2, area_km2 = n) %>%
+      mutate(str = str_cat)
+    
+    results_df <- bind_rows(results_df, tmp_df)
+  }
+  
+  write_csv(results_df, pairwise_results_file)
+}
+
+```
+
+``` {r}
+
+results_df <- read_csv(pairwise_results_file)
+### Note: geom_arc_bar doesn't seem to like factors on axes
+mtxplot_df <- results_df %>%
+  filter(tx1 >= tx2) %>%
+  mutate(tx1 = fct_rev(tx1),
+         tx2 = factor(tx2)) %>%
+  mutate(tx1_n = as.integer(tx1),
+         tx2_n = as.integer(tx2),
+         str = factor(str),
+         # r = log(area_km2) / log(max(area_km2, na.rm = TRUE)) / 2.5,
+         r = (area_km2 / max(area_km2, na.rm = TRUE))^(1/2) / 2.5 + .08,
+         start = (as.integer(str) - 1) * pi/2,
+         end   = (as.integer(str)) * pi/2)
+
+fcol_mtxplot_df <- mtxplot_df %>%
+  filter(str != 'all')
+all_mtxplot_df <- mtxplot_df %>%
+  filter(str == 'all')
+
+bkgd_tri <- data.frame(group = c(1, 1, 1), 
+                       x = c(.5, 10.5, 10.5), 
+                       y = c(10.5, 10.5, .5))
+
+fig3a_pairwise_plot <- ggplot() +
+  ggtheme_plot() +
+  geom_polygon(data = bkgd_tri, aes(x = x, y = y, group = group),
+               fill = 'white', color = 'white') +
+  geom_abline(intercept = 11, slope = -1, color = 'darkred', alpha = .5) +
+  geom_circle(data = all_mtxplot_df, aes(x0 = tx1_n, y0 = tx2_n, r = r),
+              size = .1, color = 'grey30', fill = 'white') +
+  geom_arc_bar(data = fcol_mtxplot_df, 
+               aes(x0 = tx1_n, y0 = tx2_n, r = r, 
+                   r0 = 0, start = start, end = end, fill = str),
+               color = 'grey30', size = .1) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        axis.title = element_blank()) +
+  scale_x_continuous(breaks = 1:length(taxa_gps),
+                     labels = levels(mtxplot_df$tx1),
+                     expand = c(0, 0)) +
+  scale_y_continuous(breaks = 1:length(taxa_gps),
+                     labels = levels(mtxplot_df$tx2),
+                     expand = c(0, 0)) +
+  coord_fixed() +
+  scale_fill_viridis_d()
+
+legend_df <- data.frame(x = 0, y = 0, 
+                        r = c(.08, .18, .28, .38, .48),
+                        str = c('land-based', 'ocean', 'climate', 'fishing', 'all')) %>%
+  mutate(str = factor(str, levels = levels(mtxplot_df$str)),
+         # r = log(area_km2) / log(max(area_km2, na.rm = TRUE)) / 2.5,
+         # r = (a / max(a, na.rm = TRUE))^(1/2) / 2.5 + .08,
+         start = (as.integer(str) - 1) * pi/2,
+         end   = (as.integer(str)) * pi/2)
+  
+
+fig3a_legend <- ggplot() +
+  theme_void() +
+  geom_circle(data = legend_df %>% filter(str == 'all'), 
+              aes(x0 = x, y0 = y, r = r),
+              size = .1, color = 'grey30', fill = 'white') +
+  geom_arc_bar(data = legend_df %>% filter(str != 'all'), 
+               aes(x0 = x, y0 = y, r = r, 
+                   r0 = 0, start = start, end = end, fill = str),
+               color = 'grey30', size = .1, show.legend = FALSE) +
+  coord_fixed() +
+  scale_fill_viridis_d()
+
+# fig3a_pairwise_plot
+# fig3a_legend
+```
+## Combine Fig 3a pieces
+
+```{r}
+
+lgd_ctr <- .75
+lgd_size <- .12
+
+fig3a <- ggdraw() +
+  draw_plot(fig3a_pairwise_plot + theme(legend.position = 'none')) +
+  draw_line(x = c(lgd_ctr, lgd_ctr - .1*lgd_size),
+            y = c(lgd_ctr, lgd_ctr + .65 * lgd_size),
+            size = .1, color = 'grey30') +
+  draw_plot(fig3a_legend, 
+            x = lgd_ctr - .5 * lgd_size, 
+            y = lgd_ctr - .5 * lgd_size, 
+            width = lgd_size, height = lgd_size) +
+  draw_label('climate',  color = 'grey20',
+             x = lgd_ctr + .2*lgd_size, y = lgd_ctr - .25*lgd_size,
+             hjust = 0, size = 7) +
+  draw_label('fishing',  color = 'grey20',
+             x = lgd_ctr - .3*lgd_size, y = lgd_ctr - .25*lgd_size,
+             hjust = 1, size = 7) +
+  draw_label('land-based',  color = 'grey20',
+             x = lgd_ctr - .15*lgd_size, y = lgd_ctr + .25*lgd_size,
+             hjust = 1, size = 7) +
+  draw_label('ocean',  color = 'grey20',
+             x = lgd_ctr + .15*lgd_size, y = lgd_ctr + .25*lgd_size,
+             hjust = 0, size = 7) +
+  draw_label('cumulative',  color = 'grey20',
+             x = lgd_ctr, y = lgd_ctr + .67 * lgd_size,
+             hjust = .5, vjust = 0, size = 7)
+ 
+```
+
+# Map impacted taxa
+
+Map the  number of taxonomic groups present in a cell with at least 25% of their membership impacted.
+
+```{r map for impacted taxa count}
+
+taxa_ct_rast_file <- here('_output/rasters/n_impacted_taxa_map.tif')
+
+if(!file.exists(taxa_ct_rast_file)) {
+  
+  spp_incl <- get_incl_spp()
+
+  cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+  ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+
+  spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+
+  tx_str_df <- parallel::mclapply( # tx <- taxa_gps[1]
+    taxa_gps, FUN = function(tx) {
+      df <- flatten_impacts(tx, 'all', thresh = .25)
+    }, mc.cores = 9) %>%
+    bind_rows() %>%
+    dt_join(ocean_a_df, by = 'cell_id', type = 'left')
+    
+  taxa_map_df <- tx_str_df %>%
+    group_by(cell_id) %>%
+    summarize(n_tx = n())
+  
+  taxa_map <- map_to_rast(taxa_map_df, cell_val = 'n_tx')
+
+  writeRaster(taxa_map, taxa_ct_rast_file, overwrite = TRUE)
+}
+
+```
+
+## Map of taxa presence (count)
+
+Similar to species richness, for this comparison we want to know taxonomic richness.  Select the spp in the taxon, pull in range maps, sum up, flatten, 
+
+``` {r create taxa richness map}
+
+taxa_rich_mapfile <- here('_output/rasters/n_taxa_map.tif')
+
+if(!file.exists(taxa_rich_mapfile) | reload) {
+  
+  spp_incl <- get_incl_spp()
+
+  cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+  ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+
+  spp_range_dir <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+  
+  taxa_map_list <- vector('list', length = length(taxa_gps))
+  for(i in seq_along(taxa_gps)) {
+    # i <- 2
+    taxa_gp <- taxa_gps[i]
+    spp_ids_taxa <- spp_incl %>%
+      filter(taxon == taxa_gp) %>%
+      .$iucn_sid %>%
+      unique()
+    
+    map_list <- parallel::mclapply(spp_ids_taxa, mc.cores = 12,
+      FUN = function(id) {
+        # id <- spp_ids_taxa[1]
+        spp_f <- file.path(spp_range_dir, sprintf('iucn_sid_%s.csv', id))
+        spp_df <- read_csv(spp_f, col_types = 'ii') %>%
+          mutate(iucn_sid = id) %>%
+          mutate(present = (presence != 5) & !is.na(presence))
+      })
+    map_df <- bind_rows(map_list)
+    map_taxa_df <- map_df %>%
+      group_by(cell_id) %>%
+      summarize(present = any(present))
+    taxa_map_list[[i]] <- map_to_rast(map_taxa_df, cell_val = 'present')
+  }
+  
+  taxa_map_stack <- stack(taxa_map_list)
+  taxa_rich_rast <- raster::calc(taxa_map_stack, 
+                                fun = sum, na.rm = TRUE) %>%
+    mask(ocean_a_rast)
+  
+  writeRaster(taxa_rich_rast, taxa_rich_mapfile, overwrite = TRUE)
+}
+
+```
+
+```{r}
+taxa_impact_rast <- raster(taxa_ct_rast_file)
+# taxa_rich_rast <- raster(taxa_rich_mapfile)
+# taxa_prop_impact <- taxa_impact_rast / taxa_rich_rast
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(taxa_impact_rast))
+
+taxa_impact_df <- rasterToPoints(taxa_impact_rast) %>%
+  as.data.frame() %>%
+  setNames(c('x', 'y', 'n_tx_imp')) %>%
+  mutate(n_tx_imp = factor(n_tx_imp) %>% fct_rev())
+
+
+fig3b_impact_map <- ggplot() +
+  ggtheme_map(base_size = 7) +
+  geom_raster(data = taxa_impact_df, aes(x, y, fill = n_tx_imp)) +
+  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  scale_fill_viridis_d(direction = -1) +
+  theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+        legend.key.width  = unit(.25, 'cm'),
+        legend.key.height = unit(.45, 'cm'),
+        legend.title = element_blank()) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))
+
+fig3b <- ggdraw() +
+  draw_plot(get_panel(fig3b_impact_map),  x = .01, y = 0.01, width = .88, height = .98) +
+  draw_plot(get_legend(fig3b_impact_map), x = .9, y = .2, width = .1, height = .6) +
+  draw_label('Taxa impacted', x = .95, y = .84, hjust = 1, vjust = 1, 
+             size = 7, color = 'grey20', fontface = 'bold')
+
+# fig3b
+```
+
+# Combine figs 3a and 3b
+
+``` {r}
+fig3_file <- here('ms_figs/fig3_taxa_cooccurrence.png')
+
+fig3 <- plot_grid(fig3a, fig3b, nrow = 2, 
+                  labels = c('A', 'B'), label_size = 9, label_colour = 'grey20',
+                  rel_heights = c(2, 1))
+
+ggsave(plot = fig3, filename = fig3_file,
+       width = 12, height = 18, units = 'cm', dpi = 300)
+
+knitr::include_graphics(fig3_file)
+# unlink(fig1_file)
+```

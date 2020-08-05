@@ -37,14 +37,14 @@ if(file.exists(dir_M)) {
   message("Not logged into Mazu, can't access the IUCN API key file.")
 }
 
-api_version_current <- jsonlite::fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
-  .$version
+# api_version_current <- jsonlite::fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
+#   .$version
 api_version <- '2020-1'
-if(api_version_current != api_version) {
-  message('IUCN API at ', api_version_current, ' but using ', api_version)
-} else {
-  message('IUCN API at ', api_version, '; most current version.')
-}
+# if(api_version_current != api_version) {
+#   message('IUCN API at ', api_version_current, ' but using ', api_version)
+# } else {
+#   message('IUCN API at ', api_version, '; most current version.')
+# }
 
 ### Create table of species included in this assessment
 ### * Threatened or near threatened

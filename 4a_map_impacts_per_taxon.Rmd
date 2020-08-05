@@ -57,9 +57,7 @@ spp_impacted <- list.files(impact_map_dir, recursive = TRUE) %>%
 ### Get inclusion list; drop species with no sensitivities to stressors.
 ### Also append the class level taxa instead of assessment group taxa
 spp_sens <- get_incl_spp() %>%
-  filter(!is.na(stressor)) %>%
-  left_join(get_spp_taxon(), by = c('iucn_sid', 'assess_gp')) %>%
-  mutate(taxon = tolower(rank))
+  mutate(taxon = str_replace_all(desc, ' ', ''))
 
 ### look for dropped taxonomic groups...
 comp_file <- here('_data', sprintf('iucn_comp_assessed_%s.csv', api_version))
@@ -136,11 +134,6 @@ reload <- FALSE
 ```{r create taxa maps}
 str_cats <- c('land-based', 'ocean', 'fishing', 'climate', 'all')
 
-### load priorities; if not normalizing, priority is based only on range, so
-### easily repeatable and not dependent on the spp set
-priority_df <- get_spp_priority(risk_wt = FALSE) %>%
-  filter(iucn_sid %in% spp_sens$iucn_sid)
-
 for(str_cat in str_cats) {
   # str_cat <- str_cats[5]
   
@@ -150,11 +143,8 @@ for(str_cat in str_cats) {
     taxon_map_files <- file.path(taxon_impact_map_dir, 
                                 sprintf('taxon_impact_%s_%s_%s.tif',
                                         taxon_gp, year_span, str_cat))
-    taxon_priority_map_files <- file.path(taxon_impact_map_dir, 
-                                sprintf('taxon_priority_impact_%s_%s_%s.tif',
-                                        taxon_gp, year_span, str_cat))
-    
-    if(any(!file.exists(c(taxon_map_files, taxon_priority_map_files))) | reload) {
+
+    if(any(!file.exists(taxon_map_files)) | reload) {
       spp_ids_taxa <- spp_sens %>%
         filter(taxon == taxon_gp) %>%
         filter(str_cat == 'all' | category == str_cat) %>%
@@ -186,13 +176,12 @@ for(str_cat in str_cats) {
                 imp_map <- get_spp_impact(spp_id, imp_file)
               }, mc.cores = subgp_size) %>%
             bind_rows()
+          
           message('  summarizing group ', i)
           # system.time({
           impacts_gp <- impact_maps %>%
-            dt_join(priority_df, by = 'iucn_sid', type = 'left') %>%
             group_by(cell_id, year) %>%
-            summarize(priority_sum_spp = sum(priority, na.rm = TRUE),
-                      n_spp = n()) %>%
+            summarize(n_spp = n()) %>%
             ungroup()
           # })
           
@@ -201,8 +190,7 @@ for(str_cat in str_cats) {
       
       taxon_impacts_df <- bind_rows(taxon_impacts_list) %>%
         group_by(cell_id, year) %>%
-        summarize(n_spp = sum(n_spp, na.rm = TRUE),
-                  priority_sum_spp = sum(priority_sum_spp, na.rm = TRUE)) %>%
+        summarize(n_spp = sum(n_spp, na.rm = TRUE)) %>%
         ungroup() %>%
         mutate(taxon = taxon_gp)
       
@@ -213,15 +201,13 @@ for(str_cat in str_cats) {
         taxon_impacts_df <- data.frame(cell_id = NA,
                                        year    = NA,
                                        n_spp   = NA,
-                                       priority_sum_spp = NA,
                                        taxon   = taxon_gp)
       }
       
-      ### write out as count and priority rasters by year
+      ### write out as count by year
       for(i in seq_along(year_span)) {
         # i <- 1
         taxon_nspp_map_file <- taxon_map_files[i]
-        taxon_pr_map_file   <- taxon_priority_map_files[i]
         
         taxon_impact_yr_df <- taxon_impacts_df %>%
           filter(year == year_span[i])
@@ -229,11 +215,6 @@ for(str_cat in str_cats) {
         nspp_yr_rast <- map_to_rast(taxon_impact_yr_df, 
                                     cell_val = 'n_spp')
         writeRaster(nspp_yr_rast, taxon_nspp_map_file, overwrite = TRUE)
-        
-        pr_sum_yr_rast <- map_to_rast(taxon_impact_yr_df,
-                                      cell_val = 'priority_sum_spp')
-        writeRaster(pr_sum_yr_rast, taxon_pr_map_file, overwrite = TRUE)
-        
       }
       
     } else {
@@ -245,7 +226,7 @@ for(str_cat in str_cats) {
 
 ## Animate select taxa impact maps 
 
-```{r animate function}
+```{r animate function, eval = FALSE}
 
 library(animation)
 
@@ -304,7 +285,7 @@ make_gifs <- function(map_stack, filename, layer_names = NULL, log_out = TRUE) {
 
 ```
 
-```{r impact maps by taxa, eval = TRUE}
+```{r impact maps by taxa, eval = FALSE}
 
 mapfiles <- list.files(taxon_impact_map_dir, full.names = TRUE)
 
@@ -321,7 +302,7 @@ taxa <- taxa[c(1, 2, 3, 5, 9)]
 
 ```
 
-``` {r animate impacts, results = 'asis', eval = TRUE}
+``` {r animate impacts, results = 'asis', eval = FALSE}
 ### Animate the results
 
 for(str_cat in str_cats) {
@@ -341,51 +322,6 @@ for(str_cat in str_cats) {
       make_gifs(map_stack, 
                 filename = gif_file,
                 layer_names = paste(t, str_cat, 'impacts', taxon_map_df$year))
-    }
-    
-    cat(sprintf('![](%s)', gif_file))
-  }
-}
-```
-
-<!-- ## Animate count vs. priority maps -->
-
-<!-- Just for the most recent year of each, back and forth to highlight diffs.  To highlight the differences in _pattern_ not _magnitude_, I'll stretch the priority scale to have the same range as the count scale (i.e. 1 to the max number of critters). -->
-
-``` {r animate impacts v priorities, results = 'asis', eval = FALSE}
-### Animate the results
-
-for(str_cat in str_cats) {
-  # str_cat <- str_cats[3]
-  for(t in taxa) {
-    # t <- taxa[4]
-    gif_file <- here(sprintf('figs/impact_priorities_%s_%s.gif', t, str_cat))
-    
-    if(!file.exists(gif_file) | reload) {
-      taxon_map_df <- all_taxa_maps %>%
-        filter(taxon == t) %>%
-        filter(impact == str_cat) %>%
-        filter(year == 2013)
-      rast_files <- taxon_map_df$f
-      priority_file <- str_detect(rast_files, 'priority')
-      count_rast <- raster(rast_files[!priority_file])
-      priority_rast <- raster(rast_files[priority_file])
-      ### define rescaling factors
-      c_r <- range(values(count_rast), na.rm = TRUE)
-      p_r <- range(values(priority_rast), na.rm = TRUE)
-      
-      if(p_r[2] - p_r[1] == 0) {
-        ### just one value; avoid div by zero
-        p_rescale <- priority_rast * c_r[1] / p_r[1]
-      } else {
-        p_rescale <- (priority_rast - p_r[1]) / (p_r[2] - p_r[1])
-        p_rescale <- p_rescale * (c_r[2] - c_r[1]) + c_r[1]
-      }
-
-      map_stack <- stack(count_rast, p_rescale)
-      make_gifs(map_stack, 
-                filename = gif_file,
-                layer_names = str_replace_all(names(map_stack), 'taxon_|.tif', ''))
     }
     
     cat(sprintf('![](%s)', gif_file))

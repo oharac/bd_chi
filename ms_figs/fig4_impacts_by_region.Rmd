@@ -200,8 +200,8 @@ abnj_imp  <- eez_summary_df %>%
 
 eez_to_plot <- eez_top %>%
   bind_rows(data.frame(eez = NA, rgn_label = '', stressor = 'cumulative')) %>%
-  # bind_rows(eez_select) %>%
-  # bind_rows(data.frame(eez = NA, rgn_label = ' ', stressor = 'cumulative')) %>%
+  bind_rows(eez_select) %>%
+  bind_rows(data.frame(eez = NA, rgn_label = ' ', stressor = 'cumulative')) %>%
   bind_rows(eez_btm) %>%
   bind_rows(data.frame(eez = NA, rgn_label = '  ', stressor = 'cumulative')) %>%
   bind_rows(abnj_imp) %>%
@@ -220,21 +220,24 @@ fig4_heatmap <- ggplot(eez_to_plot, aes(x = stressor, y = rgn_label, fill = a_wt
   scale_fill_viridis_c(na.value = rgb(0, 0, 0, 0)) +
   theme(axis.title = element_blank(),
         panel.grid.major = element_blank(),
-        legend.key.width = unit(.2, 'cm'),
-        legend.title = element_text(angle = 90, size = 8)) +
+        legend.key.width = unit(.28, 'cm'),
+        legend.text = element_text(angle = 90, hjust = .5),
+        legend.title = element_blank()) +
+        # legend.title = element_text(angle = 90, size = 8)) +
   labs(fill = 'Mean impact')
 
 fig4_done <- ggdraw() +
   draw_plot(fig4_heatmap + theme(legend.position = 'none'),
             x = 0, y = 0, width = .9, height = 1) + 
   draw_plot(get_legend(fig4_heatmap), x = .9, y = .2, width = .1, height = .3) +
-  draw_label('A', x = .85, y = .8, colour = 'white', size = 9, fontface = 'bold') +
-  draw_label('B', x = .85, y = .6, colour = 'white', size = 9, fontface = 'bold') +
-  draw_label('C', x = .85, y = .4, colour = 'white', size = 9, fontface = 'bold') +
-  draw_label('D', x = .85, y = .2, colour = 'white', size = 9, fontface = 'bold')
+  draw_label('Mean impact', x = .937, y = .57, color = 'grey20', size = 9, angle = 90) +
+  draw_label('A', x = .87, y = .86, colour = 'white', size = 9, fontface = 'bold') +
+  draw_label('B', x = .87, y = .65, colour = 'white', size = 9, fontface = 'bold') +
+  draw_label('C', x = .87, y = .42, colour = 'white', size = 9, fontface = 'bold') +
+  draw_label('D', x = .87, y = .16, colour = 'white', size = 9, fontface = 'bold')
 
 ggsave(plot = fig4_done, filename = here('ms_figs/fig4_impact_by_eez.png'), 
-       width = 12, height = 15, units = 'cm', dpi = 300)
+       width = 12, height = 12, units = 'cm', dpi = 300)
 
 knitr::include_graphics(here('ms_figs/fig4_impact_by_eez.png'))
 ```
