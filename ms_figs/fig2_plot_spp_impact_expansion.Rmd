@@ -123,11 +123,13 @@ Use trends to predict species impacted range in 2030.
 trend_df <- read_csv(spp_expansion_trend_file)
 
 imp_range_df <- read_csv(imp_range_file) %>%
-  select(stressor, year, impact_km2, range_km2, iucn_sid, pct_impact) %>%
+  select(stressor, year, impact_km2, impact_2plus_km2, range_km2, iucn_sid, pct_impact) %>%
+  mutate(pct_impact_2plus = impact_2plus_km2 / range_km2,
+         pct_impact_2plus = ifelse(is.na(pct_impact_2plus), 0, pct_impact_2plus)) %>%
   group_by(iucn_sid, stressor) %>%
   complete(year = 2003:2013) %>%
   arrange(iucn_sid, stressor, year) %>%
-  fill(pct_impact, .direction = 'downup') %>%
+  fill(pct_impact, pct_impact_2plus, .direction = 'downup') %>%
   ungroup() %>%
   filter(year %in% c(2003, 2013)) %>%
   filter(!is.na(pct_impact))
@@ -143,7 +145,7 @@ imp_2030_df <- imp_range_df %>%
          year = 2030) %>%
   ### add in 2003 and 2013 info
   bind_rows(imp_range_df) %>%
-  select(iucn_sid, year, pct_impact, stressor) %>%
+  select(iucn_sid, year, pct_impact, pct_impact_2plus, stressor) %>%
   filter(!is.na(pct_impact))
   
 ```
@@ -155,14 +157,18 @@ taxon_df <- get_spp_taxon()
 range_summary_all <- imp_2030_df %>%
   group_by(stressor, year) %>%
   summarize(mean_pct_imp = mean(pct_impact),
-            sd_pct_imp   = sd(pct_impact)) %>%
+            sd_pct_imp   = sd(pct_impact),
+            mean_pct_2plus = mean(pct_impact_2plus),
+            sd_pct_2plus = sd(pct_impact_2plus)) %>%
   mutate(desc = 'all spp')
 
 range_summary_taxon <- imp_2030_df %>%
   left_join(taxon_df, by = 'iucn_sid') %>%
   group_by(desc, stressor, year) %>%
   summarize(mean_pct_imp = mean(pct_impact),
-            sd_pct_imp   = sd(pct_impact)) %>%
+            sd_pct_imp   = sd(pct_impact),
+            mean_pct_2plus = mean(pct_impact_2plus),
+            sd_pct_2plus = sd(pct_impact_2plus)) %>%
   ungroup()
 ```
 
@@ -289,6 +295,7 @@ fig2a <- ggplot(cum_impact_df) +
   labs(y = 'Percent of range impacted') +
   coord_flip() +
   theme(axis.title.y = element_blank(),
+        panel.grid.major.y = element_blank(),
         legend.key.size = unit(.3, 'cm'),
         legend.background = element_blank(),
         legend.title = element_blank())
@@ -317,6 +324,7 @@ fig2b <- ggplot(plot_tax_sum_df) +
   geom_text(data = n_labels,
             aes(x = desc, label = n_lbl), y = 1.01,
             size = 1.9, hjust = 0) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   labs(y = 'Percent of range impacted') +
   scale_y_continuous(expand = c(0, 0), 
                      limits = c(0, 1.2),
@@ -325,6 +333,7 @@ fig2b <- ggplot(plot_tax_sum_df) +
   scale_fill_manual(values = c('#d01c8b', 'grey90', '#4dac26')) +
   coord_flip() +
   theme(axis.title.y = element_blank(),
+        panel.grid.major.y = element_blank(),
         legend.key.size = unit(.3, 'cm'),
         legend.background = element_blank(),
         axis.text.y = element_blank(), ### align with 2a
@@ -342,7 +351,7 @@ fig2 <- plot_grid(fig2a + theme(legend.position = 'none'), ### drop legend for m
                   labels = c('A', 'B'), label_size = 9,
                   rel_widths = c(1.2, 1),
                   align = 'h', nrow = 1)  +
-  draw_plot(legend_2a, x = .35, y = .2, width = .2, height = .2) +
+  draw_plot(legend_2a, x = .37, y = .2, width = .2, height = .2) +
   draw_plot(legend_2b, x = .72, y = .2, width = .2, height = .2)
   
   
@@ -358,15 +367,33 @@ x <- imp_2030_df %>%
   left_join(taxon_df)
 
 y <- x %>% 
-  filter(desc == 'sharks and rays' & stressor == 'cum_all')
+  filter(desc == 'sharks and rays') %>%
+  filter(stressor %in% c('art_fish', 'dem_nondest_hb', 'dem_nondest_lb', 'pel_hb', 'pel_lb', 'dem_dest'))
+
 z <- y %>% 
   spread(year, pct_impact)
 zz <- z %>% 
   mutate(diff_2003_2013 = `2013` - `2003`,
-         diff_2013_2030 = `2030` - `2013`)
+         diff_2013_2030 = `2030` - `2013`) %>%
+  left_join(get_spp_range(), by = 'iucn_sid') %>%
+  filter(eez == 0)
 
 mean(zz$diff_2003_2013) # -0.008258862
 mean(zz$diff_2013_2030) # -0.02094585
+
+ggplot(zz, aes(x = range_km2, y = diff_2003_2013)) +
+  ggtheme_plot() +
+  geom_point() +
+  scale_x_log10() +
+  facet_wrap(~ stressor)
+```
+
+``` {r}
+qwer <- zz %>%
+  mutate(quartile = ntile(range_km2, 4)) %>%
+  group_by(quartile) %>%
+  summarize(mean_range = mean(range_km2),
+            mean_diff = mean(diff_2003_2013))
 
 ### Note that from 2013 to 2030, many expanding species expand very little 
 ### while many contracting species contract by a lot

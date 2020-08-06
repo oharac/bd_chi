@@ -41,7 +41,8 @@ Plotting the number of species impacted by each stressor.  This plot includes sp
 ```{r}
 sens_all_file <- here('_output', sprintf('spp_sensitivity_%s.csv', api_version))
 
-sens_all_df <- read_csv(sens_all_file, col_types = cols('iucn_sid' = 'i'))
+sens_all_df <- read_csv(sens_all_file, col_types = cols('iucn_sid' = 'i')) %>%
+  left_join(read_csv(here('_raw/stressor_names.csv')), by = 'stressor')
 
 spp_incl <- get_incl_spp() %>%
   filter(!is.na(stressor))
@@ -51,19 +52,21 @@ plot_df <- sens_all_df %>%
   select(-code, -sens) %>%
   distinct() %>%
   filter(iucn_sid %in% spp_incl$iucn_sid) %>%
-  group_by(stressor, category) %>%
+  group_by(str_desc, category) %>%
   summarize(n_spp = n()) %>%
   ungroup() %>%
   arrange(n_spp) %>%
-  mutate(category = fct_inorder(category),
-         stressor = fct_inorder(stressor))
+  mutate(category = factor(category, levels = c("climate", "fishing", "land-based", "ocean")),
+         stressor = fct_inorder(str_desc))
 
-ggplot(plot_df, aes(x = stressor, y = n_spp, fill = category)) +
-  ggtheme_plot() +
+n_spp_str <- ggplot(plot_df, aes(x = stressor, y = n_spp, fill = category)) +
+  ggtheme_plot(base_size = 7) +
   geom_col() +
+  scale_fill_viridis_d() +
   coord_flip() +
   labs(x = 'Stressor',
        y = 'Number of impacted species')
+
 ```
 
 ## Number of stressor sensitivities per species
@@ -83,16 +86,28 @@ str_count_df <- spp_incl %>%
   ungroup()
 
 plot_df <- str_count_df %>%
-  rename(stressors = n_str, categories = n_cat) %>%
-  gather(key = type, value = ct, stressors, categories) %>%
-  mutate(ct = factor(ct))
+  rename(stressors = n_str, `stressor categories` = n_cat) %>%
+  gather(key = type, value = ct, stressors, `stressor categories`) %>%
+  arrange(ct) %>%
+  mutate(ct = as.character(ct),
+         ct = ifelse(as.integer(ct) > 5, '> 5', ct),
+         ct = fct_inorder(ct))
 
-ggplot(plot_df,
-       aes(x = ct, fill = type)) +
-  ggtheme_plot() +
-  geom_bar(position = 'dodge') +
-  labs(x = '# of stressors',
-       y = 'spp count')
+n_str_spp <- ggplot(plot_df, aes(x = ct)) +
+  ggtheme_plot(base_size = 7) +
+  geom_bar(position = 'dodge', fill = 'grey20') +
+  theme(axis.title.x = element_blank()) +
+  labs(y = 'Number of species') +
+  facet_wrap(~ type, nrow = 1, scales = 'free_x')
+
+z <- cowplot::plot_grid(n_spp_str, n_str_spp, 
+                        nrow = 2,
+                        labels = c('A', 'B'), label_size = 9, label_colour = 'grey20')
+
+ggsave(plot = z, filename = here('ms_figs/si_n_sensitivity.png'), 
+       width = 12, height = 8, units = 'cm', dpi = 300)
+
+knitr::include_graphics(here('ms_figs/si_n_sensitivity.png'))
 ```
 
 ## Try a pairwise table to examine # of spp with pairwise combos of stressors
