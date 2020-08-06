@@ -1,0 +1,15 @@
+stressor,str_desc
+direct_human,Direct human
+nutrient,Nutrient pollution
+shipping,Shipping
+art_fish,Artisanal fishing
+dem_dest,Demersal destructive fishing
+dem_nondest_hb,Demersal non-destructive high bycatch fishing
+dem_nondest_lb,Demersal non-destructive low bycatch fishing
+pel_hb,Pelagic high bycatch fishing
+pel_lb,Pelagic low bycatch fishing
+light,Light pollution
+organic,Organic chemical pollution
+oa,Ocean acidification
+slr,Sea level rise
+sst,Sea surface temperature extremes

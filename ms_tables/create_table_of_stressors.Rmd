@@ -63,12 +63,15 @@ thr_to_spp <- spp_incl %>%
   distinct()
 
 threat_table <- thr_to_spp %>%
-  group_by(code_main, desc_main, desc_sub, stressor)  %>%
+  left_join(read_csv(here('_raw/stressor_names.csv')), by = 'stressor') %>%
+  group_by(code_main, desc_main, desc_sub, str_desc)  %>%
   summarize(n_spp = n_distinct(iucn_sid)) %>%
   ungroup() %>%
-  arrange(code_main, stressor) %>%
+  arrange(code_main, str_desc) %>%
   select(-code_main) %>%
   setNames(c('Threat category', 'Threat subcategory', 'Stressor', 'n spp'))
+
+write_csv(threat_table, here('ms_tables/s1_table_threat_spp.csv'))
 
 flextable(threat_table) %>%
   theme_vanilla() %>%
