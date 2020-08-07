@@ -205,9 +205,7 @@ if(!file.exists(spp_intens_sum_file)) {
     bind_rows() %>%
     filter(eez == 0) %>%
     group_by(iucn_sid, stressor) %>%
-    mutate(n_years = n_distinct(year))
     filter(year == 2013 | is.na(year)) %>%
-    filter(stressor == 'cumulative') %>%
     mutate(pct_imp = impact_km2 / range_km2,
            pct_incr = ifelse(is.na(incr_km2), 0, incr_km2 / range_km2),
            pct_decr = ifelse(is.na(decr_km2), 0, decr_km2 / range_km2)) %>%
@@ -221,7 +219,7 @@ if(!file.exists(spp_intens_sum_file)) {
 spp_sum_df <- read_csv(spp_intens_sum_file)
 
 tax_sum_df <- spp_sum_df %>%
-  group_by(rank, desc) %>%
+  group_by(desc, stressor) %>%
   summarize(mean_pct_imp  = mean(pct_imp, na.rm = TRUE),
             sd_pct_imp    = sd(pct_imp, na.rm = TRUE),
             mean_pct_incr = mean(pct_incr, na.rm = TRUE),
@@ -233,6 +231,7 @@ tax_sum_df <- spp_sum_df %>%
   ungroup()
 
 all_sum_df <- spp_sum_df %>%
+  group_by(stressor) %>%
   summarize(desc = 'all spp',
             mean_pct_imp  = mean(pct_imp, na.rm = TRUE),
             sd_pct_imp    = sd(pct_imp, na.rm = TRUE),
@@ -244,9 +243,14 @@ all_sum_df <- spp_sum_df %>%
             sd_range_km2  = sd(range_km2)) %>%
   ungroup()
 
+write_csv(bind_rows(all_sum_df, tax_sum_df), 
+          here('ms_figs/fig2b_impact_intens_abate.csv'))
+
 plot_tax_sum_df <- tax_sum_df %>%
+  filter(stressor == 'cumulative') %>%
   arrange(mean_pct_imp) %>%
-  bind_rows(all_sum_df) %>%
+  bind_rows(all_sum_df %>% 
+              filter(stressor == 'cumulative')) %>%
   mutate(desc = fct_inorder(desc)) %>%
   mutate(mean_pct_nochange = mean_pct_imp - mean_pct_decr - mean_pct_incr) %>%
   gather(var, val, mean_pct_incr, mean_pct_decr, mean_pct_nochange) %>%
@@ -257,7 +261,6 @@ plot_tax_sum_df <- tax_sum_df %>%
                                       'no change', 
                                       'abating')))
   
-write_csv(plot_tax_sum_df, here('ms_figs/fig2b_impact_intens_abate.csv'))
 ```
 
 
@@ -287,7 +290,7 @@ fig2a <- ggplot(cum_impact_df) +
   coord_flip() +
   theme(axis.title.y = element_blank(),
         legend.key.size = unit(.25, 'cm'),
-        legend.background = element_rect(fill = 'white'),
+        legend.background = element_blank(),
         legend.title = element_blank())
 
 # fig2a
@@ -326,7 +329,7 @@ fig2b <- ggplot(plot_tax_sum_df) +
   coord_flip() +
   theme(axis.title.y = element_blank(),
         legend.key.size = unit(.25, 'cm'),
-        legend.background = element_rect(fill = 'white'),
+        legend.background = element_blank(),
         axis.text.y = element_blank(), ### align with 2a
         legend.title = element_blank()) 
 
