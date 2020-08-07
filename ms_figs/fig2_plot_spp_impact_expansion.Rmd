@@ -57,7 +57,6 @@ imp_range_file <- file.path(here('int/impacted_ranges.csv'))
 if(!file.exists(imp_range_file)) {
   # unlink(imp_range_file)
   spp_incl <- get_incl_spp() %>%
-    # filter(!is.na(stressor)) %>%
     select(-code) %>%
     distinct()
   
@@ -126,11 +125,6 @@ imp_range_df <- read_csv(imp_range_file) %>%
   select(stressor, year, impact_km2, impact_2plus_km2, range_km2, iucn_sid, pct_impact) %>%
   mutate(pct_impact_2plus = impact_2plus_km2 / range_km2,
          pct_impact_2plus = ifelse(is.na(pct_impact_2plus), 0, pct_impact_2plus)) %>%
-  group_by(iucn_sid, stressor) %>%
-  complete(year = 2003:2013) %>%
-  arrange(iucn_sid, stressor, year) %>%
-  fill(pct_impact, pct_impact_2plus, .direction = 'downup') %>%
-  ungroup() %>%
   filter(year %in% c(2003, 2013)) %>%
   filter(!is.na(pct_impact))
 
@@ -209,15 +203,12 @@ if(!file.exists(spp_intens_sum_file)) {
   
   spp_sum_df <- spp_sum_list %>%
     bind_rows() %>%
-    filter(year == 2013 | is.na(year)) %>%
     filter(eez == 0) %>%
-    # group_by(iucn_sid) %>%
-    # mutate(n_str = n_distinct(stressor) - 1) %>%
-    # ungroup() %>%
+    group_by(iucn_sid, stressor) %>%
+    mutate(n_years = n_distinct(year))
+    filter(year == 2013 | is.na(year)) %>%
     filter(stressor == 'cumulative') %>%
     mutate(pct_imp = impact_km2 / range_km2,
-           # pct_imp2 = ifelse(n_str > 1, impact_2plus_km2 / range_km2, NA),
-           # pct_imp3 = ifelse(n_str > 2, impact_3plus_km2 / range_km2, NA),
            pct_incr = ifelse(is.na(incr_km2), 0, incr_km2 / range_km2),
            pct_decr = ifelse(is.na(decr_km2), 0, decr_km2 / range_km2)) %>%
     left_join(taxon_df, by = 'iucn_sid') %>%
@@ -242,7 +233,6 @@ tax_sum_df <- spp_sum_df %>%
   ungroup()
 
 all_sum_df <- spp_sum_df %>%
-  # group_by(kng, phy, cls) %>%
   summarize(desc = 'all spp',
             mean_pct_imp  = mean(pct_imp, na.rm = TRUE),
             sd_pct_imp    = sd(pct_imp, na.rm = TRUE),
@@ -267,6 +257,7 @@ plot_tax_sum_df <- tax_sum_df %>%
                                       'no change', 
                                       'abating')))
   
+write_csv(plot_tax_sum_df, here('ms_figs/fig2b_impact_intens_abate.csv'))
 ```
 
 
@@ -295,9 +286,8 @@ fig2a <- ggplot(cum_impact_df) +
   labs(y = 'Percent of range impacted') +
   coord_flip() +
   theme(axis.title.y = element_blank(),
-        panel.grid.major.y = element_blank(),
-        legend.key.size = unit(.3, 'cm'),
-        legend.background = element_blank(),
+        legend.key.size = unit(.25, 'cm'),
+        legend.background = element_rect(fill = 'white'),
         legend.title = element_blank())
 
 # fig2a
@@ -319,6 +309,8 @@ n_labels <- get_spp_taxon() %>%
 
 fig2b <- ggplot(plot_tax_sum_df) +
   ggtheme_plot(base_size = 7) +
+  geom_rect(xmin = 1, xmax = 12, ymin = 1.01, ymax = 1.2, 
+            fill = 'white', color = 'white') + ### suppress gridlines behind n = XXX
   geom_col(aes(x = desc, y = val, fill = var), 
            width = .5) +
   geom_text(data = n_labels,
@@ -333,9 +325,8 @@ fig2b <- ggplot(plot_tax_sum_df) +
   scale_fill_manual(values = c('#d01c8b', 'grey90', '#4dac26')) +
   coord_flip() +
   theme(axis.title.y = element_blank(),
-        panel.grid.major.y = element_blank(),
-        legend.key.size = unit(.3, 'cm'),
-        legend.background = element_blank(),
+        legend.key.size = unit(.25, 'cm'),
+        legend.background = element_rect(fill = 'white'),
         axis.text.y = element_blank(), ### align with 2a
         legend.title = element_blank()) 
 
@@ -348,11 +339,14 @@ legend_2a <- get_legend(fig2a)
 legend_2b <- get_legend(fig2b)
 fig2 <- plot_grid(fig2a + theme(legend.position = 'none'), ### drop legend for manual placement
                   fig2b + theme(legend.position = 'none'), 
-                  labels = c('A', 'B'), label_size = 9,
                   rel_widths = c(1.2, 1),
                   align = 'h', nrow = 1)  +
   draw_plot(legend_2a, x = .37, y = .2, width = .2, height = .2) +
-  draw_plot(legend_2b, x = .72, y = .2, width = .2, height = .2)
+  draw_plot(legend_2b, x = .72, y = .2, width = .2, height = .2) +
+  draw_label('A', x = .05, y = .99, vjust = 1, 
+             fontface = 'bold', size = 9, color = 'grey20') +
+  draw_label('B', x = .55, y = .99, vjust = 1,
+             fontface = 'bold', size = 9, color = 'grey20')
   
   
 ggsave(plot = fig2, filename = here('ms_figs/fig2_expand_intens.png'),
