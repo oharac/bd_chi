@@ -1,0 +1,179 @@
+---
+title: 'Map stressor trends'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+# library(rgeos)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')  ###
+  ### includes library(tidyverse); library(stringr); dir_M points to ohi directory
+
+source(here('common_fxns.R'))
+source(here('_setup/rasterize_fxns.R'))
+
+```
+
+# Summary
+
+Using the stressor maps, aggregated to 10 km Mollweide, determine cell by cell linear trend.  This is recreating a script that was apparently lost in a big snafu.
+
+# Data sources
+
+Halpern et al. 2019
+
+# Methods
+
+## Make list of all stressor layers
+
+Get all the stressor layers that have been aggregated to 10 km Mollweide.
+
+```{r}
+str_files_all <- list.files(file.path(dir_bd_anx, 'layers/stressors_10km'),
+                        pattern = '.tif', full.names = TRUE)
+
+str_df_all <- data.frame(file = str_files_all) %>%
+  mutate(stressor = str_replace(basename(file), '_[0-9]{4}.+', ''),
+         year = as.integer(str_extract(basename(file), '[0-9]{4}')))
+
+str_years <- str_df_all %>%
+  group_by(stressor) %>%
+  summarize(year_min = min(year),
+            year_max = max(year),
+            range_03_13 = year_min <= 2003 & year_max >= 2013) %>%
+  filter(range_03_13)
+
+str_df <- str_df_all %>%
+  filter(stressor %in% str_years$stressor) %>%
+  filter(year >= 2003 & year <= 2013)
+```
+
+## Loop over all stressors, process linear model
+
+For each stressor, across the limited time series, calculate per-cell trend in stressor value, including p value.
+
+* load all years as a stack
+* convert to a dataframe, dropping non-ocean cells
+* for NA values, convert to zero - if NA means no presence of the stressor, then that is the same as a zero value?
+* use mclapply to run a cell-wise linear model of stressor value by year
+* get p value and the trend
+
+
+```{r}
+
+stressors <- str_df$stressor %>% unique() %>% sort()
+ocean_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+ocean_a_df <- data.frame(cell_id = 1:ncell(ocean_rast),
+                         ocean_prop = values(ocean_rast)) %>%
+  filter(!is.na(ocean_prop))
+
+outfile_dir <- file.path(dir_bd_anx, 'layers/stressor_trends')
+# unlink(file.path(outfile_dir, '*.*'))
+# unlink(file.path(outfile_dir, 'sst*.*'))
+
+for(str in stressors) {
+  # str <- stressors[14]
+  message('Processing ', str)
+  
+  ### get the raw raster file for this stressor
+  str_year_df <- str_df %>%
+    filter(stressor == str)
+  f <- str_year_df$file
+  
+  ### set up filename for the output
+  outfile_stem <- file.path(outfile_dir, 'stressor_trend_%s_%s.tif')
+  outfiles <- sprintf(outfile_stem, str, c('value', 'p_val'))
+  
+  if(any(!file.exists(outfiles))) {
+    ### gather all rasters for this stressor into a stack
+    str_stack <- raster::stack(f)
+    
+    str_rast_df_raw <- data.frame(values(str_stack)) %>%
+      setNames(str_extract(names(.), '[0-9]{4}')) %>%
+      mutate(cell_id = 1:ncell(str_stack[[1]])) %>%
+      gather(year, val, -cell_id) 
+    
+    str_rast_df <- str_rast_df_raw %>%
+      filter(cell_id %in% ocean_a_df$cell_id) %>%
+      mutate(year = as.integer(year),
+             val = ifelse(is.na(val), 0, val))
+    
+    cell_ids <- ocean_a_df$cell_id
+    chunk_size <- 1000
+    n_gps <- ceiling(length(cell_ids) / chunk_size)
+    cell_gps <- rep(1:n_gps, each = chunk_size, length.out = length(cell_ids))
+    
+    trend_list <- parallel::mclapply(1:n_gps, mc.cores = 40,
+      FUN = function(gp) { # gp <- 300 ### works well for clusters of 1000 cells
+        if(gp %% 100 == 0) message('processing gp', gp)
+        id_vec <- cell_ids[cell_gps == gp]
+        
+        cell_df <- str_rast_df %>% filter(cell_id %in% id_vec)
+        
+        cell_trend_df <- cell_df %>% 
+          group_by(cell_id) %>%
+          do(mdl = lm(val ~ year, data = .)) %>%
+          broom::tidy(mdl) %>%
+          ungroup() %>%
+          filter(term == 'year') %>%
+          select(cell_id, trend = estimate, p_val = p.value)
+        return(cell_trend_df)
+      })
+ 
+    trend_df <- bind_rows(trend_list)
+    val_rast <- map_to_rast(trend_df, cell_val = 'trend')
+    pval_rast <- map_to_rast(trend_df, cell_val = 'p_val')
+
+    writeRaster(val_rast, outfiles[1], overwrite = TRUE)
+    writeRaster(pval_rast, outfiles[2], overwrite = TRUE)
+    
+  } else {
+    message('Stressor trend files exist for stressor: ', str, '... skipping!')
+  }
+}
+```
+
+## Map results
+
+```{r}
+for(str in stressors) {
+  ### str <- stressors[2]
+  message('plotting trend layers for ', str)
+  fstem <- file.path(dir_bd_anx, 'layers/stressor_trends/stressor_trend_%s_%s.tif')
+  
+  pval <- raster(sprintf(fstem, str, 'p_val'))
+  val  <- raster(sprintf(fstem, str, 'value'))
+  sig <- calc(pval, fun = function(x) x < .05)
+  values(sig)[values(sig) < .1] <- NA
+  
+  high <- calc(val, fun = function(x) abs(x) > .001) %>%
+    mask(sig)
+  high1 <- calc(val, fun = function(x) abs(x) > .01) %>%
+    mask(sig)
+
+  plot(val, main = paste('Value: ', str))
+  plot(sig, main = paste('Sig (p < .05): ', str))
+  plot(high, main = paste('|Value| > .001 and p < .05: ', str),
+       col = c('red', 'darkgreen'))
+  plot(high1, main = paste('|Value| > .01 and p < .05: ', str),
+       col = c('red', 'darkgreen'))
+}
+```
+

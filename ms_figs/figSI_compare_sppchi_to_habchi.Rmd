@@ -1,0 +1,290 @@
+---
+title: 'Compare hab-based CHI to spp-based CHI'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(raster)
+library(sf)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Compare the patterns in cumulative human impacts on habitats to those on species. Scores for each impact set will be averaged over 2011-2013.  Scores will then be converted to quantiles for comparison.
+
+# Methods
+
+## Prep maps for hab-based CHI
+
+* Pull in original data (CHI layers from 2013)
+* Aggregate to same resolution as spp-based CHI
+* Convert to quantiles at some defined interval (1%).
+
+```{r}
+chi_2013_10km_file <- here('int/chi_2013_10km.tif')
+
+if(!file.exists(chi_2013_10km_file)) {
+  chi_rast_file <- file.path('/home/shares/ohi/git-annex', 
+                     'impact_acceleration/impact', 
+                     'cumulative_impact/chi_2013.tif')
+  
+  chi_2013 <- raster(chi_rast_file)
+  
+  chi_2013_10km <- raster::aggregate(chi_2013, 
+                                     fact = 11, fun = mean,
+                                     filename = chi_2013_10km_file,
+                                     progress = 'text',
+                                     overwrite = TRUE)
+}
+```
+
+``` {r}
+chi_2013_10km <- raster(chi_2013_10km_file)
+
+### reclassify to quantiles.  Set up reclass matrix:
+interval <- .01 ### deciles for now
+ptiles <- seq(interval, 1, interval)
+chi_vec <- values(chi_2013_10km)
+chi_vec <- chi_vec[!is.na(chi_vec)]
+qtiles_chi <- quantile(chi_vec, ptiles)
+rcl_chi_df <- data.frame(from    = c(0, qtiles_chi[1:(length(qtiles_chi) - 1)]),
+                         to      = qtiles_chi,
+                         becomes = ptiles)
+rcl_mtx <- as.matrix(rcl_chi_df)
+
+chi_qtile_rast <- reclassify(chi_2013_10km, rcl_mtx, 
+                             include.lowest = TRUE)
+writeRaster(chi_qtile_rast, 
+            here('int/chi_qtile_hab_2013.tif'), 
+            overwrite = TRUE)
+```
+
+## Prep maps for spp-based CHI
+
+* Pull in results from 2013
+* Convert to quantiles at some defined interval (1%).
+
+``` {r}
+bdchi_count  <- raster(here('_output/rasters/impact_maps/impact_all_2013.tif'))
+
+### step 3: reclassify to quantiles.  Set up reclass matrix:
+interval <- .01 ### deciles for now
+ptiles <- seq(interval, 1, interval)
+bdchi_ct_vec <- values(bdchi_count)
+bdchi_ct_vec <- bdchi_ct_vec[!is.na(bdchi_ct_vec)]
+qtiles_ct <- quantile(bdchi_ct_vec, ptiles)
+rcl_count_df <- data.frame(from    = c(0, qtiles_ct[1:(length(qtiles_ct) - 1)]),
+                     to      = qtiles_ct,
+                     becomes = ptiles)
+rcl_mtx <- as.matrix(rcl_count_df)
+
+bdchi_count_qtile <- reclassify(bdchi_count, rcl_mtx, 
+                               include.lowest = TRUE)
+writeRaster(bdchi_count_qtile, 
+            here('int', 
+                 'chi_qtile_bd_count_2013.tif'), 
+            overwrite = TRUE)
+
+```
+
+``` {r}
+nspp_rast <- raster(here('_output/rasters/n_spp_map.tif'))
+
+bdchi_pct <- bdchi_count / nspp_rast
+  
+### step 3: reclassify to quantiles.  Set up reclass matrix:
+interval <- .01 ### deciles for now
+ptiles <- seq(interval, 1, interval)
+bdchi_pct_vec <- values(bdchi_pct)
+bdchi_pct_vec <- bdchi_pct_vec[!is.na(bdchi_pct_vec)]
+qtiles_pct <- quantile(bdchi_pct_vec, ptiles)
+rcl_pct_df <- data.frame(from    = c(0, qtiles_pct[1:(length(qtiles_pct) - 1)]),
+                         to      = qtiles_pct,
+                         becomes = ptiles)
+rcl_mtx <- as.matrix(rcl_pct_df)
+
+bdchi_pct_qtile <- reclassify(bdchi_pct, rcl_mtx, 
+                              include.lowest = TRUE)
+writeRaster(bdchi_pct_qtile, 
+            here('int', 
+                 'chi_qtile_bd_pct_2013.tif'), 
+            overwrite = TRUE)
+
+```
+
+## Plot some results
+
+### Check distributions against one another
+
+```{r}
+dist_df <- data.frame(ptile = ptiles,
+                      chi = qtiles_chi,
+                      pct = qtiles_pct,
+                      ct  = qtiles_ct) %>%
+  mutate(chi_norm = chi / max(chi),
+         ct_norm = ct / max(ct))
+
+lbl <- paste('Red: norm hab CHI (x) vs pct spp CHI (y)',
+             'Green: norm hab CHI (x) vs norm ct spp CHI (y)',
+             'Blue: pct spp CHI (x) vs norm ct spp CHI (y)',
+             sep = '\n')
+ggplot(dist_df) +
+  ggtheme_plot() +
+  geom_point(aes(x = chi_norm, y = pct), color = 'red4') +
+  geom_point(aes(x = chi_norm, y = ct_norm), color = 'green4') +
+  geom_point(aes(x = pct, y = ct_norm), color = 'blue4') +
+  annotate(geom = 'text', label = lbl, 
+           x = .26, y = .8, hjust = 0, vjust = 1) +
+  labs()
+```
+
+
+```{r}
+brks <- seq(0, 1, .05)
+clrs <- hcl.colors(n = length(brks), palette = 'Berlin')
+#  [1] "Blue-Red"      "Blue-Red 2"    "Blue-Red 3"    "Red-Green"    
+#  [5] "Purple-Green"  "Purple-Brown"  "Green-Brown"   "Blue-Yellow 2"
+#  [9] "Blue-Yellow 3" "Green-Orange"  "Cyan-Magenta"  "Tropic"       
+# [13] "Broc"          "Cork"          "Vik"           "Berlin"       
+# [17] "Lisbon"        "Tofino"      
+
+plot(bdchi_pct_qtile, 
+     col = clrs,
+     breaks = brks,
+     axes = FALSE,
+     main = sprintf('Quantiles Spp CHI (pct)'))
+plot(bdchi_count_qtile, 
+     col = clrs,
+     breaks = brks,
+     axes = FALSE,
+     main = sprintf('Quantiles Spp CHI (count)'))
+plot(chi_qtile_rast, 
+     col = clrs,
+     breaks = brks,
+     axes = FALSE,
+     main = sprintf('Quantiles Hab CHI'))
+```
+
+```{r}
+qtile_diff_pct     <- chi_qtile_rast - bdchi_pct_qtile
+qtile_diff_count   <- chi_qtile_rast - bdchi_count_qtile
+qtile_diff_spponly <- bdchi_count_qtile - bdchi_pct_qtile
+
+brks <- seq(-1, 1, .05)
+clrs <- hcl.colors(n = length(brks), palette = 'Tofino')
+#  [1] "Blue-Red"      "Blue-Red 2"    "Blue-Red 3"    "Red-Green"    
+#  [5] "Purple-Green"  "Purple-Brown"  "Green-Brown"   "Blue-Yellow 2"
+#  [9] "Blue-Yellow 3" "Green-Orange"  "Cyan-Magenta"  "Tropic"       
+# [13] "Broc"          "Cork"          "Vik"           "Berlin"       
+# [17] "Lisbon"        "Tofino"      
+
+rmse_pct <- sqrt(sum(values(qtile_diff_pct)^2, na.rm = TRUE)) / sum(!is.na(values(qtile_diff_pct)))
+
+rmse_ct <- sqrt(sum(values(qtile_diff_count)^2, na.rm = TRUE)) / sum(!is.na(values(qtile_diff_count)))
+
+plot(qtile_diff_pct, 
+     col = clrs,
+     breaks = brks,
+     axes = FALSE,
+     main = sprintf('Hab CHI - Spp CHI (pct)'))
+plot(qtile_diff_count, 
+     col = clrs,
+     breaks = brks,
+     axes = FALSE,
+     main = sprintf('Hab CHI - Spp CHI (count)'))
+plot(qtile_diff_spponly, 
+     col = clrs,
+     breaks = brks,
+     axes = FALSE,
+     main = sprintf('Spp CHI (count) - Spp CHI (pct)'))
+```
+
+## Make fig S2
+
+```{r}
+
+bdchi_pct_qtile <- raster(here('int', 'chi_qtile_bd_pct_2013.tif'), 
+                          overwrite = TRUE)
+chi_qtile_rast  <- raster(here('int', 'chi_qtile_hab_2013.tif'), 
+                          overwrite = TRUE)
+
+qtile_diff_pct     <- chi_qtile_rast - bdchi_pct_qtile
+
+qtile_diff_df <- rasterToPoints(qtile_diff_pct) %>%
+  as.data.frame() %>%
+  setNames(c('x', 'y', 'diff'))
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(qtile_diff_pct))
+
+### set up a palette for scale_fill_gradient2()
+#  [1] "Blue-Red"      "Blue-Red 2"    "Blue-Red 3"    "Red-Green"    
+#  [5] "Purple-Green"  "Purple-Brown"  "Green-Brown"   "Blue-Yellow 2"
+#  [9] "Blue-Yellow 3" "Green-Orange"  "Cyan-Magenta"  "Tropic"       
+# [13] "Broc"          "Cork"          "Vik"           "Berlin"       
+# [17] "Lisbon"        "Tofino" 
+clrs <- hcl.colors(n = 3, palette = 'Tofino')
+# test <- data.frame(x = c(1:3), y = 1, val = -1:1)
+# ggplot(test, aes(x, y, color = val)) +
+#   geom_point(size = 5) +
+#   scale_color_gradient2(low = clrs[1], mid = clrs[2], high = clrs[3],
+#                        breaks = seq(-1, 1, .5), labels = paste0(seq(-100, 100, 50), '%'))
+
+```
+
+
+``` {r}
+
+diff_map <- ggplot() +
+  ggtheme_map(base_size = 7) +
+  geom_raster(data = qtile_diff_df, aes(x, y, fill = diff)) +
+  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  # scale_fill_viridis_c(breaks = seq(-1, 1, .5), labels = paste0(seq(-100, 100, 50), '%')) +
+  scale_fill_gradient2(low = clrs[1], mid = clrs[2], high = clrs[3],
+                       breaks = seq(-1, 1, .5), labels = paste0(seq(-100, 100, 50), '%')) +
+  theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+        legend.title = element_blank(),
+        legend.key.width = unit(.25, 'cm')) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))
+
+figS2 <- ggdraw() +
+  draw_plot(get_panel(diff_map),  x = 0, y = 0, width = .88, height = 1) +
+  draw_plot(get_legend(diff_map), x = .93, y = 0, width = .07, height = 1) +
+  draw_label(label = latex2exp::TeX('$%CHI_{hab} - %CHI_{spp}$'),
+             x = .9, y = .5, size = 7,
+             hjust = .5, vjust = 1, angle = 90)
+
+
+ggsave(plot = figS2, filename = here('ms_figs/figS2_habchi_diff_sppchi.png'),
+       width = 12, height = 6, units = 'cm', dpi = 300)
+
+knitr::include_graphics(here('ms_figs/figS2_habchi_diff_sppchi.png'))
+```
+
+
+
+
+

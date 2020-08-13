@@ -26,7 +26,6 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
-reload <- FALSE
 ```
 
 
@@ -64,18 +63,13 @@ ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
 spp_rich_rast <- raster(here('_output/rasters/n_spp_map.tif'))
 values(spp_rich_rast)[values(spp_rich_rast) == 0] <- NA
 
-# priority_sum_rast <- raster(here('_output/rasters/priority_sum_map.tif'))
-# values(priority_sum_rast)[values(priority_sum_rast) == 0] <- NA
-
 ```
-
-<!-- See the impact map script for comparisons of summed priority to summed species count... -->
 
 ## Setup for mapping across all taxa
 
 For each impact category, sum increasing and decreasing stressor locations for count:
 
-* gather all taxa-level map files for increasing or decreasing stressors into a raster stack
+* gather all taxa-level map files for increasing or decreasing stressors into a raster stack, by level of intensification
 * collapse the stack using `calc(fun = sum, na.rm = TRUE)`
 
 ### Calculate intensification trends by count
@@ -89,10 +83,10 @@ str_cats <- c('fishing', 'ocean', 'land-based', 'climate', 'all')
 taxon_tr_dir <- file.path(dir_bd_anx, 'taxon_trend_rasts')
 
 ### Set up filename stems for this run (non-priority)
-tr_map_stem <- 'taxon_trend_.+_%s_%s.tif'
-  ### .+ is taxon, sprintf args are stressor category, incr/decr
-outfile_stem <- here('_output/rasters/intens_maps/intens_%s_%s.tif')
-  ### stressor category, incr/decr
+tr_map_stem <- 'taxon_trend_.+_%s_%s%s.tif'
+  ### .+ is taxon, sprintf args are stressor category, incr/decr, level (1-3)
+outfile_stem <- here('_output/rasters/intens_maps/intens_%s_%s%s.tif')
+  ### stressor category, incr/decr, level (1-3)
 
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
@@ -100,32 +94,35 @@ for(str_cat in str_cats) {
   for(trend_direction in c('incr', 'decr')) {
     # trend_direction <- 'incr'
     
-    outfile <- sprintf(outfile_stem, str_cat, trend_direction)
-    message('processing ', basename(outfile))
-    if(!file.exists(outfile) | reload) {
-      trend_map_pattern <- sprintf(tr_map_stem, str_cat, trend_direction)
-      trend_map_files <- list.files(taxon_tr_dir,
-                                    pattern = trend_map_pattern,
-                                    full.names = TRUE)
-      trend_stack <- stack(trend_map_files)
-      trend_rast <- raster::calc(trend_stack, fun = sum, na.rm = TRUE) %>%
-        mask(ocean_a_rast)
+    for(level in 1:3) {
+      # level <- 1
+      outfile <- sprintf(outfile_stem, str_cat, trend_direction, level)
+      if(!file.exists(outfile)) {
+        message('processing ', basename(outfile))
+        trend_map_pattern <- sprintf(tr_map_stem, str_cat, trend_direction, level)
+        trend_map_files <- list.files(taxon_tr_dir,
+                                      pattern = trend_map_pattern,
+                                      full.names = TRUE)
+        trend_stack <- stack(trend_map_files)
+        trend_rast <- raster::calc(trend_stack, fun = sum, na.rm = TRUE) %>%
+          mask(ocean_a_rast)
+        
+        writeRaster(trend_rast, outfile, overwrite = TRUE)
+        
+      } else {
+        message('File exists: ', outfile, '... skipping!')
+      }
       
-      writeRaster(trend_rast, outfile, overwrite = TRUE)
-      
-    } else {
-      message('File exists: ', outfile, '... skipping!')
+      trend_rast <- raster(outfile)
+      trend_pct_rast <- trend_rast / spp_rich_rast
+      if(any(values(trend_pct_rast) > 1, na.rm = TRUE)) {
+        stop('some pct raster values > 1, fix it')
+      }
+      plot(trend_pct_rast,
+           col = c('grey80', hcl.colors(20, palette = 'viridis')),
+           axes = FALSE,
+           main = sprintf('Pct species with %s %s stressors lvl %s', trend_direction, str_cat, level))
     }
-    
-    trend_rast <- raster(outfile)
-    trend_pct_rast <- trend_rast / spp_rich_rast
-    if(any(values(trend_pct_rast) > 1, na.rm = TRUE)) {
-      stop('some pct raster values > 1, fix it')
-    }
-    plot(trend_pct_rast,
-         col = c('grey80', hcl.colors(20, palette = 'viridis')),
-         axes = FALSE,
-         main = sprintf('Pct species with %s %s stressors', trend_direction, str_cat))
   }
 }
 
@@ -150,7 +147,7 @@ for(str_cat in str_cats) {
     
     outfile <- sprintf(outfile_stem, trend_direction, str_cat)
     
-    if(!file.exists(outfile) | reload) {
+    if(!file.exists(outfile)) {
       trend_map_pattern <- sprintf(tr_map_stem, str_cat, trend_direction)
       trend_map_files <- list.files(taxon_tr_dir,
                                     pattern = trend_map_pattern,
@@ -183,42 +180,43 @@ Net intensification is the difference between the number of species under intens
 
 str_cats <- c('fishing', 'ocean', 'land-based', 'climate', 'all')
 
-infile_stem <- here('_output/rasters/intens_maps/intens_%s_%s.tif')
+infile_stem <- here('_output/rasters/intens_maps/intens_%s_%s%s.tif')
   ### stressor category, incr/decr
 
 for(str_cat in str_cats) {
   # str_cat <- str_cats[5]
-
-  incr <- raster(sprintf(infile_stem, str_cat, 'incr'))
-  decr <- raster(sprintf(infile_stem, str_cat, 'decr'))
+  for(level in 1:3) {
+    incr <- raster(sprintf(infile_stem, str_cat, 'incr', level))
+    decr <- raster(sprintf(infile_stem, str_cat, 'decr', level))
+    
+    diff <- calc(stack(incr, -decr), fun = sum, na.rm = TRUE)
+    
+    diff_pct <- diff / spp_rich_rast
+    diff_pct[incr == 0 & decr == 0] <- NA
+        
+    hcl.pals('diverging')
+    brks <- seq(-1, 1, .05)
+    clrs <- hcl.colors(n = length(brks), palette = 'Red-Green', rev = TRUE)
+    plot(diff_pct,
+         col = clrs,
+         breaks = brks,
+         axes = FALSE,
+         main = sprintf('Net intens, Pct spp, %s strs level %s', str_cat, level))
   
-  diff <- calc(stack(incr, -decr), fun = sum, na.rm = TRUE)
-  
-  diff_pct <- diff / spp_rich_rast
-  diff_pct[incr == 0 & decr == 0] <- NA
-      
-  hcl.pals('diverging')
-  brks <- seq(-1, 1, .05)
-  clrs <- hcl.colors(n = length(brks), palette = 'Red-Green', rev = TRUE)
-  plot(diff_pct,
-       col = clrs,
-       breaks = brks,
-       axes = FALSE,
-       main = sprintf('Net intensification, Pct species, %s stressors', str_cat))
-
+  }
 }
 
 ```
 
 ### Plot intens vs abate
 
-Because a zero net intensification can result from low intensification cooccuring with low abatement, or high of each, let's examine the frequency with which various combinations occur.
+Because a zero net intensification can result from low intensification cooccuring with low abatement, or high of each, let's examine the frequency with which various combinations occur.  Just examine level 1 as this is the most likely to have overlaps.
 
 ```{r diff plot}
 
 str_cats <- c('fishing', 'ocean', 'land-based', 'climate', 'all')
 
-infile_stem <- here('_output/rasters/intens_maps/intens_%s_%s.tif')
+infile_stem <- here('_output/rasters/intens_maps/intens_%s_%s1.tif')
   ### stressor category, incr/decr
 
 for(str_cat in str_cats) {
@@ -242,7 +240,7 @@ for(str_cat in str_cats) {
     scale_fill_viridis_c() +
     scale_x_log10(breaks = c(1, 2, 5, 10, 20, 50, 100, 200)) +
     scale_y_log10(breaks = c(1, 2, 5, 10, 20, 50, 100, 200)) +
-    labs(title = sprintf('Intensifying vs abating, %s stressors', str_cat),
+    labs(title = sprintf('Intens vs abating, %s strs level 1', str_cat),
          x = 'nspp abating', y = 'nspp intensifying')
 
   print(tmp)
@@ -250,11 +248,11 @@ for(str_cat in str_cats) {
 
 ```
 
-## Plot bivariate maps?
+<!-- ## Plot bivariate maps? -->
 
-NOTE: bivariate on ocean stressors (only shipping) won't work - no cell can have both intensifying and abating - all one or the other (or nothing).  So limit to just the other four.
+<!-- NOTE: bivariate on ocean stressors (only shipping) won't work - no cell can have both intensifying and abating - all one or the other (or nothing).  So limit to just the other four. -->
 
-```{r}
+```{r, eval = FALSE}
 # install.packages("remotes")
 # remotes::install_github("slu-openGIS/biscale")
 

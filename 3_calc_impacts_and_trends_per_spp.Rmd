@@ -88,6 +88,8 @@ This table checks the trends across each stressor map, determines whether stress
 
 pace_sum_file <- here('int/pace_summary.csv')
 
+cells_ocean <- nrow(ocean_area_df)
+
 if(!file.exists(pace_sum_file)) {
   
   check_list <- vector('list', length = length(stressors))
@@ -106,26 +108,64 @@ if(!file.exists(pace_sum_file)) {
     df <- rast_to_map(trend_r, cell_val = 'trend') %>%
       full_join(rast_to_map(p_val_r, cell_val = 'p'), by = 'cell_id')
     df2 <- df %>%
-      mutate(range = case_when(trend > 0 ~ 'incr', 
-                               trend < 0 ~ 'decr',
-                               TRUE ~ 'mid'),
+      mutate(range = case_when(trend >   0.01 ~ 'rapid_incr',
+                               trend <  -0.01 ~ 'rapid_decr',
+                               trend >  0.001 ~ 'incr',
+                               trend < -0.001 ~ 'decr',
+                               trend > 0 ~ 'small_incr', 
+                               trend < 0 ~ 'small_decr',
+                               TRUE ~ 'no_change'),
              sig = p < 0.05) %>%
       group_by(range) %>%
-      summarize(pct_sig = sum(sig) / n()) %>%
+      summarize(pct_sig = sum(sig, na.rm = TRUE) / n(),
+                pct_area = n() / cells_ocean) %>%
+      ungroup() %>%
       mutate(stressor = str)
     check_list[[i]] <- df2
   }
-  check_df <- bind_rows(check_list) %>% 
-    filter(range != 'mid') %>%
-    spread(range, pct_sig)
+  check_df <- bind_rows(check_list) %>%
+    mutate(sig_pct_area = pct_area * pct_sig) %>%
+    # select(-pct_area, -pct_sig) %>%
+    # spread(range, sig_pct_area) %>%
+    mutate(range = factor(range, levels = c('rapid_incr', 'incr', 'small_incr', 'small_decr', 'decr', 'rapid_decr'))) %>%
+    filter(!is.na(range))
+    
+  sig_df <- bind_rows(check_list) %>% 
+    select(-pct_area) %>%
+    spread(range, pct_sig) %>%
+    select(-no_change)
+  area_df <- bind_rows(check_list) %>%
+    select(-pct_sig) %>%
+    spread(range, pct_area) %>%
+    # mutate(incr = incr + rapid_incr,
+    #        small_incr = small_incr + incr,
+    #        decr = decr + rapid_decr,
+    #        small_decr = small_decr + decr) %>%
+    select(stressor, rapid_incr, incr, small_incr, small_decr, decr, rapid_decr)
   
   write_csv(check_df, pace_sum_file)
-} else {
-  check_df <- read_csv(pace_sum_file)
 }
+  
+check_df <- read_csv(pace_sum_file) %>%
+  mutate(range = factor(range, levels = c('rapid_incr', 'incr', 
+                                          'small_incr', 'small_decr', 
+                                          'decr', 'rapid_decr')))
 
-# knitr::kable(check_df, caption = 'pct significant by trend direction')
+knitr::kable(check_df, caption = '% total ocean area by significant trend')
 
+ggplot(check_df, aes(x = range, y = sig_pct_area, fill = range)) +
+  ggtheme_plot() +
+  geom_col(width = 1) + 
+  geom_vline(xintercept = 3.5, color = 'grey30', size = .25) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
+  scale_fill_brewer(palette = 'RdYlGn') +
+  theme(axis.title = element_blank(),
+        axis.text.x = element_blank(),
+        legend.position = c(.75, .10),
+        legend.direction = 'horizontal',
+        legend.title = element_blank()) +
+  labs(title = '% Ocean Area by significant trend') +
+  facet_wrap(~ stressor, scales = 'free_y')
 ```
 
 Reclassify trend values into pace
@@ -134,8 +174,12 @@ Reclassify trend values into pace
 
 \begin{align*}
   P = \begin{cases} 
+    +3 &\text{if } (T > 0.01) \wedge (p < 0.05)\\
+    +2 &\text{if } (T > 0.001) \wedge (p < 0.05)\\
     +1 &\text{if } (T > 0) \wedge (p < 0.05)\\
     -1 &\text{if } (T < 0) \wedge (p < 0.05)\\
+    -2 &\text{if } (T < 0.001) \wedge (p < 0.05)\\
+    -3 &\text{if } (T < 0.01) \wedge (p < 0.05)\\
     NA &\text{else}
   \end{cases}
 \end{align*}
@@ -162,7 +206,11 @@ for(str in stressors) {
 
     pace_df <- rast_to_map(t_r, cell_val = 'trend') %>%
       full_join(rast_to_map(p_r, cell_val = 'p'), by = 'cell_id') %>%
-      mutate(pace = case_when(trend > 0 & p < 0.05 ~ 1,
+      mutate(pace = case_when(trend > 0.01 & p < 0.05 ~ 3,
+                              trend < -0.01 & p < 0.05 ~ -3,
+                              trend > 0.001 & p < 0.05 ~ 2,
+                              trend < -0.001 & p < 0.05 ~ -2,
+                              trend > 0 & p < 0.05 ~ 1,
                               trend < 0 & p < 0.05 ~ -1,
                               TRUE                 ~ NA_real_),
              stressor = str) %>%
@@ -231,8 +279,12 @@ summarize_impacts <- function(spp_intsx_df, range_df, eez = FALSE) {
   df <- spp_intsx_df %>%
     group_by_at(vars(all_of(gps))) %>%
     summarize(impact_km2 = sum(ocean_area_km2),
-              incr_km2   = sum((pace == 1) * ocean_area_km2, na.rm = TRUE), 
-              decr_km2   = sum((pace == -1) * ocean_area_km2, na.rm = TRUE)) %>%
+              incr1_km2   = sum((pace %in% 1:3) * ocean_area_km2, na.rm = TRUE), 
+              incr2_km2   = sum((pace %in% 2:3) * ocean_area_km2, na.rm = TRUE), 
+              incr3_km2   = sum((pace %in% 3) * ocean_area_km2, na.rm = TRUE), 
+              decr1_km2   = sum((pace %in% -1:-3) * ocean_area_km2, na.rm = TRUE),
+              decr2_km2   = sum((pace %in% -2:-3) * ocean_area_km2, na.rm = TRUE),
+              decr3_km2   = sum((pace %in% -3) * ocean_area_km2, na.rm = TRUE)) %>%
     ungroup()
   if(eez) {
     ### if any cells with no EEZ (or region), they'll be dropped here
@@ -263,15 +315,23 @@ summarize_cum_impacts <- function(spp_intsx_df, range_df, eez = FALSE) {
     # select(cell_id, year, ocean_area_km2, stressor) %>%
     distinct() %>%
     group_by_at(vars(all_of(gps_1))) %>%
-    summarize(incr = any(pace == 1, na.rm = TRUE) & !any(pace == -1, na.rm = TRUE),
-              decr = any(pace == -1, na.rm = TRUE) & !any(pace == 1, na.rm = TRUE),
+    summarize(incr1 = any(pace %in% 1:3, na.rm = TRUE) & !any(pace < 0, na.rm = TRUE),
+              incr2 = any(pace %in% 2:3, na.rm = TRUE) & !any(pace < 0, na.rm = TRUE),
+              incr3 = any(pace %in% 3, na.rm = TRUE) & !any(pace < 0, na.rm = TRUE),
+              decr1 = any(pace %in% -1:-3, na.rm = TRUE) & !any(pace > 0, na.rm = TRUE),
+              decr2 = any(pace %in% -2:-3, na.rm = TRUE) & !any(pace > 0, na.rm = TRUE),
+              decr3 = any(pace %in% -3, na.rm = TRUE) & !any(pace > 0, na.rm = TRUE),
               n_impact = n()) %>%
     group_by_at(vars(all_of(gps_2))) %>%
     summarize(impact_km2 = sum(ocean_area_km2),
               impact_2plus_km2 = sum((n_impact > 1) * ocean_area_km2),
               impact_3plus_km2 = sum((n_impact > 2) * ocean_area_km2),
-              incr_km2   = sum(incr * ocean_area_km2, na.rm = TRUE), 
-              decr_km2   = sum(decr * ocean_area_km2, na.rm = TRUE),
+              incr1_km2   = sum(incr1 * ocean_area_km2, na.rm = TRUE), 
+              incr2_km2   = sum(incr2 * ocean_area_km2, na.rm = TRUE), 
+              incr3_km2   = sum(incr3 * ocean_area_km2, na.rm = TRUE), 
+              decr1_km2   = sum(decr1 * ocean_area_km2, na.rm = TRUE),
+              decr2_km2   = sum(decr2 * ocean_area_km2, na.rm = TRUE),
+              decr3_km2   = sum(decr3 * ocean_area_km2, na.rm = TRUE),
               stressor = 'cumulative') %>%
     ungroup()
   
@@ -279,13 +339,13 @@ summarize_cum_impacts <- function(spp_intsx_df, range_df, eez = FALSE) {
     df <- data.frame(
       stressor = 'cumulative',
       year = NA,
-      impact_km2 = 0, incr_km2 = 0, decr_km2 = 0, eez = 0)
+      impact_km2 = 0, incr1_km2 = 0, decr1_km2 = 0, eez = 0)
   }
   
   if(eez) {
     ### if any cells with no EEZ (or region), they'll be dropped here
     df <- df %>%
-      complete(eez = eez_vec, nesting(impact_km2, incr_km2, decr_km2, stressor)) %>%
+      complete(eez = eez_vec, nesting(impact_km2, incr1_km2, decr1_km2, stressor)) %>%
       filter(eez > 0 & !is.na(eez))
   } else {
     ### not EEZ, so global analysis - add in a zero EEZ
@@ -361,6 +421,8 @@ calc_cum_impact <- function(spp_id, impact_cat, pace_df) {
 
 ### calculate species cumulative impacts by stressor category
 
+NOTE: This chunk runs into problems and craps out.  Check that the resulting files total 6355 (1271 species * 5 stressors).
+
 ``` {r calc species cumulative impacts by category}
 
 ### set up list of all intersection files and an ID for indexing
@@ -373,30 +435,43 @@ pace_df <- get_pace_df()
 ### set up categories to loop over
 categories <- c(str_cats$category %>% unique(), 'all')
 
-reload <- FALSE
+x <- list.files(file.path(dir_bd_anx, 'spp_impacts'), full.names = TRUE)
 ### to clear old versions:
-# x <- list.files(file.path(dir_bd_anx, 'spp_impacts'), full.names = TRUE)
-# unlink(x)
+# # unlink(x)
+
 ### to check whether any are missing, look for ids with fewer than 
 ### five stressors
-# y <- data.frame(x) %>%
-#   mutate(id = str_extract(basename(x), '[0-9]+') %>% as.integer(),
-#          str = str_replace_all(basename(x), '.+[0-9]+_|.csv', '')) %>%
-#   group_by(id) %>%
-#   summarize(n_str = n(), str = paste0(str, collapse = ', '))
+y <- data.frame(x) %>%
+  mutate(id = str_extract(basename(x), '[0-9]+') %>% as.integer(),
+         str = str_replace_all(basename(x), '.+[0-9]+_|.csv', '')) %>%
+  group_by(id) %>%
+  summarize(n_str = n(), str = paste0(str, collapse = ', '))
+
 
 for(impact_cat in categories) {
   # impact_cat <- categories[5]
-  tmp <- parallel::mclapply(spp_ids, mc.cores = 20,
+  
+  ### only consider those that aren't already complete
+  spp_ids_incomplete <- y %>%
+    filter(n_str < 5) %>%
+    filter(!str_detect(str, impact_cat)) %>%
+    .$id
+  
+  spp_ids_to_process <- spp_ids[!spp_ids %in% y$id | spp_ids %in% spp_ids_incomplete]
+  
+  message('Processing ', length(spp_ids_to_process), ' species for ', impact_cat)
+
+  tmp <- parallel::mclapply(spp_ids_to_process, mc.cores = 20,
     FUN = function(spp_id) {
-      ### spp_id <- ids[1]
+      ### spp_id <- spp_ids_to_process[1]
       ### spp_id <- 2477 
       ### spp_id <- 907
+      ### spp_id <- 10030
       ### spp_id <- 22697963
       spp_impact_fstem <- file.path(dir_bd_anx, 'spp_impacts/spp_impacts_%s_%s.csv')
       spp_impact_file <- file.path(sprintf(spp_impact_fstem, spp_id, impact_cat))
       
-      if(!file.exists(spp_impact_file) | reload) {
+      if(!file.exists(spp_impact_file)) {
         message('Processing spp ', spp_id, '; ', impact_cat)
         ### Calculate total species range, accounting for partial ocean cells
         impact_df <- calc_cum_impact(spp_id, 
@@ -411,6 +486,11 @@ for(impact_cat in categories) {
   )
 }
 
+z <- list.files(file.path(dir_bd_anx, 'spp_impacts'), full.names = TRUE)
+if(length(z) < length(spp_ids) * length(categories)) {
+  stop('Not all species impacts were calculated: ', length(z),
+       ' out of ', length(spp_ids) * length(categories))
+}
 ```
 
 ## Calculate maps of cumulative impacts
@@ -476,24 +556,39 @@ map_cum_impact <- function(spp_id,
 ```
 
 ``` {r map species cumulative impacts, eval = TRUE}
-
-reload <- FALSE
+x <- list.files(file.path(dir_bd_anx, 'spp_impact_rasts'),
+                full.names = TRUE)
 ### to clear old versions:
-# x <- list.files(file.path(dir_bd_anx, 'spp_impact_rasts'),
-#                 full.names = TRUE)
-# unlink(x)
+# # unlink(x)
+
+### to check whether any are missing, look for ids with fewer than 
+### five stressors
+y <- data.frame(x) %>%
+  mutate(id = str_extract(basename(x), '[0-9]+') %>% as.integer(),
+         str = str_replace_all(basename(x), '.+[0-9]+_|.csv', '')) %>%
+  group_by(id) %>%
+  summarize(n_str = n(), str = paste0(str, collapse = ', '))
+
 
 categories <- c(str_cats$category %>% unique(), 'all')
 
 for(impact_cat in categories) {
-  # impact_cat <- categories[1]
+  # impact_cat <- categories[5]
   # for(spp_id in spp_ids) {
-  tmp <- parallel::mclapply(spp_ids, mc.cores = 4,
+    ### only consider those that aren't already complete
+  spp_ids_incomplete <- y %>%
+    filter(n_str < 5) %>%
+    filter(!str_detect(str, impact_cat)) %>%
+    .$id
+  
+  spp_ids_to_process <- spp_ids[!spp_ids %in% y$id | spp_ids %in% spp_ids_incomplete]
+
+  tmp <- parallel::mclapply(spp_ids_to_process, mc.cores = 4,
     FUN = function(spp_id) {
-      ### spp_id <- spp_ids[2]
+      ### spp_id <- spp_ids_to_process[2]
       impact_fstem <- file.path(dir_bd_anx, 'spp_impact_rasts/spp_impact_map_%s_%s.csv')
       impact_rast_file <- sprintf(impact_fstem, spp_id, impact_cat)
-      if(!file.exists(impact_rast_file) | reload) {
+      if(!file.exists(impact_rast_file)) {
         message('Mapping spp ', spp_id, '; ', impact_cat)
         ### Calculate total species range, accounting for partial ocean cells
         impact_rast <- map_cum_impact(spp_id,
@@ -508,9 +603,17 @@ for(impact_cat in categories) {
   )
 }
 
+z <- list.files(file.path(dir_bd_anx, 'spp_impact_rasts'), full.names = TRUE)
+if(length(z) < length(spp_ids) * length(categories)) {
+  stop('Not all species impact rasters were calculated: ', length(z),
+       ' out of ', length(spp_ids) * length(categories))
+}
+
 ```
 
-## Examine distribution of impacts - cutoffs by taxa and overall
+## Examine distribution of impacts
+
+Proportion of species falling into these categories.  `incr2` means increasing at greater than 0.1% per year, while `incr3` means increasing at greater than 1.0% per year.
 
 ```{r}
 
@@ -522,47 +625,59 @@ spp_impact_fstem <- file.path(dir_bd_anx, 'spp_impacts/spp_impacts_%s_%s.csv')
 spp_impact_files <- sprintf(spp_impact_fstem, spp_ids, 'all')
 
 spp_impacts <- parallel::mclapply(spp_impact_files, 
-                                  FUN = function(x) {
-                                    read_csv(x, col_types = cols(.default = 'd', 
-                                                                 stressor = 'c',
-                                                                 iucn_sid = 'i',
-                                                                 eez = 'i', 
-                                                                 year = 'i'))
-                                  }, mc.cores = 24) %>%
+      FUN = function(x) {
+        read_csv(x, col_types = cols(.default = 'd', 
+                                     stressor = 'c',
+                                     iucn_sid = 'i',
+                                     eez = 'i', 
+                                     year = 'i'))
+      }, mc.cores = 24) %>%
   bind_rows() %>%
   filter(year %in% c(2003, 2013) & stressor == 'cumulative') %>%
   mutate(impact_pct = impact_km2 / range_km2,
-         incr_pct   = incr_km2 / range_km2,
-         decr_pct   = decr_km2 / range_km2,
-         imp_2plus_pct = impact_2plus_km2 / range_km2)
+         incr1_pct   = incr1_km2 / range_km2,
+         incr2_pct   = incr2_km2 / range_km2,
+         incr3_pct   = incr3_km2 / range_km2,
+         decr1_pct   = decr1_km2 / range_km2,
+         decr2_pct   = decr2_km2 / range_km2,
+         decr3_pct   = decr3_km2 / range_km2,
+         imp_2plus_pct = impact_2plus_km2 / range_km2) %>%
+  mutate_if(is.double, .funs = function(x) ifelse(is.na(x), 0, x))
 
 spp_means <- spp_impacts %>%
-  group_by(year) %>%
+  group_by(year, eez) %>%
   summarize(mean_impact = mean(impact_pct),    sd_impact = sd(impact_pct),
-            mean_incr   = mean(incr_pct),      sd_incr   = sd(incr_pct),
-            mean_decr   = mean(decr_pct),      sd_decr   = sd(decr_pct),
+            mean_incr1   = mean(incr1_pct),    sd_incr1   = sd(incr1_pct),
+            mean_incr2   = mean(incr2_pct),    sd_incr2   = sd(incr2_pct),
+            mean_incr3   = mean(incr3_pct),    sd_incr3   = sd(incr3_pct),
+            mean_decr1   = mean(decr1_pct),    sd_decr1   = sd(decr1_pct),
+            mean_decr2   = mean(decr2_pct),    sd_decr2   = sd(decr2_pct),
+            mean_decr3   = mean(decr3_pct),    sd_decr3   = sd(decr3_pct),
             mean_imp_2p = mean(imp_2plus_pct), sd_imp_2p = sd(imp_2plus_pct))
 
 spp_impact_levels <- spp_impacts %>%
-  group_by(year) %>%
+  group_by(year, eez) %>%
   summarize(impact_over_50 = sum(impact_pct >= .5) / n(),
             impact_over_90 = sum(impact_pct >= .9) / n(),
             impact_at_100  = sum(impact_pct == 1.0) / n())
-knitr::kable(spp_impact_levels)
+knitr::kable(spp_impact_levels %>% filter(eez == 0))
 
 spp_incr_levels <- spp_impacts %>%
-  group_by(year) %>%
-  summarize(incr_over_50 = sum(incr_pct >= .5) / n(),
-            incr_over_90 = sum(incr_pct >= .9) / n(),
-            incr_at_100  = sum(incr_pct == 1.0) / n())
-knitr::kable(spp_incr_levels)
+  group_by(year, eez) %>%
+  summarize(incr2_over_50 = sum(incr2_pct >= .5) / n(),
+            incr2_over_90 = sum(incr2_pct >= .9) / n(),
+            incr2_at_100  = sum(incr2_pct == 1.0) / n(),
+            incr3_over_50 = sum(incr3_pct >= .5) / n(),
+            incr3_over_90 = sum(incr3_pct >= .9) / n(),
+            incr3_at_100  = sum(incr3_pct == 1.0) / n())
+knitr::kable(spp_incr_levels %>% filter(eez == 0))
 
 spp_imp2plus_levels <- spp_impacts %>%
-  group_by(year) %>%
+  group_by(year, eez) %>%
   summarize(imp2pl_over_50 = sum(imp_2plus_pct >= .5) / n(),
             imp2pl_over_90 = sum(imp_2plus_pct >= .9) / n(),
             imp2pl_at_100  = sum(imp_2plus_pct == 1.0) / n())
-knitr::kable(spp_imp2plus_levels)
+knitr::kable(spp_imp2plus_levels %>% filter(eez == 0))
 
 ```
 

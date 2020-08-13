@@ -36,7 +36,7 @@ Create taxa-level maps of number of species with intensifying or deintensifying 
 # Methods
 
 * Gather species maps by taxonomic group (IUCN comprehensively assessed groups)
-* read in all trend maps for all stressors, flatten to increasing/decreasing/indeterminate for each year
+* read in all trend maps for all stressors, flatten to increasing/decreasing/indeterminate for each year (with different thresholds for incr/decr)
 * add maps together for a taxa-level map of number of increasingly/decreasingly impacted species per cell
 
 Individual stressor trend layers are clipped to their respective footprints based on the 95% contour volume applied to the 2013 stressor map.  Therefore, cells with a significant trend but no footprint are dropped.  In physical terms, this is a forward-looking approach, and means one of:
@@ -67,7 +67,7 @@ ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
 
 ```
 
-## Loop over taxonomic groups to create taxa-level impact maps
+## Loop over taxonomic groups to create taxa-level trend maps
 
 These maps count up the number of species with increasing impacts by the aggregated stressor group (land-based, ocean, climate, fishing, and all); similarly for species with decreasing impacts.
 
@@ -132,7 +132,12 @@ get_pace_df <- function() {
 
 ```{r create taxa maps}
 
-### Trend files are rasters of value (trend slope) and p_val.
+# x <- list.files(taxon_trend_map_dir, full.names = TRUE)
+# # unlink(x)
+
+### Trend files are rasters of value (trend slope) and p_val.  This captures
+### pace in three levels: trend > 0, trend > .001, and trend > .01 (and 
+### less than neg values for decrease).
 pace_df <- get_pace_df()
 
 ### get the stressor footprints for 2013 as a dataframe
@@ -151,9 +156,9 @@ for(str_cat in str_cats) {
     ### taxon_gp <- taxon_gps[1]
     
     tx_incr_f <- file.path(taxon_trend_map_dir,
-      sprintf('taxon_trend_%s_%s_incr.tif', taxon_gp, str_cat))
+      sprintf('taxon_trend_%s_%s_incr%s.tif', taxon_gp, str_cat, 1:3))
     tx_decr_f <- file.path(taxon_trend_map_dir, 
-      sprintf('taxon_trend_%s_%s_decr.tif', taxon_gp, str_cat))
+      sprintf('taxon_trend_%s_%s_decr%s.tif', taxon_gp, str_cat, 1:3))
 
     if(any(!file.exists(tx_incr_f, tx_decr_f)) | reload) {
       spp_ids_taxa <- spp_sens %>%
@@ -202,11 +207,19 @@ for(str_cat in str_cats) {
           
           trend_gp_summary <- trend_gp %>%
             group_by(cell_id, iucn_sid) %>%
-            summarize(incr = any(pace == +1) & !any(pace == -1),
-                      decr = any(pace == -1) & !any(pace == +1)) %>%
+            summarize(incr1 = any(pace %in% 1:3) & !any(pace < 0),
+                      decr1 = any(pace %in% -1:-3) & !any(pace > 0),
+                      incr2 = any(pace %in% 2:3) & !any(pace < 0),
+                      decr2 = any(pace %in% -2:-3) & !any(pace > 0),
+                      incr3 = any(pace %in% 3) & !any(pace < 0),
+                      decr3 = any(pace %in% -3) & !any(pace > 0)) %>%
             group_by(cell_id) %>%
-            summarize(n_incr_spp = sum(incr, na.rm = TRUE),
-                      n_decr_spp = sum(decr, na.rm = TRUE)) %>%
+            summarize(n_incr1_spp = sum(incr1, na.rm = TRUE),
+                      n_decr1_spp = sum(decr1, na.rm = TRUE),
+                      n_incr2_spp = sum(incr2, na.rm = TRUE),
+                      n_decr2_spp = sum(decr2, na.rm = TRUE),
+                      n_incr3_spp = sum(incr3, na.rm = TRUE),
+                      n_decr3_spp = sum(decr3, na.rm = TRUE)) %>%
             ungroup()
           
           taxon_trend_list[[i]] <- trend_gp_summary
@@ -215,8 +228,12 @@ for(str_cat in str_cats) {
       ### collate all the list element dataframes
       taxon_trend_df <- bind_rows(taxon_trend_list) %>%
         group_by(cell_id) %>%
-        summarize(n_incr_spp = sum(n_incr_spp, na.rm = TRUE),
-                  n_decr_spp = sum(n_decr_spp, na.rm = TRUE)) %>%
+        summarize(n_incr1_spp = sum(n_incr1_spp, na.rm = TRUE),
+                  n_decr1_spp = sum(n_decr1_spp, na.rm = TRUE),
+                  n_incr2_spp = sum(n_incr2_spp, na.rm = TRUE),
+                  n_decr2_spp = sum(n_decr2_spp, na.rm = TRUE),
+                  n_incr3_spp = sum(n_incr3_spp, na.rm = TRUE),
+                  n_decr3_spp = sum(n_decr3_spp, na.rm = TRUE)) %>%
         ungroup() %>%
         mutate(taxon = taxon_gp)
       
@@ -224,60 +241,72 @@ for(str_cat in str_cats) {
       
       if(nrow(taxon_trend_df) == 0) {
         ### either no species in the list, or no trend for any of the spp
-        taxon_trend_df <- data.frame(cell_id = NA,
-                                     n_incr_spp = NA,
-                                     n_decr_spp = NA,
+        taxon_trend_df <- data.frame(cell_id = 1,
+                                     n_incr1_spp = 0,
+                                     n_decr1_spp = 0,
+                                     n_incr2_spp = 0,
+                                     n_decr2_spp = 0,
+                                     n_incr3_spp = 0,
+                                     n_decr3_spp = 0,
                                      taxon   = taxon_gp)
       }
       
       ### convert to rasters and write out as +/- by count and priority
 
-      nspp_incr_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_incr_spp')
-      nspp_decr_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_decr_spp')
+      nspp_incr1_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_incr1_spp')
+      nspp_decr1_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_decr1_spp')
+      nspp_incr2_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_incr2_spp')
+      nspp_decr2_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_decr2_spp')
+      nspp_incr3_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_incr3_spp')
+      nspp_decr3_rast <- map_to_rast(taxon_trend_df, cell_val = 'n_decr3_spp')
  
-      writeRaster(nspp_incr_rast, tx_incr_f, overwrite = TRUE)
-      writeRaster(nspp_decr_rast, tx_decr_f, overwrite = TRUE)
+      writeRaster(stack(nspp_incr1_rast, nspp_incr2_rast, nspp_incr3_rast),
+                  tx_incr_f, bylayer = TRUE, overwrite = TRUE)
+      writeRaster(stack(nspp_decr1_rast, nspp_decr2_rast, nspp_decr3_rast),
+                  tx_decr_f, bylayer = TRUE, overwrite = TRUE)
 
     } else {
       message('Files exist... skipping!')
     }
   }
 }
+
 ```
 
 ## Plot select taxa trend maps 
 
 Plot taxa maps species experiencing intensifying/deintensifying impacts.  Here we plot only the trends for fishing stressors, climate stressors, and all cumulative stressors, for a subset of taxa.  We plot the count only (not priority-weighted).
 
-```{r trend maps by taxa, eval = FALSE}
+Note, since we have three levels of intensification, here we will print all levels for a few select taxa and stressor categories...
+
+```{r trend maps by taxa}
 
 mapfiles <- list.files(taxon_trend_map_dir, full.names = TRUE)
 
 strs <- c('fishing', 'climate', 'all')
 
-taxa <- taxon_gps[c(1, 2, 3, 5, 9)]
+taxa <- c('mammals', 'marinereptiles', 'bonyfishes', 'sharksandrays', 'seabirds')
 
 for(str_cat in strs) {
   # str_cat <- strs[1]
   for(t in taxa) {
     # t <- taxa[3]
-    fstem <- file.path(taxon_trend_map_dir, 'taxon_trend_%s_%s_%s.tif')
+    fstem <- file.path(taxon_trend_map_dir, 'taxon_trend_%s_%s_%s%s.tif')
     
-    incr_map <- raster(sprintf(fstem, t, str_cat, 'incr'))
+    incr_map <- stack(sprintf(fstem, t, str_cat, 'incr', 1:3))
     plot(incr_map, 
          col = c('grey70', hcl.colors(n = 20, rev = TRUE)),
-         main = sprintf('intensifying %s impacts, %s', str_cat, t))
+         main = sprintf('incr %s, %s, lvl %s', str_cat, t, 1:3))
     
-    decr_map <- raster(sprintf(fstem, t, str_cat, 'decr'))
+    decr_map <- stack(sprintf(fstem, t, str_cat, 'decr', 1:3))
     plot(decr_map, 
          col = c('grey70', hcl.colors(n = 20, rev = TRUE)),
-         main = sprintf('deintensifying %s impacts, %s', str_cat, t))
+         main = sprintf('decr %s, %s, lvl %s', str_cat, t, 1:3))
     
-    overlap <- raster(incr_map)
+    overlap <- stack(incr_map)
+    values(overlap) <- NA
     values(overlap)[values(incr_map) > 0 & values(decr_map) > 0] <- 1
-    plot(overlap, 
-         col = 'darkred',
-         main = sprintf('overlapping incr and decr %s, %s', str_cat, t))
+    cat('sum of overlap of', str_cat, 'for', t, 'across all levels: ', sum(values(overlap), na.rm = TRUE), 'cells\n')
   }
 }
 ```
