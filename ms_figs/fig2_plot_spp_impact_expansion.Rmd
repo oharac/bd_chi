@@ -260,9 +260,9 @@ all_sum_df <- spp_sum_df %>%
 write_csv(bind_rows(all_sum_df, tax_sum_df), 
           here('ms_figs/fig2b_impact_intens_abate.csv'))
 
-intens_lvls <- c('> 1.0%/yr', '> 0.1%/yr', '> 0%/yr', 
+intens_lvls <- c('> 1.0%/yr', '> 0.1%/yr', '> 0.0%/yr', 
                  'no change', 
-                 '< 0%/yr', '< -0.1%/yr', '< -1.0%/yr')
+                 '< 0.0%/yr', '<-0.1%/yr', '<-1.0%/yr')
 plot_tax_sum_df <- tax_sum_df %>%
   filter(stressor == 'cumulative') %>%
   arrange(mean_pct_imp) %>%
@@ -339,7 +339,7 @@ fig2b <- ggplot(plot_tax_sum_df) +
             fill = 'white', color = 'white') + ### suppress gridlines behind n = XXX
   geom_rect(xmin = 2, xmax = 7, ymin = .50, ymax = 1, 
             fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
-  geom_col(aes(x = desc, y = val, fill = var), 
+  geom_col(aes(x = desc, y = val, fill = var), color = 'grey40', size = .1,
            width = .5) +
   geom_text(data = n_labels,
             aes(x = desc, label = n_lbl), y = 1.03,
