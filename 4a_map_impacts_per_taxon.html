@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Tue Aug 4 15:12:11 2020 by ohara" />
+<meta name="author" content="Compiled on Mon Aug 17 15:45:49 2020 by ohara" />
 
 
 <title>Map impacts per taxon</title>
@@ -1676,7 +1676,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Map impacts per taxon</h1>
-<h4 class="author"><em>Compiled on Tue Aug 4 15:12:11 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Mon Aug 17 15:45:49 2020 by ohara</em></h4>
 
 </div>
 
@@ -1756,6 +1756,7 @@ div.tocify {
 <li>also add priority values for each cell/year per stressor</li>
 </ul></li>
 <li>for all subgroups in a taxa, add them up.</li>
+<li>Repeat this but focusing only on cells where species are impacted by multiple stressors.</li>
 </ul>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>get_spp_vec &lt;-<span class="st"> </span><span class="cf">function</span>(spp_ids, i, subgp_size) {</span>
 <span id="cb4-2"><a href="#cb4-2"></a>  gp_first &lt;-<span class="st"> </span>(i <span class="op">-</span><span class="st"> </span><span class="dv">1</span>) <span class="op">*</span><span class="st"> </span>subgp_size <span class="op">+</span><span class="st"> </span><span class="dv">1</span></span>
@@ -1763,20 +1764,22 @@ div.tocify {
 <span id="cb4-4"><a href="#cb4-4"></a>  spp_id_vec &lt;-<span class="st"> </span>spp_ids[gp_first<span class="op">:</span>gp_last]</span>
 <span id="cb4-5"><a href="#cb4-5"></a>}</span>
 <span id="cb4-6"><a href="#cb4-6"></a></span>
-<span id="cb4-7"><a href="#cb4-7"></a>get_spp_impact &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, imp_file) {</span>
-<span id="cb4-8"><a href="#cb4-8"></a>  impact_map &lt;-<span class="st"> </span><span class="kw">read_csv</span>(imp_file, <span class="dt">col_types =</span> <span class="st">&#39;iii&#39;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(year) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(cell_id)) <span class="op">%&gt;%</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a><span class="st">    </span><span class="kw">filter</span>(n_impacts <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span> <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(n_impacts)) <span class="op">%&gt;%</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a><span class="st">    </span><span class="kw">select</span>(cell_id, year) <span class="op">%&gt;%</span></span>
-<span id="cb4-12"><a href="#cb4-12"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> spp_id)</span>
-<span id="cb4-13"><a href="#cb4-13"></a>  <span class="kw">return</span>(impact_map)</span>
-<span id="cb4-14"><a href="#cb4-14"></a>}</span>
-<span id="cb4-15"><a href="#cb4-15"></a></span>
-<span id="cb4-16"><a href="#cb4-16"></a>taxon_gps &lt;-<span class="st"> </span>spp_sens<span class="op">$</span>taxon <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">sort</span>()</span>
+<span id="cb4-7"><a href="#cb4-7"></a>get_spp_impact &lt;-<span class="st"> </span><span class="cf">function</span>(spp_id, imp_file, <span class="dt">n_imp =</span> <span class="dv">1</span>) {</span>
+<span id="cb4-8"><a href="#cb4-8"></a>  <span class="co">### n_imp is the threshold for minimum number of impacts to include</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>  <span class="co">### e.g. n_imp == 2 counts all cells with at least two stressors</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>  impact_map &lt;-<span class="st"> </span><span class="kw">read_csv</span>(imp_file, <span class="dt">col_types =</span> <span class="st">&#39;iii&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="st">    </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(year) <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(cell_id)) <span class="op">%&gt;%</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="st">    </span><span class="kw">filter</span>(n_impacts <span class="op">&gt;=</span><span class="st"> </span>n_imp <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw">is.na</span>(n_impacts)) <span class="op">%&gt;%</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="st">    </span><span class="kw">select</span>(cell_id, year) <span class="op">%&gt;%</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">iucn_sid =</span> spp_id)</span>
+<span id="cb4-15"><a href="#cb4-15"></a>  <span class="kw">return</span>(impact_map)</span>
+<span id="cb4-16"><a href="#cb4-16"></a>}</span>
 <span id="cb4-17"><a href="#cb4-17"></a></span>
-<span id="cb4-18"><a href="#cb4-18"></a>subgp_size &lt;-<span class="st"> </span><span class="dv">24</span> <span class="co">### number of spp to process at a time</span></span>
-<span id="cb4-19"><a href="#cb4-19"></a>year_span &lt;-<span class="st"> </span><span class="dv">2003</span><span class="op">:</span><span class="dv">2013</span></span>
-<span id="cb4-20"><a href="#cb4-20"></a>reload &lt;-<span class="st"> </span><span class="ot">FALSE</span></span></code></pre></div>
+<span id="cb4-18"><a href="#cb4-18"></a>taxon_gps &lt;-<span class="st"> </span>spp_sens<span class="op">$</span>taxon <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">sort</span>()</span>
+<span id="cb4-19"><a href="#cb4-19"></a></span>
+<span id="cb4-20"><a href="#cb4-20"></a>subgp_size &lt;-<span class="st"> </span><span class="dv">24</span> <span class="co">### number of spp to process at a time</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a>year_span &lt;-<span class="st"> </span><span class="dv">2003</span><span class="op">:</span><span class="dv">2013</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a>reload &lt;-<span class="st"> </span><span class="ot">FALSE</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>str_cats &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;land-based&#39;</span>, <span class="st">&#39;ocean&#39;</span>, <span class="st">&#39;fishing&#39;</span>, <span class="st">&#39;climate&#39;</span>, <span class="st">&#39;all&#39;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2"></a></span>
 <span id="cb5-3"><a href="#cb5-3"></a><span class="cf">for</span>(str_cat <span class="cf">in</span> str_cats) {</span>
@@ -1863,103 +1866,178 @@ div.tocify {
 <span id="cb5-84"><a href="#cb5-84"></a>      }</span>
 <span id="cb5-85"><a href="#cb5-85"></a>      </span>
 <span id="cb5-86"><a href="#cb5-86"></a>    } <span class="cf">else</span> {</span>
-<span id="cb5-87"><a href="#cb5-87"></a>      <span class="kw">message</span>(<span class="st">&#39;Files exist... skipping!&#39;</span>)</span>
+<span id="cb5-87"><a href="#cb5-87"></a>      <span class="co"># message(&#39;Files exist... skipping!&#39;)</span></span>
 <span id="cb5-88"><a href="#cb5-88"></a>    }</span>
 <span id="cb5-89"><a href="#cb5-89"></a>  }</span>
 <span id="cb5-90"><a href="#cb5-90"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="cf">for</span>(taxon_gp <span class="cf">in</span> taxon_gps) {</span>
+<span id="cb6-2"><a href="#cb6-2"></a>  <span class="co">### taxon_gp &lt;- taxon_gps[6]</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>  </span>
+<span id="cb6-4"><a href="#cb6-4"></a>  taxon_2plus_map_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(taxon_impact_map_dir, </span>
+<span id="cb6-5"><a href="#cb6-5"></a>                              <span class="kw">sprintf</span>(<span class="st">&#39;taxon_impact_%s_2013_all_2plus.tif&#39;</span>,</span>
+<span id="cb6-6"><a href="#cb6-6"></a>                                      taxon_gp))</span>
+<span id="cb6-7"><a href="#cb6-7"></a></span>
+<span id="cb6-8"><a href="#cb6-8"></a>  <span class="cf">if</span>(<span class="kw">any</span>(<span class="op">!</span><span class="kw">file.exists</span>(taxon_2plus_map_file)) <span class="op">|</span><span class="st"> </span>reload) {</span>
+<span id="cb6-9"><a href="#cb6-9"></a>    spp_ids_taxa &lt;-<span class="st"> </span>spp_sens <span class="op">%&gt;%</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="st">      </span><span class="kw">filter</span>(taxon <span class="op">==</span><span class="st"> </span>taxon_gp) <span class="op">%&gt;%</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="st">      </span><span class="kw">filter</span>(str_cat <span class="op">==</span><span class="st"> &#39;all&#39;</span> <span class="op">|</span><span class="st"> </span>category <span class="op">==</span><span class="st"> </span>str_cat) <span class="op">%&gt;%</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="st">      </span>.<span class="op">$</span>iucn_sid <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb6-13"><a href="#cb6-13"></a><span class="st">      </span><span class="kw">unique</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">sort</span>()</span>
+<span id="cb6-14"><a href="#cb6-14"></a>    </span>
+<span id="cb6-15"><a href="#cb6-15"></a>    n_subgps &lt;-<span class="st"> </span><span class="kw">ceiling</span>(<span class="kw">length</span>(spp_ids_taxa) <span class="op">/</span><span class="st"> </span>subgp_size)</span>
+<span id="cb6-16"><a href="#cb6-16"></a>    <span class="kw">message</span>(<span class="st">&#39;Processing &#39;</span>, str_cat, <span class="st">&#39; impacts for &#39;</span>, taxon_gp, </span>
+<span id="cb6-17"><a href="#cb6-17"></a>            <span class="st">&#39;: &#39;</span>, <span class="kw">length</span>(spp_ids_taxa), </span>
+<span id="cb6-18"><a href="#cb6-18"></a>            <span class="st">&#39; species broken into &#39;</span>, n_subgps, <span class="st">&#39; groups.&#39;</span>)</span>
+<span id="cb6-19"><a href="#cb6-19"></a>    </span>
+<span id="cb6-20"><a href="#cb6-20"></a>    <span class="cf">if</span>(<span class="kw">length</span>(spp_ids_taxa) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</span>
+<span id="cb6-21"><a href="#cb6-21"></a>      <span class="co">### uh oh, no species in this taxon affected by this stressor.</span></span>
+<span id="cb6-22"><a href="#cb6-22"></a>      taxon_impacts_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>()</span>
+<span id="cb6-23"><a href="#cb6-23"></a>    } <span class="cf">else</span> {</span>
+<span id="cb6-24"><a href="#cb6-24"></a>      <span class="co">### loop over all spp in this taxon affected by this stressor</span></span>
+<span id="cb6-25"><a href="#cb6-25"></a>      <span class="co">### initialize a list to store </span></span>
+<span id="cb6-26"><a href="#cb6-26"></a>      taxon_impacts_list &lt;-<span class="st"> </span><span class="kw">vector</span>(<span class="st">&#39;list&#39;</span>, <span class="dt">length =</span> n_subgps)</span>
+<span id="cb6-27"><a href="#cb6-27"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>n_subgps) {</span>
+<span id="cb6-28"><a href="#cb6-28"></a>        <span class="co"># i &lt;- 1</span></span>
+<span id="cb6-29"><a href="#cb6-29"></a>        <span class="kw">message</span>(<span class="st">&#39;  processing group &#39;</span>, i)</span>
+<span id="cb6-30"><a href="#cb6-30"></a>        spp_id_vec &lt;-<span class="st"> </span><span class="kw">get_spp_vec</span>(spp_ids_taxa, i, subgp_size)</span>
+<span id="cb6-31"><a href="#cb6-31"></a>        </span>
+<span id="cb6-32"><a href="#cb6-32"></a>        impact_maps &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">mclapply</span>(spp_id_vec,</span>
+<span id="cb6-33"><a href="#cb6-33"></a>            <span class="dt">FUN =</span> <span class="cf">function</span>(spp_id) {</span>
+<span id="cb6-34"><a href="#cb6-34"></a>              <span class="co">### spp_id &lt;- spp_id_vec[1]</span></span>
+<span id="cb6-35"><a href="#cb6-35"></a>              imp_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(spp_impact_map_dir, </span>
+<span id="cb6-36"><a href="#cb6-36"></a>                                 <span class="kw">sprintf</span>(<span class="st">&#39;spp_impact_map_%s_all.csv&#39;</span>, spp_id))</span>
+<span id="cb6-37"><a href="#cb6-37"></a>              imp_map &lt;-<span class="st"> </span><span class="kw">get_spp_impact</span>(spp_id, imp_file, <span class="dt">n_imp =</span> <span class="dv">2</span>)</span>
+<span id="cb6-38"><a href="#cb6-38"></a>            }, <span class="dt">mc.cores =</span> subgp_size) <span class="op">%&gt;%</span></span>
+<span id="cb6-39"><a href="#cb6-39"></a><span class="st">          </span><span class="kw">bind_rows</span>()</span>
+<span id="cb6-40"><a href="#cb6-40"></a>        </span>
+<span id="cb6-41"><a href="#cb6-41"></a>        <span class="kw">message</span>(<span class="st">&#39;  summarizing group &#39;</span>, i)</span>
+<span id="cb6-42"><a href="#cb6-42"></a>        <span class="co"># system.time({</span></span>
+<span id="cb6-43"><a href="#cb6-43"></a>        impacts_gp &lt;-<span class="st"> </span>impact_maps <span class="op">%&gt;%</span></span>
+<span id="cb6-44"><a href="#cb6-44"></a><span class="st">          </span><span class="kw">filter</span>(year <span class="op">==</span><span class="st"> </span><span class="dv">2013</span>) <span class="op">%&gt;%</span></span>
+<span id="cb6-45"><a href="#cb6-45"></a><span class="st">          </span><span class="kw">group_by</span>(cell_id) <span class="op">%&gt;%</span></span>
+<span id="cb6-46"><a href="#cb6-46"></a><span class="st">          </span><span class="kw">summarize</span>(<span class="dt">n_spp =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></span>
+<span id="cb6-47"><a href="#cb6-47"></a><span class="st">          </span><span class="kw">ungroup</span>()</span>
+<span id="cb6-48"><a href="#cb6-48"></a>        <span class="co"># })</span></span>
+<span id="cb6-49"><a href="#cb6-49"></a>        </span>
+<span id="cb6-50"><a href="#cb6-50"></a>        taxon_impacts_list[[i]] &lt;-<span class="st"> </span>impacts_gp</span>
+<span id="cb6-51"><a href="#cb6-51"></a>      } <span class="co">### end of for loop</span></span>
+<span id="cb6-52"><a href="#cb6-52"></a>    </span>
+<span id="cb6-53"><a href="#cb6-53"></a>    taxon_impacts_df &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(taxon_impacts_list) <span class="op">%&gt;%</span></span>
+<span id="cb6-54"><a href="#cb6-54"></a><span class="st">      </span><span class="kw">group_by</span>(cell_id) <span class="op">%&gt;%</span><span class="st"> </span><span class="co">### no need to group by year</span></span>
+<span id="cb6-55"><a href="#cb6-55"></a><span class="st">      </span><span class="kw">summarize</span>(<span class="dt">n_spp =</span> <span class="kw">sum</span>(n_spp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb6-56"><a href="#cb6-56"></a><span class="st">      </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span></span>
+<span id="cb6-57"><a href="#cb6-57"></a><span class="st">      </span><span class="kw">mutate</span>(<span class="dt">taxon =</span> taxon_gp)</span>
+<span id="cb6-58"><a href="#cb6-58"></a>    </span>
+<span id="cb6-59"><a href="#cb6-59"></a>    } <span class="co">### end of if statement for zero-length species vector</span></span>
+<span id="cb6-60"><a href="#cb6-60"></a>    </span>
+<span id="cb6-61"><a href="#cb6-61"></a>    <span class="cf">if</span>(<span class="kw">nrow</span>(taxon_impacts_df) <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</span>
+<span id="cb6-62"><a href="#cb6-62"></a>      <span class="co">### either no species in the list, or no impacts for any of the spp</span></span>
+<span id="cb6-63"><a href="#cb6-63"></a>      taxon_impacts_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">cell_id =</span> <span class="ot">NA</span>,</span>
+<span id="cb6-64"><a href="#cb6-64"></a>                                     <span class="dt">n_spp   =</span> <span class="ot">NA</span>,</span>
+<span id="cb6-65"><a href="#cb6-65"></a>                                     <span class="dt">taxon   =</span> taxon_gp)</span>
+<span id="cb6-66"><a href="#cb6-66"></a>    }</span>
+<span id="cb6-67"><a href="#cb6-67"></a>    </span>
+<span id="cb6-68"><a href="#cb6-68"></a>    nspp_imp2plus_rast &lt;-<span class="st"> </span><span class="kw">map_to_rast</span>(taxon_impacts_df, </span>
+<span id="cb6-69"><a href="#cb6-69"></a>                                 <span class="dt">cell_val =</span> <span class="st">&#39;n_spp&#39;</span>)</span>
+<span id="cb6-70"><a href="#cb6-70"></a>    <span class="kw">writeRaster</span>(nspp_imp2plus_rast, taxon_2plus_map_file, <span class="dt">overwrite =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb6-71"><a href="#cb6-71"></a></span>
+<span id="cb6-72"><a href="#cb6-72"></a>  } <span class="cf">else</span> {</span>
+<span id="cb6-73"><a href="#cb6-73"></a>    <span class="co"># message(&#39;Files exist... skipping!&#39;)</span></span>
+<span id="cb6-74"><a href="#cb6-74"></a>  }</span>
+<span id="cb6-75"><a href="#cb6-75"></a>}</span></code></pre></div>
 </div>
 <div id="animate-select-taxa-impact-maps" class="section level2">
 <h2><span class="header-section-number">2.3</span> Animate select taxa impact maps</h2>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">library</span>(animation)</span>
-<span id="cb6-2"><a href="#cb6-2"></a></span>
-<span id="cb6-3"><a href="#cb6-3"></a>make_ramp &lt;-<span class="st"> </span><span class="cf">function</span>(n, palette, <span class="dt">log_out =</span> <span class="ot">TRUE</span>) {</span>
-<span id="cb6-4"><a href="#cb6-4"></a>  <span class="cf">if</span>(log_out) {</span>
-<span id="cb6-5"><a href="#cb6-5"></a>    n_even &lt;-<span class="st"> </span><span class="kw">ceiling</span>(n)</span>
-<span id="cb6-6"><a href="#cb6-6"></a>    n_max &lt;-<span class="st"> </span><span class="dv">10</span><span class="op">^</span>n_even</span>
-<span id="cb6-7"><a href="#cb6-7"></a>    log_steps &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">200</span>, <span class="dv">500</span>, <span class="dv">1000</span>)</span>
-<span id="cb6-8"><a href="#cb6-8"></a>    log_steps &lt;-<span class="st"> </span>log_steps[log_steps <span class="op">&lt;=</span><span class="st"> </span>n_max]</span>
-<span id="cb6-9"><a href="#cb6-9"></a>    </span>
-<span id="cb6-10"><a href="#cb6-10"></a>    breaks &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>, n_even, <span class="dt">length.out =</span> <span class="dv">100</span>)</span>
-<span id="cb6-11"><a href="#cb6-11"></a>    lblpos &lt;-<span class="st"> </span><span class="kw">log10</span>(log_steps)</span>
-<span id="cb6-12"><a href="#cb6-12"></a>    labels &lt;-<span class="st"> </span><span class="dv">10</span><span class="op">^</span>lblpos</span>
-<span id="cb6-13"><a href="#cb6-13"></a>    colors &lt;-<span class="st"> </span><span class="kw">hcl.colors</span>(<span class="kw">length</span>(breaks), <span class="dt">palette =</span> palette)</span>
-<span id="cb6-14"><a href="#cb6-14"></a>  } <span class="cf">else</span> {</span>
-<span id="cb6-15"><a href="#cb6-15"></a>    n_even &lt;-<span class="st"> </span><span class="kw">round</span>(n <span class="op">+</span><span class="st"> </span><span class="dv">50</span>, <span class="dv">-2</span>)</span>
-<span id="cb6-16"><a href="#cb6-16"></a>    breaks &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="kw">seq</span>(.<span class="dv">5</span>, n_even, <span class="dt">length.out =</span> <span class="dv">100</span>))</span>
-<span id="cb6-17"><a href="#cb6-17"></a>    lblpos &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>, n_even, <span class="dt">by =</span> <span class="dv">50</span>)</span>
-<span id="cb6-18"><a href="#cb6-18"></a>    labels &lt;-<span class="st"> </span>lblpos</span>
-<span id="cb6-19"><a href="#cb6-19"></a>    colors &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;grey40&#39;</span>, <span class="kw">hcl.colors</span>(<span class="dv">100</span>, <span class="dt">palette =</span> palette))</span>
-<span id="cb6-20"><a href="#cb6-20"></a>  }</span>
-<span id="cb6-21"><a href="#cb6-21"></a>  </span>
-<span id="cb6-22"><a href="#cb6-22"></a>  <span class="co">### For breaks and colors, add a different color for </span></span>
-<span id="cb6-23"><a href="#cb6-23"></a>  <span class="co">### a value of exactly zero</span></span>
-<span id="cb6-24"><a href="#cb6-24"></a>  <span class="kw">return</span>(<span class="kw">list</span>(<span class="st">&#39;colors&#39;</span> =<span class="st"> </span>colors,</span>
-<span id="cb6-25"><a href="#cb6-25"></a>              <span class="st">&#39;breaks&#39;</span> =<span class="st"> </span>breaks,</span>
-<span id="cb6-26"><a href="#cb6-26"></a>              <span class="st">&#39;labels&#39;</span> =<span class="st"> </span>labels,</span>
-<span id="cb6-27"><a href="#cb6-27"></a>              <span class="st">&#39;lblpos&#39;</span> =<span class="st"> </span>lblpos))</span>
-<span id="cb6-28"><a href="#cb6-28"></a>}</span>
-<span id="cb6-29"><a href="#cb6-29"></a></span>
-<span id="cb6-30"><a href="#cb6-30"></a>make_gifs &lt;-<span class="st"> </span><span class="cf">function</span>(map_stack, filename, <span class="dt">layer_names =</span> <span class="ot">NULL</span>, <span class="dt">log_out =</span> <span class="ot">TRUE</span>) {</span>
-<span id="cb6-31"><a href="#cb6-31"></a>  <span class="cf">if</span>(<span class="kw">is.null</span>(layer_names)) layer_names =<span class="st"> </span><span class="kw">names</span>(map_stack)</span>
-<span id="cb6-32"><a href="#cb6-32"></a></span>
-<span id="cb6-33"><a href="#cb6-33"></a>  <span class="cf">if</span>(log_out) map_stack &lt;-<span class="st"> </span><span class="kw">log10</span>(map_stack)</span>
-<span id="cb6-34"><a href="#cb6-34"></a>  </span>
-<span id="cb6-35"><a href="#cb6-35"></a>  n &lt;-<span class="st"> </span><span class="kw">max</span>(<span class="kw">c</span>(<span class="kw">maxValue</span>(map_stack), <span class="dv">1</span>), <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb6-36"><a href="#cb6-36"></a></span>
-<span id="cb6-37"><a href="#cb6-37"></a>  ramp &lt;-<span class="st"> </span><span class="kw">make_ramp</span>(n, <span class="dt">palette =</span> <span class="st">&#39;viridis&#39;</span>, log_out)</span>
-<span id="cb6-38"><a href="#cb6-38"></a>  </span>
-<span id="cb6-39"><a href="#cb6-39"></a>  <span class="kw">capture.output</span>({</span>
-<span id="cb6-40"><a href="#cb6-40"></a>    <span class="kw">saveGIF</span>({</span>
-<span id="cb6-41"><a href="#cb6-41"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">nlayers</span>(map_stack)){</span>
-<span id="cb6-42"><a href="#cb6-42"></a>        <span class="kw">plot</span>(map_stack[[i]], </span>
-<span id="cb6-43"><a href="#cb6-43"></a>             <span class="dt">col =</span> ramp<span class="op">$</span>colors,</span>
-<span id="cb6-44"><a href="#cb6-44"></a>             <span class="dt">breaks =</span> ramp<span class="op">$</span>breaks,</span>
-<span id="cb6-45"><a href="#cb6-45"></a>             <span class="dt">axes =</span> <span class="ot">FALSE</span>,</span>
-<span id="cb6-46"><a href="#cb6-46"></a>             <span class="dt">axis.args =</span> <span class="kw">list</span>(<span class="dt">at =</span> ramp<span class="op">$</span>lblpos, <span class="dt">labels =</span> ramp<span class="op">$</span>labels),</span>
-<span id="cb6-47"><a href="#cb6-47"></a>             <span class="dt">main =</span> layer_names[i])</span>
-<span id="cb6-48"><a href="#cb6-48"></a>      }}, </span>
-<span id="cb6-49"><a href="#cb6-49"></a>      <span class="dt">interval =</span> <span class="fl">0.5</span>, <span class="dt">movie.name =</span> filename, </span>
-<span id="cb6-50"><a href="#cb6-50"></a>      <span class="dt">ani.width =</span> <span class="dv">700</span>, <span class="dt">ani.height =</span> <span class="dv">420</span>)</span>
-<span id="cb6-51"><a href="#cb6-51"></a>  })</span>
-<span id="cb6-52"><a href="#cb6-52"></a>  </span>
-<span id="cb6-53"><a href="#cb6-53"></a>  <span class="kw">return</span>(<span class="kw">invisible</span>(<span class="ot">NULL</span>))</span>
-<span id="cb6-54"><a href="#cb6-54"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>mapfiles &lt;-<span class="st"> </span><span class="kw">list.files</span>(taxon_impact_map_dir, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">library</span>(animation)</span>
 <span id="cb7-2"><a href="#cb7-2"></a></span>
-<span id="cb7-3"><a href="#cb7-3"></a>all_taxa_maps &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">f =</span> mapfiles) <span class="op">%&gt;%</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">impact =</span> <span class="kw">str_replace_all</span>(<span class="kw">basename</span>(f), <span class="st">&#39;taxon.+_[0-9]{4}_|.tif&#39;</span>, <span class="st">&#39;&#39;</span>),</span>
-<span id="cb7-5"><a href="#cb7-5"></a>         <span class="dt">type =</span> <span class="kw">ifelse</span>(<span class="kw">str_detect</span>(<span class="kw">basename</span>(f), <span class="st">&#39;priority&#39;</span>), <span class="st">&#39;priority&#39;</span>, <span class="st">&#39;sum&#39;</span>),</span>
-<span id="cb7-6"><a href="#cb7-6"></a>         <span class="dt">year =</span> <span class="kw">str_extract</span>(<span class="kw">basename</span>(f), <span class="st">&#39;[0-9]{4}&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">as.integer</span>(),</span>
-<span id="cb7-7"><a href="#cb7-7"></a>         <span class="dt">taxon =</span> <span class="kw">str_replace_all</span>(<span class="kw">basename</span>(f), <span class="st">&#39;taxon.+impact_|_[0-9].+&#39;</span>, <span class="st">&#39;&#39;</span>))</span>
-<span id="cb7-8"><a href="#cb7-8"></a></span>
-<span id="cb7-9"><a href="#cb7-9"></a>str_cats &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;fishing&#39;</span>, <span class="st">&#39;land-based&#39;</span>, <span class="st">&#39;ocean&#39;</span>, <span class="st">&#39;climate&#39;</span>, <span class="st">&#39;all&#39;</span>)</span>
-<span id="cb7-10"><a href="#cb7-10"></a>taxa &lt;-<span class="st"> </span>all_taxa_maps<span class="op">$</span>taxon <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb7-11"><a href="#cb7-11"></a><span class="st">  </span><span class="kw">unique</span>()</span>
-<span id="cb7-12"><a href="#cb7-12"></a>taxa &lt;-<span class="st"> </span>taxa[<span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">9</span>)]</span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">### Animate the results</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>make_ramp &lt;-<span class="st"> </span><span class="cf">function</span>(n, palette, <span class="dt">log_out =</span> <span class="ot">TRUE</span>) {</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  <span class="cf">if</span>(log_out) {</span>
+<span id="cb7-5"><a href="#cb7-5"></a>    n_even &lt;-<span class="st"> </span><span class="kw">ceiling</span>(n)</span>
+<span id="cb7-6"><a href="#cb7-6"></a>    n_max &lt;-<span class="st"> </span><span class="dv">10</span><span class="op">^</span>n_even</span>
+<span id="cb7-7"><a href="#cb7-7"></a>    log_steps &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">200</span>, <span class="dv">500</span>, <span class="dv">1000</span>)</span>
+<span id="cb7-8"><a href="#cb7-8"></a>    log_steps &lt;-<span class="st"> </span>log_steps[log_steps <span class="op">&lt;=</span><span class="st"> </span>n_max]</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    </span>
+<span id="cb7-10"><a href="#cb7-10"></a>    breaks &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>, n_even, <span class="dt">length.out =</span> <span class="dv">100</span>)</span>
+<span id="cb7-11"><a href="#cb7-11"></a>    lblpos &lt;-<span class="st"> </span><span class="kw">log10</span>(log_steps)</span>
+<span id="cb7-12"><a href="#cb7-12"></a>    labels &lt;-<span class="st"> </span><span class="dv">10</span><span class="op">^</span>lblpos</span>
+<span id="cb7-13"><a href="#cb7-13"></a>    colors &lt;-<span class="st"> </span><span class="kw">hcl.colors</span>(<span class="kw">length</span>(breaks), <span class="dt">palette =</span> palette)</span>
+<span id="cb7-14"><a href="#cb7-14"></a>  } <span class="cf">else</span> {</span>
+<span id="cb7-15"><a href="#cb7-15"></a>    n_even &lt;-<span class="st"> </span><span class="kw">round</span>(n <span class="op">+</span><span class="st"> </span><span class="dv">50</span>, <span class="dv">-2</span>)</span>
+<span id="cb7-16"><a href="#cb7-16"></a>    breaks &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="kw">seq</span>(.<span class="dv">5</span>, n_even, <span class="dt">length.out =</span> <span class="dv">100</span>))</span>
+<span id="cb7-17"><a href="#cb7-17"></a>    lblpos &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>, n_even, <span class="dt">by =</span> <span class="dv">50</span>)</span>
+<span id="cb7-18"><a href="#cb7-18"></a>    labels &lt;-<span class="st"> </span>lblpos</span>
+<span id="cb7-19"><a href="#cb7-19"></a>    colors &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;grey40&#39;</span>, <span class="kw">hcl.colors</span>(<span class="dv">100</span>, <span class="dt">palette =</span> palette))</span>
+<span id="cb7-20"><a href="#cb7-20"></a>  }</span>
+<span id="cb7-21"><a href="#cb7-21"></a>  </span>
+<span id="cb7-22"><a href="#cb7-22"></a>  <span class="co">### For breaks and colors, add a different color for </span></span>
+<span id="cb7-23"><a href="#cb7-23"></a>  <span class="co">### a value of exactly zero</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a>  <span class="kw">return</span>(<span class="kw">list</span>(<span class="st">&#39;colors&#39;</span> =<span class="st"> </span>colors,</span>
+<span id="cb7-25"><a href="#cb7-25"></a>              <span class="st">&#39;breaks&#39;</span> =<span class="st"> </span>breaks,</span>
+<span id="cb7-26"><a href="#cb7-26"></a>              <span class="st">&#39;labels&#39;</span> =<span class="st"> </span>labels,</span>
+<span id="cb7-27"><a href="#cb7-27"></a>              <span class="st">&#39;lblpos&#39;</span> =<span class="st"> </span>lblpos))</span>
+<span id="cb7-28"><a href="#cb7-28"></a>}</span>
+<span id="cb7-29"><a href="#cb7-29"></a></span>
+<span id="cb7-30"><a href="#cb7-30"></a>make_gifs &lt;-<span class="st"> </span><span class="cf">function</span>(map_stack, filename, <span class="dt">layer_names =</span> <span class="ot">NULL</span>, <span class="dt">log_out =</span> <span class="ot">TRUE</span>) {</span>
+<span id="cb7-31"><a href="#cb7-31"></a>  <span class="cf">if</span>(<span class="kw">is.null</span>(layer_names)) layer_names =<span class="st"> </span><span class="kw">names</span>(map_stack)</span>
+<span id="cb7-32"><a href="#cb7-32"></a></span>
+<span id="cb7-33"><a href="#cb7-33"></a>  <span class="cf">if</span>(log_out) map_stack &lt;-<span class="st"> </span><span class="kw">log10</span>(map_stack)</span>
+<span id="cb7-34"><a href="#cb7-34"></a>  </span>
+<span id="cb7-35"><a href="#cb7-35"></a>  n &lt;-<span class="st"> </span><span class="kw">max</span>(<span class="kw">c</span>(<span class="kw">maxValue</span>(map_stack), <span class="dv">1</span>), <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb7-36"><a href="#cb7-36"></a></span>
+<span id="cb7-37"><a href="#cb7-37"></a>  ramp &lt;-<span class="st"> </span><span class="kw">make_ramp</span>(n, <span class="dt">palette =</span> <span class="st">&#39;viridis&#39;</span>, log_out)</span>
+<span id="cb7-38"><a href="#cb7-38"></a>  </span>
+<span id="cb7-39"><a href="#cb7-39"></a>  <span class="kw">capture.output</span>({</span>
+<span id="cb7-40"><a href="#cb7-40"></a>    <span class="kw">saveGIF</span>({</span>
+<span id="cb7-41"><a href="#cb7-41"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">nlayers</span>(map_stack)){</span>
+<span id="cb7-42"><a href="#cb7-42"></a>        <span class="kw">plot</span>(map_stack[[i]], </span>
+<span id="cb7-43"><a href="#cb7-43"></a>             <span class="dt">col =</span> ramp<span class="op">$</span>colors,</span>
+<span id="cb7-44"><a href="#cb7-44"></a>             <span class="dt">breaks =</span> ramp<span class="op">$</span>breaks,</span>
+<span id="cb7-45"><a href="#cb7-45"></a>             <span class="dt">axes =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb7-46"><a href="#cb7-46"></a>             <span class="dt">axis.args =</span> <span class="kw">list</span>(<span class="dt">at =</span> ramp<span class="op">$</span>lblpos, <span class="dt">labels =</span> ramp<span class="op">$</span>labels),</span>
+<span id="cb7-47"><a href="#cb7-47"></a>             <span class="dt">main =</span> layer_names[i])</span>
+<span id="cb7-48"><a href="#cb7-48"></a>      }}, </span>
+<span id="cb7-49"><a href="#cb7-49"></a>      <span class="dt">interval =</span> <span class="fl">0.5</span>, <span class="dt">movie.name =</span> filename, </span>
+<span id="cb7-50"><a href="#cb7-50"></a>      <span class="dt">ani.width =</span> <span class="dv">700</span>, <span class="dt">ani.height =</span> <span class="dv">420</span>)</span>
+<span id="cb7-51"><a href="#cb7-51"></a>  })</span>
+<span id="cb7-52"><a href="#cb7-52"></a>  </span>
+<span id="cb7-53"><a href="#cb7-53"></a>  <span class="kw">return</span>(<span class="kw">invisible</span>(<span class="ot">NULL</span>))</span>
+<span id="cb7-54"><a href="#cb7-54"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>mapfiles &lt;-<span class="st"> </span><span class="kw">list.files</span>(taxon_impact_map_dir, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)</span>
 <span id="cb8-2"><a href="#cb8-2"></a></span>
-<span id="cb8-3"><a href="#cb8-3"></a><span class="cf">for</span>(str_cat <span class="cf">in</span> str_cats) {</span>
-<span id="cb8-4"><a href="#cb8-4"></a>  <span class="co"># str_cat &lt;- str_cats[3]</span></span>
-<span id="cb8-5"><a href="#cb8-5"></a>  <span class="cf">for</span>(t <span class="cf">in</span> taxa) {</span>
-<span id="cb8-6"><a href="#cb8-6"></a>    <span class="co"># t &lt;- taxa[2]</span></span>
-<span id="cb8-7"><a href="#cb8-7"></a>    gif_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="kw">sprintf</span>(<span class="st">&#39;figs/impact_%s_%s.gif&#39;</span>, t, str_cat))</span>
-<span id="cb8-8"><a href="#cb8-8"></a>    </span>
-<span id="cb8-9"><a href="#cb8-9"></a>    <span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(gif_file) <span class="op">|</span><span class="st"> </span>reload) {</span>
-<span id="cb8-10"><a href="#cb8-10"></a>      taxon_map_df &lt;-<span class="st"> </span>all_taxa_maps <span class="op">%&gt;%</span></span>
-<span id="cb8-11"><a href="#cb8-11"></a><span class="st">        </span><span class="kw">filter</span>(taxon <span class="op">==</span><span class="st"> </span>t) <span class="op">%&gt;%</span></span>
-<span id="cb8-12"><a href="#cb8-12"></a><span class="st">        </span><span class="kw">filter</span>(impact <span class="op">==</span><span class="st"> </span>str_cat) <span class="op">%&gt;%</span></span>
-<span id="cb8-13"><a href="#cb8-13"></a><span class="st">        </span><span class="kw">filter</span>(type <span class="op">==</span><span class="st"> &#39;sum&#39;</span>)</span>
-<span id="cb8-14"><a href="#cb8-14"></a>      rast_files &lt;-<span class="st"> </span>taxon_map_df<span class="op">$</span>f</span>
-<span id="cb8-15"><a href="#cb8-15"></a>      map_stack &lt;-<span class="st"> </span><span class="kw">stack</span>(rast_files)</span>
-<span id="cb8-16"><a href="#cb8-16"></a>      </span>
-<span id="cb8-17"><a href="#cb8-17"></a>      <span class="kw">make_gifs</span>(map_stack, </span>
-<span id="cb8-18"><a href="#cb8-18"></a>                <span class="dt">filename =</span> gif_file,</span>
-<span id="cb8-19"><a href="#cb8-19"></a>                <span class="dt">layer_names =</span> <span class="kw">paste</span>(t, str_cat, <span class="st">&#39;impacts&#39;</span>, taxon_map_df<span class="op">$</span>year))</span>
-<span id="cb8-20"><a href="#cb8-20"></a>    }</span>
-<span id="cb8-21"><a href="#cb8-21"></a>    </span>
-<span id="cb8-22"><a href="#cb8-22"></a>    <span class="kw">cat</span>(<span class="kw">sprintf</span>(<span class="st">&#39;![](%s)&#39;</span>, gif_file))</span>
-<span id="cb8-23"><a href="#cb8-23"></a>  }</span>
-<span id="cb8-24"><a href="#cb8-24"></a>}</span></code></pre></div>
+<span id="cb8-3"><a href="#cb8-3"></a>all_taxa_maps &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">f =</span> mapfiles) <span class="op">%&gt;%</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">impact =</span> <span class="kw">str_replace_all</span>(<span class="kw">basename</span>(f), <span class="st">&#39;taxon.+_[0-9]{4}_|.tif&#39;</span>, <span class="st">&#39;&#39;</span>),</span>
+<span id="cb8-5"><a href="#cb8-5"></a>         <span class="dt">type =</span> <span class="kw">ifelse</span>(<span class="kw">str_detect</span>(<span class="kw">basename</span>(f), <span class="st">&#39;priority&#39;</span>), <span class="st">&#39;priority&#39;</span>, <span class="st">&#39;sum&#39;</span>),</span>
+<span id="cb8-6"><a href="#cb8-6"></a>         <span class="dt">year =</span> <span class="kw">str_extract</span>(<span class="kw">basename</span>(f), <span class="st">&#39;[0-9]{4}&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">as.integer</span>(),</span>
+<span id="cb8-7"><a href="#cb8-7"></a>         <span class="dt">taxon =</span> <span class="kw">str_replace_all</span>(<span class="kw">basename</span>(f), <span class="st">&#39;taxon.+impact_|_[0-9].+&#39;</span>, <span class="st">&#39;&#39;</span>))</span>
+<span id="cb8-8"><a href="#cb8-8"></a></span>
+<span id="cb8-9"><a href="#cb8-9"></a>str_cats &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;fishing&#39;</span>, <span class="st">&#39;land-based&#39;</span>, <span class="st">&#39;ocean&#39;</span>, <span class="st">&#39;climate&#39;</span>, <span class="st">&#39;all&#39;</span>)</span>
+<span id="cb8-10"><a href="#cb8-10"></a>taxa &lt;-<span class="st"> </span>all_taxa_maps<span class="op">$</span>taxon <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="st">  </span><span class="kw">unique</span>()</span>
+<span id="cb8-12"><a href="#cb8-12"></a>taxa &lt;-<span class="st"> </span>taxa[<span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">9</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co">### Animate the results</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="cf">for</span>(str_cat <span class="cf">in</span> str_cats) {</span>
+<span id="cb9-4"><a href="#cb9-4"></a>  <span class="co"># str_cat &lt;- str_cats[3]</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>  <span class="cf">for</span>(t <span class="cf">in</span> taxa) {</span>
+<span id="cb9-6"><a href="#cb9-6"></a>    <span class="co"># t &lt;- taxa[2]</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>    gif_file &lt;-<span class="st"> </span><span class="kw">here</span>(<span class="kw">sprintf</span>(<span class="st">&#39;figs/impact_%s_%s.gif&#39;</span>, t, str_cat))</span>
+<span id="cb9-8"><a href="#cb9-8"></a>    </span>
+<span id="cb9-9"><a href="#cb9-9"></a>    <span class="cf">if</span>(<span class="op">!</span><span class="kw">file.exists</span>(gif_file) <span class="op">|</span><span class="st"> </span>reload) {</span>
+<span id="cb9-10"><a href="#cb9-10"></a>      taxon_map_df &lt;-<span class="st"> </span>all_taxa_maps <span class="op">%&gt;%</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="st">        </span><span class="kw">filter</span>(taxon <span class="op">==</span><span class="st"> </span>t) <span class="op">%&gt;%</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="st">        </span><span class="kw">filter</span>(impact <span class="op">==</span><span class="st"> </span>str_cat) <span class="op">%&gt;%</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a><span class="st">        </span><span class="kw">filter</span>(type <span class="op">==</span><span class="st"> &#39;sum&#39;</span>)</span>
+<span id="cb9-14"><a href="#cb9-14"></a>      rast_files &lt;-<span class="st"> </span>taxon_map_df<span class="op">$</span>f</span>
+<span id="cb9-15"><a href="#cb9-15"></a>      map_stack &lt;-<span class="st"> </span><span class="kw">stack</span>(rast_files)</span>
+<span id="cb9-16"><a href="#cb9-16"></a>      </span>
+<span id="cb9-17"><a href="#cb9-17"></a>      <span class="kw">make_gifs</span>(map_stack, </span>
+<span id="cb9-18"><a href="#cb9-18"></a>                <span class="dt">filename =</span> gif_file,</span>
+<span id="cb9-19"><a href="#cb9-19"></a>                <span class="dt">layer_names =</span> <span class="kw">paste</span>(t, str_cat, <span class="st">&#39;impacts&#39;</span>, taxon_map_df<span class="op">$</span>year))</span>
+<span id="cb9-20"><a href="#cb9-20"></a>    }</span>
+<span id="cb9-21"><a href="#cb9-21"></a>    </span>
+<span id="cb9-22"><a href="#cb9-22"></a>    <span class="kw">cat</span>(<span class="kw">sprintf</span>(<span class="st">&#39;![](%s)&#39;</span>, gif_file))</span>
+<span id="cb9-23"><a href="#cb9-23"></a>  }</span>
+<span id="cb9-24"><a href="#cb9-24"></a>}</span></code></pre></div>
 </div>
 </div>
 

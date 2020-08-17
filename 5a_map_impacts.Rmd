@@ -189,7 +189,7 @@ values(nspp_rast)[values(nspp_rast) == 0] <- NA
 
 ```{r impact all species by stressor category}
 
-str_cats <- taxa_map_df$impact %>% unique()
+str_cats <- c('fishing', 'climate', 'land-based', 'ocean', 'all')
 yrs <- 2003:2013
 
 outfile_stem <- file.path(impact_map_dir, 'impact_%s_%s.tif')
@@ -219,6 +219,27 @@ for(str_cat in str_cats) {
       # message('File exists: ', outfile, '... skipping!')
     # }
   }
+}
+
+```
+
+```{r impact all species by stressor category 2plus stressors 2013 only}
+
+outfile <- file.path(impact_map_dir, 'impact_all_2013_2plus.tif')
+
+
+if(!file.exists(outfile) | reload) {
+      
+  impact_map_files <- taxa_map_df %>%
+    filter(impact == 'all_2plus')
+  
+  impact_2plus_stack <- stack(impact_map_files$map)
+  impact_2plus_rast <- raster::calc(impact_2plus_stack, 
+                                 fun = sum, na.rm = TRUE) %>%
+    mask(ocean_a_rast)
+  
+  writeRaster(impact_2plus_rast, outfile, overwrite = TRUE)
+    
 }
 
 ```
@@ -281,6 +302,8 @@ for(str_cat in str_cats) {
 ### Plot 2013 layers
 
 ``` {r plot just 2013 layers}
+str_cats <- c('fishing', 'climate', 'land-based', 'ocean', 'all')
+outfile_stem <- file.path(impact_map_dir, 'impact_%s_%s.tif')
 
 for(str_cat in str_cats) {
   # str_cat <- str_cats[1]
@@ -301,6 +324,16 @@ for(str_cat in str_cats) {
   #      main = paste('priority pct spp impacted:', str_cat, 'stressors'))
   
 }
+```
+
+```{r plot 2plus stressor map}
+r <- raster(sprintf(outfile_stem, 'all', '2013_2plus'))
+
+r_norm <- r / nspp_rast
+
+plot(r_norm, col = hcl.colors(n = 20),
+     axes = FALSE,
+     main = paste('pct spp impacted: all stressors (2+)'))
 ```
 
 <!-- How correlated are impact counts with species richness?  Examine 2013 year. -->

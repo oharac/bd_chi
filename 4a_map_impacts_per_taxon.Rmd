@@ -106,6 +106,7 @@ For a given taxon:
     * add all maps for this group: by cell/year per stressor
     * also add priority values for each cell/year per stressor
 * for all subgroups in a taxa, add them up.
+* Repeat this but focusing only on cells where species are impacted by multiple stressors.
     
 ```{r set up functions}
 
@@ -115,10 +116,12 @@ get_spp_vec <- function(spp_ids, i, subgp_size) {
   spp_id_vec <- spp_ids[gp_first:gp_last]
 }
 
-get_spp_impact <- function(spp_id, imp_file) {
+get_spp_impact <- function(spp_id, imp_file, n_imp = 1) {
+  ### n_imp is the threshold for minimum number of impacts to include
+  ### e.g. n_imp == 2 counts all cells with at least two stressors
   impact_map <- read_csv(imp_file, col_types = 'iii') %>%
     filter(!is.na(year) & !is.na(cell_id)) %>%
-    filter(n_impacts > 0 & !is.na(n_impacts)) %>%
+    filter(n_impacts >= n_imp & !is.na(n_impacts)) %>%
     select(cell_id, year) %>%
     mutate(iucn_sid = spp_id)
   return(impact_map)
@@ -218,8 +221,87 @@ for(str_cat in str_cats) {
       }
       
     } else {
-      message('Files exist... skipping!')
+      # message('Files exist... skipping!')
     }
+  }
+}
+```
+
+```{r create taxa maps with multiple stressors - all 2013 only}
+
+for(taxon_gp in taxon_gps) {
+  ### taxon_gp <- taxon_gps[6]
+  
+  taxon_2plus_map_file <- file.path(taxon_impact_map_dir, 
+                              sprintf('taxon_impact_%s_2013_all_2plus.tif',
+                                      taxon_gp))
+
+  if(any(!file.exists(taxon_2plus_map_file)) | reload) {
+    spp_ids_taxa <- spp_sens %>%
+      filter(taxon == taxon_gp) %>%
+      filter(str_cat == 'all' | category == str_cat) %>%
+      .$iucn_sid %>% 
+      unique() %>% sort()
+    
+    n_subgps <- ceiling(length(spp_ids_taxa) / subgp_size)
+    message('Processing ', str_cat, ' impacts for ', taxon_gp, 
+            ': ', length(spp_ids_taxa), 
+            ' species broken into ', n_subgps, ' groups.')
+    
+    if(length(spp_ids_taxa) == 0) {
+      ### uh oh, no species in this taxon affected by this stressor.
+      taxon_impacts_df <- data.frame()
+    } else {
+      ### loop over all spp in this taxon affected by this stressor
+      ### initialize a list to store 
+      taxon_impacts_list <- vector('list', length = n_subgps)
+      for(i in 1:n_subgps) {
+        # i <- 1
+        message('  processing group ', i)
+        spp_id_vec <- get_spp_vec(spp_ids_taxa, i, subgp_size)
+        
+        impact_maps <- parallel::mclapply(spp_id_vec,
+            FUN = function(spp_id) {
+              ### spp_id <- spp_id_vec[1]
+              imp_file <- file.path(spp_impact_map_dir, 
+                                 sprintf('spp_impact_map_%s_all.csv', spp_id))
+              imp_map <- get_spp_impact(spp_id, imp_file, n_imp = 2)
+            }, mc.cores = subgp_size) %>%
+          bind_rows()
+        
+        message('  summarizing group ', i)
+        # system.time({
+        impacts_gp <- impact_maps %>%
+          filter(year == 2013) %>%
+          group_by(cell_id) %>%
+          summarize(n_spp = n()) %>%
+          ungroup()
+        # })
+        
+        taxon_impacts_list[[i]] <- impacts_gp
+      } ### end of for loop
+    
+    taxon_impacts_df <- bind_rows(taxon_impacts_list) %>%
+      group_by(cell_id) %>% ### no need to group by year
+      summarize(n_spp = sum(n_spp, na.rm = TRUE)) %>%
+      ungroup() %>%
+      mutate(taxon = taxon_gp)
+    
+    } ### end of if statement for zero-length species vector
+    
+    if(nrow(taxon_impacts_df) == 0) {
+      ### either no species in the list, or no impacts for any of the spp
+      taxon_impacts_df <- data.frame(cell_id = NA,
+                                     n_spp   = NA,
+                                     taxon   = taxon_gp)
+    }
+    
+    nspp_imp2plus_rast <- map_to_rast(taxon_impacts_df, 
+                                 cell_val = 'n_spp')
+    writeRaster(nspp_imp2plus_rast, taxon_2plus_map_file, overwrite = TRUE)
+
+  } else {
+    # message('Files exist... skipping!')
   }
 }
 ```
