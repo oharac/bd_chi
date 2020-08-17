@@ -260,9 +260,9 @@ all_sum_df <- spp_sum_df %>%
 write_csv(bind_rows(all_sum_df, tax_sum_df), 
           here('ms_figs/fig2b_impact_intens_abate.csv'))
 
-intens_lvls <- c('> 1.0%/yr', '> 0.1%/yr', '> 0%/yr', 
+intens_lvls <- c('> 1.0%/yr', '> 0.1%/yr', '> 0.0%/yr', 
                  'no change', 
-                 '< 0%/yr', '< -0.1%/yr', '< -1.0%/yr')
+                 '< 0.0%/yr', '<-0.1%/yr', '<-1.0%/yr')
 plot_tax_sum_df <- tax_sum_df %>%
   filter(stressor == 'cumulative') %>%
   arrange(mean_pct_imp) %>%
@@ -299,6 +299,8 @@ fig2a <- ggplot(cum_impact_df) +
              position = position_dodge(width = -.6),
              show.legend = FALSE,
              size = .25) +
+  geom_rect(xmin = 2, xmax = 4, ymin = .75, ymax = 1, 
+            fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
   scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
@@ -306,6 +308,7 @@ fig2a <- ggplot(cum_impact_df) +
                      limits = c(-.02, 1.02),
                      breaks = seq(0, 1, .25),
                      labels = paste0(seq(0, 100, 25), '%')) +
+  scale_x_discrete(expand = c(0.02, 0.02)) +
   labs(y = 'Percent of range impacted') +
   coord_flip() +
   theme(axis.title.y = element_blank(),
@@ -332,19 +335,22 @@ n_labels <- get_spp_taxon() %>%
 
 fig2b <- ggplot(plot_tax_sum_df) +
   ggtheme_plot(base_size = 7) +
-  geom_rect(xmin = 1, xmax = 12, ymin = 1.01, ymax = 1.2, 
+  geom_rect(xmin = 1, xmax = 12, ymin = 1.02, ymax = 1.22, 
             fill = 'white', color = 'white') + ### suppress gridlines behind n = XXX
-  geom_col(aes(x = desc, y = val, fill = var), 
+  geom_rect(xmin = 2, xmax = 7, ymin = .50, ymax = 1, 
+            fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
+  geom_col(aes(x = desc, y = val, fill = var), color = 'grey40', size = .1,
            width = .5) +
   geom_text(data = n_labels,
-            aes(x = desc, label = n_lbl), y = 1.01,
+            aes(x = desc, label = n_lbl), y = 1.03,
             size = 1.9, hjust = 0) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   labs(y = 'Percent of range impacted') +
   scale_y_continuous(expand = c(0, 0), 
-                     limits = c(0, 1.2),
+                     limits = c(0, 1.22),
                      breaks = seq(0, 1, .25),
                      labels = paste0(seq(0, 100, 25), '%')) +
+  scale_x_discrete(expand = c(0.02, 0.02)) +
   scale_fill_manual(values = hcl.colors(n = 7, palette = 'Red-Green')) +
   coord_flip() +
   labs(fill = 'Rate of\nintensification') +
@@ -366,12 +372,12 @@ fig2 <- plot_grid(fig2a + theme(legend.position = 'none'), ### drop legend for m
                   fig2b + theme(legend.position = 'none'), 
                   rel_widths = c(1.2, 1),
                   align = 'h', nrow = 1)  +
-  draw_plot(legend_2a, x = .37, y = .2, width = .2, height = .2) +
-  draw_plot(legend_2b, x = .72, y = .2, width = .2, height = .4) +
+  draw_plot(legend_2a, x = .38, y = .22, width = .2, height = .2) +
+  draw_plot(legend_2b, x = .73, y = .215, width = .2, height = .4) +
   draw_label('A', x = .05, y = .99, vjust = 1, 
-             fontface = 'bold', size = 9, color = 'grey20') +
+             fontface = 'bold', size = 9, colour = 'grey20') +
   draw_label('B', x = .55, y = .99, vjust = 1,
-             fontface = 'bold', size = 9, color = 'grey20')
+             fontface = 'bold', size = 9, colour = 'grey20')
   
   
 ggsave(plot = fig2, filename = here('ms_figs/fig2_expand_intens.png'),
@@ -407,7 +413,7 @@ ggplot(zz, aes(x = range_km2, y = diff_2003_2013)) +
   facet_wrap(~ stressor)
 ```
 
-``` {r}
+``` {r, eval = FALSE}
 qwer <- zz %>%
   mutate(quartile = ntile(range_km2, 4)) %>%
   group_by(quartile) %>%
