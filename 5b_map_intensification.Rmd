@@ -367,3 +367,22 @@ for(str_cat in str_cats) {
 }
 ```
 
+```{r}
+int_rast <- raster(here('_output/rasters/intens_maps/intens_all_incr2.tif'))
+abate_rast <- raster(here('_output/rasters/intens_maps/intens_all_decr2.tif'))
+nspp_rast <- raster(here('_output/rasters/n_spp_map.tif'))
+df <- data.frame(incr = values(int_rast),
+                 decr = values(abate_rast)) %>%
+  filter(incr > 0 & decr > 0) %>%
+  mutate(max_plus = incr + decr,
+         max_minus = abs(incr - decr),
+         min_val = ifelse(incr > decr, decr, incr),
+         max_val = ifelse(incr > decr, incr, decr),
+         incr_hi = incr > decr)
+
+ggplot(df %>% sample_frac(size = .1), 
+       aes(x = max_val, y = min_val, color = incr_hi)) +
+  geom_point()
+  
+```
+
