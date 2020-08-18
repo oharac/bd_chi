@@ -232,7 +232,7 @@ spp_sum_df <- read_csv(spp_intens_sum_file)
 
 tax_sum_df <- spp_sum_df %>%
   group_by(desc, stressor) %>%
-  summarize(mean_pct_imp  = mean(pct_imp, na.rm = TRUE),
+  summarize(mean_pct_imp   = mean(pct_imp, na.rm = TRUE),
             mean_pct_incr1 = mean(pct_incr1, na.rm = TRUE),
             mean_pct_decr1 = mean(pct_decr1, na.rm = TRUE),
             mean_pct_incr2 = mean(pct_incr2, na.rm = TRUE),
@@ -240,13 +240,16 @@ tax_sum_df <- spp_sum_df %>%
             mean_pct_incr3 = mean(pct_incr3, na.rm = TRUE),
             mean_pct_decr3 = mean(pct_decr3, na.rm = TRUE),
             mean_range_km2 = mean(range_km2),
+            sd_pct_imp     = sd(pct_imp, na.rm = TRUE),
+            sd_pct_incr2   = sd(pct_incr2, na.rm = TRUE),
+            sd_pct_decr2   = sd(pct_decr2, na.rm = TRUE),
             sd_range_km2  = sd(range_km2)) %>%
   ungroup()
 
 all_sum_df <- spp_sum_df %>%
   group_by(stressor) %>%
   summarize(desc = 'all spp',
-            mean_pct_imp  = mean(pct_imp, na.rm = TRUE),
+            mean_pct_imp   = mean(pct_imp, na.rm = TRUE),
             mean_pct_incr1 = mean(pct_incr1, na.rm = TRUE),
             mean_pct_decr1 = mean(pct_decr1, na.rm = TRUE),
             mean_pct_incr2 = mean(pct_incr2, na.rm = TRUE),
@@ -254,6 +257,9 @@ all_sum_df <- spp_sum_df %>%
             mean_pct_incr3 = mean(pct_incr3, na.rm = TRUE),
             mean_pct_decr3 = mean(pct_decr3, na.rm = TRUE),
             mean_range_km2 = mean(range_km2),
+            sd_pct_imp     = sd(pct_imp, na.rm = TRUE),
+            sd_pct_incr2   = sd(pct_incr2, na.rm = TRUE),
+            sd_pct_decr2   = sd(pct_decr2, na.rm = TRUE),
             sd_range_km2  = sd(range_km2)) %>%
   ungroup()
 
@@ -273,7 +279,7 @@ plot_tax_sum_df <- tax_sum_df %>%
            (mean_pct_decr1 + mean_pct_incr1 + 
             mean_pct_decr2 + mean_pct_incr2 +
             mean_pct_decr3 + mean_pct_incr3)) %>%
-  gather(var, val, mean_pct_incr1:mean_pct_decr3, mean_pct_nochange) %>%
+  gather(var, val, starts_with('mean_pct_incr'), starts_with('mean_pct_decr'), mean_pct_nochange) %>%
   mutate(var = case_when(var == 'mean_pct_incr1' ~ intens_lvls[1],
                          var == 'mean_pct_incr2' ~ intens_lvls[2],
                          var == 'mean_pct_incr3' ~ intens_lvls[3],
