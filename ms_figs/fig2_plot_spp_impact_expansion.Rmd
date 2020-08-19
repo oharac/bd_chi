@@ -148,6 +148,7 @@ imp_2030_df <- imp_range_df %>%
 
 taxon_df <- get_spp_taxon()
 
+
 range_summary_all <- imp_2030_df %>%
   group_by(stressor, year) %>%
   summarize(mean_pct_imp = mean(pct_impact),
@@ -164,6 +165,27 @@ range_summary_taxon <- imp_2030_df %>%
             mean_pct_2plus = mean(pct_impact_2plus),
             sd_pct_2plus = sd(pct_impact_2plus)) %>%
   ungroup()
+
+ttest_2003_2013_all <- imp_2030_df %>%
+  filter(str_detect(stressor, '^cum_')) %>%
+  select(-pct_impact_2plus) %>%
+  spread(year, pct_impact) %>%
+  group_by(stressor) %>%
+  do(t = t.test(.$`2013`, .$`2003`, paired = TRUE)) %>%
+  broom::tidy(t) %>%
+  mutate(desc = 'all spp')
+ttest_2003_2013_taxa <- imp_2030_df %>%
+  filter(str_detect(stressor, '^cum_')) %>%
+  left_join(taxon_df, by = 'iucn_sid') %>%
+  select(-pct_impact_2plus) %>%
+  spread(year, pct_impact) %>%
+  group_by(stressor, desc) %>%
+  filter(n() > 1) %>%
+  do(t = t.test(.$`2013`, .$`2003`, paired = TRUE)) %>%
+  broom::tidy(t)
+write_csv(bind_rows(ttest_2003_2013_all, ttest_2003_2013_taxa),
+          here('ms_figs/fig2a_ttest_by_stressor.csv'))
+
 ```
 
 ```{r}
@@ -243,6 +265,8 @@ tax_sum_df <- spp_sum_df %>%
             sd_pct_imp     = sd(pct_imp, na.rm = TRUE),
             sd_pct_incr2   = sd(pct_incr2, na.rm = TRUE),
             sd_pct_decr2   = sd(pct_decr2, na.rm = TRUE),
+            sd_pct_incr3   = sd(pct_incr3, na.rm = TRUE),
+            sd_pct_decr3   = sd(pct_decr3, na.rm = TRUE),
             sd_range_km2  = sd(range_km2)) %>%
   ungroup()
 
@@ -260,6 +284,8 @@ all_sum_df <- spp_sum_df %>%
             sd_pct_imp     = sd(pct_imp, na.rm = TRUE),
             sd_pct_incr2   = sd(pct_incr2, na.rm = TRUE),
             sd_pct_decr2   = sd(pct_decr2, na.rm = TRUE),
+            sd_pct_incr3   = sd(pct_incr3, na.rm = TRUE),
+            sd_pct_decr3   = sd(pct_decr3, na.rm = TRUE),
             sd_range_km2  = sd(range_km2)) %>%
   ungroup()
 
@@ -294,6 +320,15 @@ plot_tax_sum_df <- tax_sum_df %>%
 # Assemble plot
 ```{r fig 2a}
 
+ttest_expansion <- read_csv(here('ms_figs/fig2a_ttest_by_stressor.csv')) %>%
+  filter(stressor == 'cum_all') %>%
+  mutate(stars = case_when(p.value > .05 ~ '',
+                           p.value > .01 ~ '*',
+                           p.value > .001 ~ '**',
+                           TRUE ~ '***'),
+         lbl   = ifelse(p.value > .001 , 
+                        sprintf('p = %s', round(p.value, 3)), 'p < 0.001'))
+
 fig2a <- ggplot(cum_impact_df) +
   ggtheme_plot(base_size = 7) +
   geom_point(aes(y = mean_pct_imp, x = desc, 
@@ -310,6 +345,12 @@ fig2a <- ggplot(cum_impact_df) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
   scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
+  # geom_text(data = ttest_expansion, aes(x = desc, label = lbl), 
+  #           y = .80, size = 1.9, color = 'grey20', 
+  #           vjust = 0, hjust = 0, nudge_x = .06) +
+  # geom_text(data = ttest_expansion, aes(x = desc, label = stars), 
+  #           y = .79, size = 1.9, color = 'grey20', 
+  #           vjust = 0, hjust = 1, nudge_x = .06) +
   scale_y_continuous(expand = c(0, 0), 
                      limits = c(-.02, 1.02),
                      breaks = seq(0, 1, .25),
