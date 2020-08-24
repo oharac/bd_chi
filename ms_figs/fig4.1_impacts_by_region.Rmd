@@ -125,7 +125,8 @@ if(!file.exists(imp_by_eez_file)) {
 }
 ```
 
-### Heatmap by EEZ
+
+### Bar chart by EEZ
 
 ```{r heatmap impacts by eez}
 rgn_names <- read_csv(here('_spatial/rgn_names.csv'))
@@ -136,34 +137,31 @@ eez_summary_df <- read_csv(here('_output/impacts_by_eez.csv')) %>%
   group_by(eez) %>%
   mutate(cum_imp = max(a_wt_mean_imp_pct)) %>%
   ungroup() %>%
-  arrange(desc(cum_imp))
+  filter(eez > 0)
 
-
-rgn_order <- eez_summary_df %>%
+eez_score_order <- eez_summary_df %>%
   filter(eez < 255 & eez != 213) %>%
   arrange(desc(cum_imp)) %>%
   filter(stressor == 'cumulative') %>%
-  .$rgn_label
+  .$eez
 
-
-n_eez <- length(rgn_order) ### 221
-n_select <- 15
-
+n_select <- 10
 eez_top <- eez_summary_df %>%
-  filter(rgn_label %in% rgn_order[1:n_select])
+  filter(eez %in% eez_score_order[1:n_select]) %>%
+  .$eez %>% unique()
 
 eez_btm <- eez_summary_df %>%
-  filter(rgn_label %in% rgn_order[(n_eez - n_select + 1):n_eez])
+  filter(eez %in% eez_score_order[(220 - n_select + 1):220]) %>%
+  .$eez %>% unique()
 
-large_eez <- foreign::read.dbf(file.path(dir_bd_anx, 'spatial/ohi_rgns/regions_2017_update.dbf')) %>%
+large_eez <- read_sf(here('_spatial/rgns_mol_1k.gpkg')) %>%
+  as.data.frame() %>%
+  select(-geom) %>%
   filter(rgn_type == 'eez') %>%
   filter(rgn_id < 255 & rgn_id != 213) %>%
-  filter(!rgn_name %in% c(eez_top$rgn_label, eez_btm$rgn_label)) %>%
+  filter(!rgn_id %in% c(eez_top, eez_btm)) %>%
   arrange(desc(area_km2)) %>%
-  head(10)
-
-eez_select <- eez_summary_df %>%
-  filter(rgn_label %in% large_eez$rgn_name)
+  head(10) %>% .$rgn_id
 
 abnj_imp  <- eez_summary_df %>%
   filter(eez > 255 | eez == 213) %>%
@@ -171,43 +169,120 @@ abnj_imp  <- eez_summary_df %>%
   mutate(rgn_label = str_replace(rgn_label, 'ific|antic', '.'),
          rgn_label = str_replace(rgn_label, ' Ocean', ''))
 
-eez_to_plot <- eez_top %>%
-  bind_rows(data.frame(eez = NA, rgn_label = '', stressor = 'cumulative')) %>%
-  bind_rows(eez_select) %>%
-  bind_rows(data.frame(eez = NA, rgn_label = ' ', stressor = 'cumulative')) %>%
-  bind_rows(eez_btm) %>%
-  bind_rows(data.frame(eez = NA, rgn_label = '  ', stressor = 'cumulative')) %>%
-  bind_rows(abnj_imp) %>%
+eez_plot_df <- eez_summary_df %>%
+  filter(eez < 255 & eez != 213 & eez > 0) %>%
+  arrange(r1_label, desc(cum_imp)) %>%
   mutate(rgn_label = str_replace_all(rgn_label, 'Islands?', 'Is.'),
          rgn_label = str_replace_all(rgn_label, ' and ', '/'),
          rgn_label = fct_inorder(rgn_label) %>% fct_rev(),
          stressor = factor(stressor, 
-                           levels = c('cumulative', 'fishing', 'ocean', 'climate', 'land-based')))
+                           levels = c('cumulative', 'fishing', 'ocean', 'climate', 'land-based'))) %>%
+  mutate(rank = case_when(eez %in% eez_top ~ 'top',
+                          eez %in% eez_btm ~ 'btm',
+                          eez %in% large_eez ~ 'big',
+                          TRUE ~ 'else')) 
 
-fig4_heatmap <- ggplot(eez_to_plot, aes(x = stressor, y = rgn_label, fill = a_wt_mean_imp_pct)) +
+eez_lbls <- eez_plot_df %>%
+  filter(stressor == 'cumulative') %>%
+  mutate(lbl = ifelse(rank != 'else', as.character(rgn_label), '')) %>%
+  mutate(w   = ifelse(rank != 'else', 1, .25),
+         pos = sum(w) - (cumsum(w) - 0.5 * w)) %>%
+  select(eez, lbl, w, pos)
+
+eez_plot_df <- eez_plot_df %>%
+  left_join(eez_lbls, by = 'eez')
+
+georgn_lbls_df <- eez_plot_df %>%
+  filter(stressor == 'cumulative') %>%
+  group_by(r1_label) %>%
+  summarize(min_pos = min(pos),
+            max_pos = max(pos),
+            pos = (max_pos + min_pos) / 2)
+
+lims <- c(-.5, max(eez_lbls$pos) + .5)
+
+make_barplot <- function(df, str) {
+  df_str <-  df %>% filter(stressor == str)
+  fig4_barplot <- ggplot(df_str,
+                         aes(x = pos, y = a_wt_mean_imp_pct, 
+                             fill = rank, width = .9*w)) +
+    ggtheme_plot(base_size = 7) +
+    geom_hline(yintercept = 1, color = 'grey90', size = .25) +
+    geom_vline(aes(xintercept = pos), color = 'grey90', size = .1) +
+    geom_col() +
+    scale_fill_manual(values = c('top' = '#FDE725', 'btm' = '#21908C', 
+                                 'big' = '#440154', 'else' = '#666666')) +
+    labs(fill = 'category') +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 1)) +
+    scale_x_continuous(expand = c(0, 0), limits = lims) +
+    coord_flip() +
+    theme(axis.title = element_blank(),
+          panel.grid.major = element_blank(),
+          legend.key.width = unit(.28, 'cm'),
+          legend.text = element_text(angle = 90, hjust = .5),
+          legend.title = element_blank(),
+          axis.text = element_blank())
+}
+fig4_cumulative <- make_barplot(eez_plot_df, 'cumulative')
+fig4_fishing    <- make_barplot(eez_plot_df, 'fishing')
+fig4_climate    <- make_barplot(eez_plot_df, 'climate')
+fig4_ocean      <- make_barplot(eez_plot_df, 'ocean')
+fig4_land      <- make_barplot(eez_plot_df, 'land-based')
+
+fig4_eez_labels <- ggplot(eez_plot_df %>% filter(stressor == 'cumulative'),
+                          aes(x = pos)) +
   ggtheme_plot(base_size = 7) +
-  geom_tile() +
-  theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
-  scale_x_discrete(expand = c(0, 0)) +
-  scale_y_discrete(expand = c(0, 0)) +
-  scale_fill_viridis_c(na.value = rgb(0, 0, 0, 0)) +
+  geom_text(aes(label = lbl), y = 0, color = 'grey20',
+            hjust = 1, vjust = .9, size = 1.7) +
+  scale_y_continuous(expand = c(0, 0), limits = c(-1, 0.02)) +
+  scale_x_continuous(expand = c(0, 0), limits = lims) +
+  coord_flip() +
   theme(axis.title = element_blank(),
         panel.grid.major = element_blank(),
-        legend.key.width = unit(.28, 'cm'),
-        legend.text = element_text(angle = 90, hjust = .5),
-        legend.title = element_blank()) +
-        # legend.title = element_text(angle = 90, size = 8)) +
-  labs(fill = 'Mean impact')
+        axis.text = element_blank())
+  
+fig4_rgn_labels <- ggplot(georgn_lbls_df,
+                          aes(y = pos)) +
+  ggtheme_plot(base_size = 7) +
+  geom_linerange(x = 0, aes(ymin = min_pos + .05, ymax = max_pos - .05), color = 'grey20') +
+  geom_text(aes(label = r1_label), x = -.05, color = 'grey20', face = 'italics',
+            hjust = 1, vjust = .5, size = 1.7) +
+  scale_x_continuous(expand = c(0, 0), limits = c(-1, 0.01)) +
+  scale_y_continuous(expand = c(0, 0), limits = lims) +
+  theme(axis.title = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.text = element_blank())
+
+l_w <- .20
+c_w <- .16
 
 fig4_done <- ggdraw() +
-  draw_plot(fig4_heatmap + theme(legend.position = 'none'),
-            x = 0, y = 0, width = .9, height = 1) + 
-  draw_plot(get_legend(fig4_heatmap), x = .9, y = .2, width = .1, height = .3) +
-  draw_label('Mean impact', x = .937, y = .57, color = 'grey20', size = 9, angle = 90) +
-  draw_label('A', x = .87, y = .86, colour = 'white', size = 9, fontface = 'bold') +
-  draw_label('B', x = .87, y = .65, colour = 'white', size = 9, fontface = 'bold') +
-  draw_label('C', x = .87, y = .42, colour = 'white', size = 9, fontface = 'bold') +
-  draw_label('D', x = .87, y = .16, colour = 'white', size = 9, fontface = 'bold')
+  draw_plot(get_panel(fig4_eez_labels),
+            x = 0, y = 0.01, width = l_w, height = .96) + 
+  draw_plot(get_panel(fig4_cumulative),
+            x = l_w,         y = 0.01, width = c_w - .005, height = .96) + 
+  draw_plot(get_panel(fig4_fishing),
+            x = l_w + c_w,   y = 0.01, width = c_w - .005, height = .96) + 
+  draw_plot(get_panel(fig4_climate),
+            x = l_w + 2*c_w, y = 0.01, width = c_w - .005, height = .96) + 
+  draw_plot(get_panel(fig4_ocean),
+            x = l_w + 3*c_w, y = 0.01, width = c_w - .005, height = .96) + 
+  draw_plot(get_panel(fig4_land),
+            x = l_w + 4*c_w, y = 0.01, width = c_w - .005, height = .96) +
+  draw_plot(get_panel(fig4_rgn_labels),
+            x = .95, y = 0.01, width = .05, height = .96) +
+  draw_label(x = l_w, y = .98,         label = 'cumulative', 
+             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+  draw_label(x = l_w + c_w, y = .98,   label = 'fishing',
+             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+  draw_label(x = l_w + 2*c_w, y = .98, label = 'climate', 
+             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+  draw_label(x = l_w + 3*c_w, y = .98, label = 'ocean', 
+             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+  draw_label(x = l_w + 4*c_w, y = .98, label = 'land-based', 
+             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold')
+
+  # draw_plot(get_legend(fig4_barplot), x = .9, y = .2, width = .1, height = .3)
 
 ggsave(plot = fig4_done, filename = here('ms_figs/fig4_impact_by_eez.png'), 
        width = 12, height = 12, units = 'cm', dpi = 300)
