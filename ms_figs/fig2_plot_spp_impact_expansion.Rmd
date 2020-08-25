@@ -228,11 +228,12 @@ if(!file.exists(spp_intens_sum_file)) {
   spp_sum_df <- spp_sum_list %>%
     bind_rows() %>%
     filter(eez == 0) %>%
+    filter(year == 2013 | is.na(year)) %>%
     group_by(iucn_sid) %>%
     complete(stressor = c('cumulative', get_str_cats()$stressor)) %>%
+    fill(range_km2, .direction = 'updown') %>%
     mutate_if(is.double, .funs = function(x) ifelse(is.na(x), 0, x)) %>%
     group_by(iucn_sid, stressor) %>%
-    filter(year == 2013 | is.na(year)) %>%
     ### disaggregate incr/decr levels:
     mutate(incr1_km2 = incr1_km2 - incr2_km2, ### incr2 still includes incr3
            incr2_km2 = incr2_km2 - incr3_km2,
@@ -247,6 +248,12 @@ if(!file.exists(spp_intens_sum_file)) {
            pct_decr1 = decr1_km2 / range_km2) %>%
     left_join(taxon_df, by = 'iucn_sid') %>%
     select(iucn_sid, stressor, starts_with('pct'), range_km2, desc)
+  
+  # mammcheck <- spp_sum_df %>%
+  #   group_by(desc, stressor) %>%
+  #   summarize(pct_imp = mean(pct_imp, na.rm = TRUE),
+  #             pct_incr2 = mean(pct_incr2, na.rm = TRUE),
+  #             pct_incr3 = mean(pct_incr3, na.rm = TRUE))
   
   write_csv(spp_sum_df, spp_intens_sum_file)
 }
@@ -370,14 +377,16 @@ fig2a <- ggplot(cum_impact_df) +
 
 ```{r fig 2b}
 
-n_labels <- get_spp_taxon() %>%
-  filter(iucn_sid %in% imp_range_df$iucn_sid) %>%
+n_labels <- get_incl_spp() %>%
+  select(iucn_sid, desc) %>%
+  distinct() %>%
   group_by(desc) %>%
   summarize(n_spp = n()) %>%
-  bind_rows(get_spp_taxon() %>%
-    filter(iucn_sid %in% imp_range_df$iucn_sid) %>%
-    summarize(n_spp = n()) %>%
-      mutate(desc = 'all spp')) %>%
+  bind_rows(get_incl_spp() %>%
+              select(iucn_sid, desc) %>%
+              distinct() %>%
+              summarize(n_spp = n()) %>%
+              mutate(desc = 'all spp')) %>%
   mutate(n_lbl = paste0('n = ', n_spp),
          desc = factor(desc, levels = levels(plot_tax_sum_df$desc))) %>%
   arrange(desc)
