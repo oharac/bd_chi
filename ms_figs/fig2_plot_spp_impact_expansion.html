@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Tue Aug 25 13:32:13 2020 by ohara" />
+<meta name="author" content="Compiled on Tue Aug 25 14:19:54 2020 by ohara" />
 
 
 <title>Plot species impact expansion</title>
@@ -1676,7 +1676,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Plot species impact expansion</h1>
-<h4 class="author"><em>Compiled on Tue Aug 25 13:32:13 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Tue Aug 25 14:19:54 2020 by ohara</em></h4>
 
 </div>
 
@@ -1859,93 +1859,94 @@ div.tocify {
 <span id="cb7-16"><a href="#cb7-16"></a>  spp_sum_df &lt;-<span class="st"> </span>spp_sum_list <span class="op">%&gt;%</span></span>
 <span id="cb7-17"><a href="#cb7-17"></a><span class="st">    </span><span class="kw">bind_rows</span>() <span class="op">%&gt;%</span></span>
 <span id="cb7-18"><a href="#cb7-18"></a><span class="st">    </span><span class="kw">filter</span>(eez <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) <span class="op">%&gt;%</span></span>
-<span id="cb7-19"><a href="#cb7-19"></a><span class="st">    </span><span class="kw">mutate_if</span>(is.double, <span class="dt">.funs =</span> <span class="cf">function</span>(x) <span class="kw">ifelse</span>(<span class="kw">is.na</span>(x), <span class="dv">0</span>, x)) <span class="op">%&gt;%</span></span>
-<span id="cb7-20"><a href="#cb7-20"></a><span class="st">    </span><span class="kw">group_by</span>(iucn_sid, stressor) <span class="op">%&gt;%</span></span>
-<span id="cb7-21"><a href="#cb7-21"></a><span class="st">    </span><span class="kw">filter</span>(year <span class="op">==</span><span class="st"> </span><span class="dv">2013</span> <span class="op">|</span><span class="st"> </span><span class="kw">is.na</span>(year)) <span class="op">%&gt;%</span></span>
-<span id="cb7-22"><a href="#cb7-22"></a><span class="st">    </span><span class="co">### disaggregate incr/decr levels:</span></span>
-<span id="cb7-23"><a href="#cb7-23"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">incr1_km2 =</span> incr1_km2 <span class="op">-</span><span class="st"> </span>incr2_km2, <span class="co">### incr2 still includes incr3</span></span>
-<span id="cb7-24"><a href="#cb7-24"></a>           <span class="dt">incr2_km2 =</span> incr2_km2 <span class="op">-</span><span class="st"> </span>incr3_km2,</span>
-<span id="cb7-25"><a href="#cb7-25"></a>           <span class="dt">decr1_km2 =</span> decr1_km2 <span class="op">-</span><span class="st"> </span>decr2_km2, <span class="co">### decr2 still includes decr3</span></span>
-<span id="cb7-26"><a href="#cb7-26"></a>           <span class="dt">decr2_km2 =</span> decr2_km2 <span class="op">-</span><span class="st"> </span>decr3_km2) <span class="op">%&gt;%</span></span>
-<span id="cb7-27"><a href="#cb7-27"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">pct_imp =</span> impact_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
-<span id="cb7-28"><a href="#cb7-28"></a>           <span class="dt">pct_incr3 =</span> incr3_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
-<span id="cb7-29"><a href="#cb7-29"></a>           <span class="dt">pct_decr3 =</span> decr3_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
-<span id="cb7-30"><a href="#cb7-30"></a>           <span class="dt">pct_incr2 =</span> incr2_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
-<span id="cb7-31"><a href="#cb7-31"></a>           <span class="dt">pct_decr2 =</span> decr2_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
-<span id="cb7-32"><a href="#cb7-32"></a>           <span class="dt">pct_incr1 =</span> incr1_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
-<span id="cb7-33"><a href="#cb7-33"></a>           <span class="dt">pct_decr1 =</span> decr1_km2 <span class="op">/</span><span class="st"> </span>range_km2) <span class="op">%&gt;%</span></span>
-<span id="cb7-34"><a href="#cb7-34"></a><span class="st">    </span><span class="kw">left_join</span>(taxon_df, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb7-35"><a href="#cb7-35"></a><span class="st">    </span><span class="kw">select</span>(iucn_sid, stressor, <span class="kw">starts_with</span>(<span class="st">&#39;pct&#39;</span>), range_km2, </span>
-<span id="cb7-36"><a href="#cb7-36"></a>           assess_gp, rank, desc)</span>
-<span id="cb7-37"><a href="#cb7-37"></a>  </span>
-<span id="cb7-38"><a href="#cb7-38"></a>  <span class="kw">write_csv</span>(spp_sum_df, spp_intens_sum_file)</span>
-<span id="cb7-39"><a href="#cb7-39"></a>}</span>
-<span id="cb7-40"><a href="#cb7-40"></a></span>
-<span id="cb7-41"><a href="#cb7-41"></a>spp_sum_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(spp_intens_sum_file)</span>
-<span id="cb7-42"><a href="#cb7-42"></a></span>
-<span id="cb7-43"><a href="#cb7-43"></a>tax_sum_df &lt;-<span class="st"> </span>spp_sum_df <span class="op">%&gt;%</span></span>
-<span id="cb7-44"><a href="#cb7-44"></a><span class="st">  </span><span class="kw">group_by</span>(desc, stressor) <span class="op">%&gt;%</span></span>
-<span id="cb7-45"><a href="#cb7-45"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">mean_pct_imp   =</span> <span class="kw">mean</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-46"><a href="#cb7-46"></a>            <span class="dt">mean_pct_incr1 =</span> <span class="kw">mean</span>(pct_incr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-47"><a href="#cb7-47"></a>            <span class="dt">mean_pct_decr1 =</span> <span class="kw">mean</span>(pct_decr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-48"><a href="#cb7-48"></a>            <span class="dt">mean_pct_incr2 =</span> <span class="kw">mean</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-49"><a href="#cb7-49"></a>            <span class="dt">mean_pct_decr2 =</span> <span class="kw">mean</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-50"><a href="#cb7-50"></a>            <span class="dt">mean_pct_incr3 =</span> <span class="kw">mean</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-51"><a href="#cb7-51"></a>            <span class="dt">mean_pct_decr3 =</span> <span class="kw">mean</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-52"><a href="#cb7-52"></a>            <span class="dt">mean_range_km2 =</span> <span class="kw">mean</span>(range_km2),</span>
-<span id="cb7-53"><a href="#cb7-53"></a>            <span class="dt">sd_pct_imp     =</span> <span class="kw">sd</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-54"><a href="#cb7-54"></a>            <span class="dt">sd_pct_incr2   =</span> <span class="kw">sd</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-55"><a href="#cb7-55"></a>            <span class="dt">sd_pct_decr2   =</span> <span class="kw">sd</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-56"><a href="#cb7-56"></a>            <span class="dt">sd_pct_incr3   =</span> <span class="kw">sd</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-57"><a href="#cb7-57"></a>            <span class="dt">sd_pct_decr3   =</span> <span class="kw">sd</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-58"><a href="#cb7-58"></a>            <span class="dt">sd_range_km2  =</span> <span class="kw">sd</span>(range_km2)) <span class="op">%&gt;%</span></span>
-<span id="cb7-59"><a href="#cb7-59"></a><span class="st">  </span><span class="kw">ungroup</span>()</span>
-<span id="cb7-60"><a href="#cb7-60"></a></span>
-<span id="cb7-61"><a href="#cb7-61"></a>all_sum_df &lt;-<span class="st"> </span>spp_sum_df <span class="op">%&gt;%</span></span>
-<span id="cb7-62"><a href="#cb7-62"></a><span class="st">  </span><span class="kw">group_by</span>(stressor) <span class="op">%&gt;%</span></span>
-<span id="cb7-63"><a href="#cb7-63"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">desc =</span> <span class="st">&#39;all spp&#39;</span>,</span>
-<span id="cb7-64"><a href="#cb7-64"></a>            <span class="dt">mean_pct_imp   =</span> <span class="kw">mean</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-65"><a href="#cb7-65"></a>            <span class="dt">mean_pct_incr1 =</span> <span class="kw">mean</span>(pct_incr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-66"><a href="#cb7-66"></a>            <span class="dt">mean_pct_decr1 =</span> <span class="kw">mean</span>(pct_decr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-67"><a href="#cb7-67"></a>            <span class="dt">mean_pct_incr2 =</span> <span class="kw">mean</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-68"><a href="#cb7-68"></a>            <span class="dt">mean_pct_decr2 =</span> <span class="kw">mean</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-69"><a href="#cb7-69"></a>            <span class="dt">mean_pct_incr3 =</span> <span class="kw">mean</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-70"><a href="#cb7-70"></a>            <span class="dt">mean_pct_decr3 =</span> <span class="kw">mean</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-71"><a href="#cb7-71"></a>            <span class="dt">mean_range_km2 =</span> <span class="kw">mean</span>(range_km2),</span>
-<span id="cb7-72"><a href="#cb7-72"></a>            <span class="dt">sd_pct_imp     =</span> <span class="kw">sd</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-73"><a href="#cb7-73"></a>            <span class="dt">sd_pct_incr2   =</span> <span class="kw">sd</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-74"><a href="#cb7-74"></a>            <span class="dt">sd_pct_decr2   =</span> <span class="kw">sd</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-75"><a href="#cb7-75"></a>            <span class="dt">sd_pct_incr3   =</span> <span class="kw">sd</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-76"><a href="#cb7-76"></a>            <span class="dt">sd_pct_decr3   =</span> <span class="kw">sd</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
-<span id="cb7-77"><a href="#cb7-77"></a>            <span class="dt">sd_range_km2  =</span> <span class="kw">sd</span>(range_km2)) <span class="op">%&gt;%</span></span>
-<span id="cb7-78"><a href="#cb7-78"></a><span class="st">  </span><span class="kw">ungroup</span>()</span>
-<span id="cb7-79"><a href="#cb7-79"></a></span>
-<span id="cb7-80"><a href="#cb7-80"></a><span class="kw">write_csv</span>(<span class="kw">bind_rows</span>(all_sum_df, tax_sum_df), </span>
-<span id="cb7-81"><a href="#cb7-81"></a>          <span class="kw">here</span>(<span class="st">&#39;ms_figs/fig2b_impact_intens_abate.csv&#39;</span>))</span>
-<span id="cb7-82"><a href="#cb7-82"></a></span>
-<span id="cb7-83"><a href="#cb7-83"></a>intens_lvls &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;&gt; 1.0%/yr&#39;</span>, <span class="st">&#39;&gt; 0.1%/yr&#39;</span>, <span class="st">&#39;&gt; 0.0%/yr&#39;</span>, </span>
-<span id="cb7-84"><a href="#cb7-84"></a>                 <span class="st">&#39;no change&#39;</span>, </span>
-<span id="cb7-85"><a href="#cb7-85"></a>                 <span class="st">&#39;&lt; 0.0%/yr&#39;</span>, <span class="st">&#39;&lt;-0.1%/yr&#39;</span>, <span class="st">&#39;&lt;-1.0%/yr&#39;</span>)</span>
-<span id="cb7-86"><a href="#cb7-86"></a>plot_tax_sum_df &lt;-<span class="st"> </span>tax_sum_df <span class="op">%&gt;%</span></span>
-<span id="cb7-87"><a href="#cb7-87"></a><span class="st">  </span><span class="kw">filter</span>(stressor <span class="op">==</span><span class="st"> &#39;cumulative&#39;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb7-88"><a href="#cb7-88"></a><span class="st">  </span><span class="kw">arrange</span>(mean_pct_imp) <span class="op">%&gt;%</span></span>
-<span id="cb7-89"><a href="#cb7-89"></a><span class="st">  </span><span class="kw">bind_rows</span>(all_sum_df <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb7-90"><a href="#cb7-90"></a><span class="st">              </span><span class="kw">filter</span>(stressor <span class="op">==</span><span class="st"> &#39;cumulative&#39;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb7-91"><a href="#cb7-91"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">desc =</span> <span class="kw">fct_inorder</span>(desc)) <span class="op">%&gt;%</span></span>
-<span id="cb7-92"><a href="#cb7-92"></a><span class="st">  </span><span class="co">### no change is (total) - (all the other categories)</span></span>
-<span id="cb7-93"><a href="#cb7-93"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">mean_pct_nochange =</span> mean_pct_imp <span class="op">-</span><span class="st"> </span></span>
-<span id="cb7-94"><a href="#cb7-94"></a><span class="st">           </span>(mean_pct_decr1 <span class="op">+</span><span class="st"> </span>mean_pct_incr1 <span class="op">+</span><span class="st"> </span></span>
-<span id="cb7-95"><a href="#cb7-95"></a><span class="st">            </span>mean_pct_decr2 <span class="op">+</span><span class="st"> </span>mean_pct_incr2 <span class="op">+</span></span>
-<span id="cb7-96"><a href="#cb7-96"></a><span class="st">            </span>mean_pct_decr3 <span class="op">+</span><span class="st"> </span>mean_pct_incr3)) <span class="op">%&gt;%</span></span>
-<span id="cb7-97"><a href="#cb7-97"></a><span class="st">  </span><span class="kw">gather</span>(var, val, <span class="kw">starts_with</span>(<span class="st">&#39;mean_pct_incr&#39;</span>), <span class="kw">starts_with</span>(<span class="st">&#39;mean_pct_decr&#39;</span>), mean_pct_nochange) <span class="op">%&gt;%</span></span>
-<span id="cb7-98"><a href="#cb7-98"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">var =</span> <span class="kw">case_when</span>(var <span class="op">==</span><span class="st"> &#39;mean_pct_incr3&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">1</span>],</span>
-<span id="cb7-99"><a href="#cb7-99"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_incr2&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">2</span>],</span>
-<span id="cb7-100"><a href="#cb7-100"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_incr1&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">3</span>],</span>
-<span id="cb7-101"><a href="#cb7-101"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_decr1&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">5</span>],</span>
-<span id="cb7-102"><a href="#cb7-102"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_decr2&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">6</span>],</span>
-<span id="cb7-103"><a href="#cb7-103"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_decr3&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">7</span>],</span>
-<span id="cb7-104"><a href="#cb7-104"></a>                         <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">4</span>])) <span class="op">%&gt;%</span></span>
-<span id="cb7-105"><a href="#cb7-105"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">var =</span> <span class="kw">factor</span>(var, <span class="dt">levels =</span> intens_lvls))</span></code></pre></div>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="st">    </span><span class="kw">group_by</span>(iucn_sid) <span class="op">%&gt;%</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="st">    </span><span class="kw">complete</span>(<span class="dt">stressor =</span> <span class="kw">c</span>(<span class="st">&#39;cumulative&#39;</span>, <span class="kw">get_str_cats</span>()<span class="op">$</span>stressor)) <span class="op">%&gt;%</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a><span class="st">    </span><span class="kw">mutate_if</span>(is.double, <span class="dt">.funs =</span> <span class="cf">function</span>(x) <span class="kw">ifelse</span>(<span class="kw">is.na</span>(x), <span class="dv">0</span>, x)) <span class="op">%&gt;%</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a><span class="st">    </span><span class="kw">group_by</span>(iucn_sid, stressor) <span class="op">%&gt;%</span></span>
+<span id="cb7-23"><a href="#cb7-23"></a><span class="st">    </span><span class="kw">filter</span>(year <span class="op">==</span><span class="st"> </span><span class="dv">2013</span> <span class="op">|</span><span class="st"> </span><span class="kw">is.na</span>(year)) <span class="op">%&gt;%</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a><span class="st">    </span><span class="co">### disaggregate incr/decr levels:</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">incr1_km2 =</span> incr1_km2 <span class="op">-</span><span class="st"> </span>incr2_km2, <span class="co">### incr2 still includes incr3</span></span>
+<span id="cb7-26"><a href="#cb7-26"></a>           <span class="dt">incr2_km2 =</span> incr2_km2 <span class="op">-</span><span class="st"> </span>incr3_km2,</span>
+<span id="cb7-27"><a href="#cb7-27"></a>           <span class="dt">decr1_km2 =</span> decr1_km2 <span class="op">-</span><span class="st"> </span>decr2_km2, <span class="co">### decr2 still includes decr3</span></span>
+<span id="cb7-28"><a href="#cb7-28"></a>           <span class="dt">decr2_km2 =</span> decr2_km2 <span class="op">-</span><span class="st"> </span>decr3_km2) <span class="op">%&gt;%</span></span>
+<span id="cb7-29"><a href="#cb7-29"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">pct_imp =</span> impact_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
+<span id="cb7-30"><a href="#cb7-30"></a>           <span class="dt">pct_incr3 =</span> incr3_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
+<span id="cb7-31"><a href="#cb7-31"></a>           <span class="dt">pct_decr3 =</span> decr3_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
+<span id="cb7-32"><a href="#cb7-32"></a>           <span class="dt">pct_incr2 =</span> incr2_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
+<span id="cb7-33"><a href="#cb7-33"></a>           <span class="dt">pct_decr2 =</span> decr2_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
+<span id="cb7-34"><a href="#cb7-34"></a>           <span class="dt">pct_incr1 =</span> incr1_km2 <span class="op">/</span><span class="st"> </span>range_km2,</span>
+<span id="cb7-35"><a href="#cb7-35"></a>           <span class="dt">pct_decr1 =</span> decr1_km2 <span class="op">/</span><span class="st"> </span>range_km2) <span class="op">%&gt;%</span></span>
+<span id="cb7-36"><a href="#cb7-36"></a><span class="st">    </span><span class="kw">left_join</span>(taxon_df, <span class="dt">by =</span> <span class="st">&#39;iucn_sid&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb7-37"><a href="#cb7-37"></a><span class="st">    </span><span class="kw">select</span>(iucn_sid, stressor, <span class="kw">starts_with</span>(<span class="st">&#39;pct&#39;</span>), range_km2, desc)</span>
+<span id="cb7-38"><a href="#cb7-38"></a>  </span>
+<span id="cb7-39"><a href="#cb7-39"></a>  <span class="kw">write_csv</span>(spp_sum_df, spp_intens_sum_file)</span>
+<span id="cb7-40"><a href="#cb7-40"></a>}</span>
+<span id="cb7-41"><a href="#cb7-41"></a></span>
+<span id="cb7-42"><a href="#cb7-42"></a>spp_sum_df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(spp_intens_sum_file)</span>
+<span id="cb7-43"><a href="#cb7-43"></a></span>
+<span id="cb7-44"><a href="#cb7-44"></a>tax_sum_df &lt;-<span class="st"> </span>spp_sum_df <span class="op">%&gt;%</span></span>
+<span id="cb7-45"><a href="#cb7-45"></a><span class="st">  </span><span class="kw">group_by</span>(desc, stressor) <span class="op">%&gt;%</span></span>
+<span id="cb7-46"><a href="#cb7-46"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">mean_pct_imp   =</span> <span class="kw">mean</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-47"><a href="#cb7-47"></a>            <span class="dt">mean_pct_incr1 =</span> <span class="kw">mean</span>(pct_incr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-48"><a href="#cb7-48"></a>            <span class="dt">mean_pct_decr1 =</span> <span class="kw">mean</span>(pct_decr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-49"><a href="#cb7-49"></a>            <span class="dt">mean_pct_incr2 =</span> <span class="kw">mean</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-50"><a href="#cb7-50"></a>            <span class="dt">mean_pct_decr2 =</span> <span class="kw">mean</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-51"><a href="#cb7-51"></a>            <span class="dt">mean_pct_incr3 =</span> <span class="kw">mean</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-52"><a href="#cb7-52"></a>            <span class="dt">mean_pct_decr3 =</span> <span class="kw">mean</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-53"><a href="#cb7-53"></a>            <span class="dt">mean_range_km2 =</span> <span class="kw">mean</span>(range_km2),</span>
+<span id="cb7-54"><a href="#cb7-54"></a>            <span class="dt">sd_pct_imp     =</span> <span class="kw">sd</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-55"><a href="#cb7-55"></a>            <span class="dt">sd_pct_incr2   =</span> <span class="kw">sd</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-56"><a href="#cb7-56"></a>            <span class="dt">sd_pct_decr2   =</span> <span class="kw">sd</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-57"><a href="#cb7-57"></a>            <span class="dt">sd_pct_incr3   =</span> <span class="kw">sd</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-58"><a href="#cb7-58"></a>            <span class="dt">sd_pct_decr3   =</span> <span class="kw">sd</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-59"><a href="#cb7-59"></a>            <span class="dt">sd_range_km2  =</span> <span class="kw">sd</span>(range_km2)) <span class="op">%&gt;%</span></span>
+<span id="cb7-60"><a href="#cb7-60"></a><span class="st">  </span><span class="kw">ungroup</span>()</span>
+<span id="cb7-61"><a href="#cb7-61"></a></span>
+<span id="cb7-62"><a href="#cb7-62"></a>all_sum_df &lt;-<span class="st"> </span>spp_sum_df <span class="op">%&gt;%</span></span>
+<span id="cb7-63"><a href="#cb7-63"></a><span class="st">  </span><span class="kw">group_by</span>(stressor) <span class="op">%&gt;%</span></span>
+<span id="cb7-64"><a href="#cb7-64"></a><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">desc =</span> <span class="st">&#39;all spp&#39;</span>,</span>
+<span id="cb7-65"><a href="#cb7-65"></a>            <span class="dt">mean_pct_imp   =</span> <span class="kw">mean</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-66"><a href="#cb7-66"></a>            <span class="dt">mean_pct_incr1 =</span> <span class="kw">mean</span>(pct_incr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-67"><a href="#cb7-67"></a>            <span class="dt">mean_pct_decr1 =</span> <span class="kw">mean</span>(pct_decr1, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-68"><a href="#cb7-68"></a>            <span class="dt">mean_pct_incr2 =</span> <span class="kw">mean</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-69"><a href="#cb7-69"></a>            <span class="dt">mean_pct_decr2 =</span> <span class="kw">mean</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-70"><a href="#cb7-70"></a>            <span class="dt">mean_pct_incr3 =</span> <span class="kw">mean</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-71"><a href="#cb7-71"></a>            <span class="dt">mean_pct_decr3 =</span> <span class="kw">mean</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-72"><a href="#cb7-72"></a>            <span class="dt">mean_range_km2 =</span> <span class="kw">mean</span>(range_km2),</span>
+<span id="cb7-73"><a href="#cb7-73"></a>            <span class="dt">sd_pct_imp     =</span> <span class="kw">sd</span>(pct_imp, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-74"><a href="#cb7-74"></a>            <span class="dt">sd_pct_incr2   =</span> <span class="kw">sd</span>(pct_incr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-75"><a href="#cb7-75"></a>            <span class="dt">sd_pct_decr2   =</span> <span class="kw">sd</span>(pct_decr2, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-76"><a href="#cb7-76"></a>            <span class="dt">sd_pct_incr3   =</span> <span class="kw">sd</span>(pct_incr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-77"><a href="#cb7-77"></a>            <span class="dt">sd_pct_decr3   =</span> <span class="kw">sd</span>(pct_decr3, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</span>
+<span id="cb7-78"><a href="#cb7-78"></a>            <span class="dt">sd_range_km2  =</span> <span class="kw">sd</span>(range_km2)) <span class="op">%&gt;%</span></span>
+<span id="cb7-79"><a href="#cb7-79"></a><span class="st">  </span><span class="kw">ungroup</span>()</span>
+<span id="cb7-80"><a href="#cb7-80"></a></span>
+<span id="cb7-81"><a href="#cb7-81"></a><span class="kw">write_csv</span>(<span class="kw">bind_rows</span>(all_sum_df, tax_sum_df), </span>
+<span id="cb7-82"><a href="#cb7-82"></a>          <span class="kw">here</span>(<span class="st">&#39;ms_figs/fig2b_impact_intens_abate.csv&#39;</span>))</span>
+<span id="cb7-83"><a href="#cb7-83"></a></span>
+<span id="cb7-84"><a href="#cb7-84"></a>intens_lvls &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;&gt; 1.0%/yr&#39;</span>, <span class="st">&#39;&gt; 0.1%/yr&#39;</span>, <span class="st">&#39;&gt; 0.0%/yr&#39;</span>, </span>
+<span id="cb7-85"><a href="#cb7-85"></a>                 <span class="st">&#39;no change&#39;</span>, </span>
+<span id="cb7-86"><a href="#cb7-86"></a>                 <span class="st">&#39;&lt; 0.0%/yr&#39;</span>, <span class="st">&#39;&lt;-0.1%/yr&#39;</span>, <span class="st">&#39;&lt;-1.0%/yr&#39;</span>)</span>
+<span id="cb7-87"><a href="#cb7-87"></a>plot_tax_sum_df &lt;-<span class="st"> </span>tax_sum_df <span class="op">%&gt;%</span></span>
+<span id="cb7-88"><a href="#cb7-88"></a><span class="st">  </span><span class="kw">filter</span>(stressor <span class="op">==</span><span class="st"> &#39;cumulative&#39;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb7-89"><a href="#cb7-89"></a><span class="st">  </span><span class="kw">arrange</span>(mean_pct_imp) <span class="op">%&gt;%</span></span>
+<span id="cb7-90"><a href="#cb7-90"></a><span class="st">  </span><span class="kw">bind_rows</span>(all_sum_df <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb7-91"><a href="#cb7-91"></a><span class="st">              </span><span class="kw">filter</span>(stressor <span class="op">==</span><span class="st"> &#39;cumulative&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb7-92"><a href="#cb7-92"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">desc =</span> <span class="kw">fct_inorder</span>(desc)) <span class="op">%&gt;%</span></span>
+<span id="cb7-93"><a href="#cb7-93"></a><span class="st">  </span><span class="co">### no change is (total) - (all the other categories)</span></span>
+<span id="cb7-94"><a href="#cb7-94"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">mean_pct_nochange =</span> mean_pct_imp <span class="op">-</span><span class="st"> </span></span>
+<span id="cb7-95"><a href="#cb7-95"></a><span class="st">           </span>(mean_pct_decr1 <span class="op">+</span><span class="st"> </span>mean_pct_incr1 <span class="op">+</span><span class="st"> </span></span>
+<span id="cb7-96"><a href="#cb7-96"></a><span class="st">            </span>mean_pct_decr2 <span class="op">+</span><span class="st"> </span>mean_pct_incr2 <span class="op">+</span></span>
+<span id="cb7-97"><a href="#cb7-97"></a><span class="st">            </span>mean_pct_decr3 <span class="op">+</span><span class="st"> </span>mean_pct_incr3)) <span class="op">%&gt;%</span></span>
+<span id="cb7-98"><a href="#cb7-98"></a><span class="st">  </span><span class="kw">gather</span>(var, val, <span class="kw">starts_with</span>(<span class="st">&#39;mean_pct_incr&#39;</span>), <span class="kw">starts_with</span>(<span class="st">&#39;mean_pct_decr&#39;</span>), mean_pct_nochange) <span class="op">%&gt;%</span></span>
+<span id="cb7-99"><a href="#cb7-99"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">var =</span> <span class="kw">case_when</span>(var <span class="op">==</span><span class="st"> &#39;mean_pct_incr3&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">1</span>],</span>
+<span id="cb7-100"><a href="#cb7-100"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_incr2&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">2</span>],</span>
+<span id="cb7-101"><a href="#cb7-101"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_incr1&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">3</span>],</span>
+<span id="cb7-102"><a href="#cb7-102"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_decr1&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">5</span>],</span>
+<span id="cb7-103"><a href="#cb7-103"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_decr2&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">6</span>],</span>
+<span id="cb7-104"><a href="#cb7-104"></a>                         var <span class="op">==</span><span class="st"> &#39;mean_pct_decr3&#39;</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">7</span>],</span>
+<span id="cb7-105"><a href="#cb7-105"></a>                         <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span>intens_lvls[<span class="dv">4</span>])) <span class="op">%&gt;%</span></span>
+<span id="cb7-106"><a href="#cb7-106"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">var =</span> <span class="kw">factor</span>(var, <span class="dt">levels =</span> intens_lvls))</span></code></pre></div>
 </div>
 </div>
 <div id="assemble-plot" class="section level1">

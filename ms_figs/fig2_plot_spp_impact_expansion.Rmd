@@ -228,6 +228,8 @@ if(!file.exists(spp_intens_sum_file)) {
   spp_sum_df <- spp_sum_list %>%
     bind_rows() %>%
     filter(eez == 0) %>%
+    group_by(iucn_sid) %>%
+    complete(stressor = c('cumulative', get_str_cats()$stressor)) %>%
     mutate_if(is.double, .funs = function(x) ifelse(is.na(x), 0, x)) %>%
     group_by(iucn_sid, stressor) %>%
     filter(year == 2013 | is.na(year)) %>%
@@ -244,8 +246,7 @@ if(!file.exists(spp_intens_sum_file)) {
            pct_incr1 = incr1_km2 / range_km2,
            pct_decr1 = decr1_km2 / range_km2) %>%
     left_join(taxon_df, by = 'iucn_sid') %>%
-    select(iucn_sid, stressor, starts_with('pct'), range_km2, 
-           assess_gp, rank, desc)
+    select(iucn_sid, stressor, starts_with('pct'), range_km2, desc)
   
   write_csv(spp_sum_df, spp_intens_sum_file)
 }
