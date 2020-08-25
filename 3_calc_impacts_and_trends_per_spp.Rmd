@@ -1,5 +1,5 @@
 ---
-title: 'Calculate species stressor impacts'
+title: 'Calculate species stressor impacts and intensification'
 author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output: 
   html_document:
@@ -108,12 +108,12 @@ if(!file.exists(pace_sum_file)) {
     df <- rast_to_map(trend_r, cell_val = 'trend') %>%
       full_join(rast_to_map(p_val_r, cell_val = 'p'), by = 'cell_id')
     df2 <- df %>%
-      mutate(range = case_when(trend >   0.01 ~ 'rapid_incr',
-                               trend <  -0.01 ~ 'rapid_decr',
-                               trend >  0.001 ~ 'incr',
-                               trend < -0.001 ~ 'decr',
-                               trend > 0 ~ 'small_incr', 
-                               trend < 0 ~ 'small_decr',
+      mutate(range = case_when(trend >   0.01 ~ 'incr3',
+                               trend <  -0.01 ~ 'decr3',
+                               trend >  0.001 ~ 'incr2',
+                               trend < -0.001 ~ 'decr2',
+                               trend > 0 ~ 'incr1', 
+                               trend < 0 ~ 'decr1',
                                TRUE ~ 'no_change'),
              sig = p < 0.05) %>%
       group_by(range) %>%
@@ -127,7 +127,8 @@ if(!file.exists(pace_sum_file)) {
     mutate(sig_pct_area = pct_area * pct_sig) %>%
     # select(-pct_area, -pct_sig) %>%
     # spread(range, sig_pct_area) %>%
-    mutate(range = factor(range, levels = c('rapid_incr', 'incr', 'small_incr', 'small_decr', 'decr', 'rapid_decr'))) %>%
+    mutate(range = factor(range, levels = c('incr3', 'incr2', 'incr1', 
+                                            'decr1', 'decr2', 'decr3'))) %>%
     filter(!is.na(range))
     
   sig_df <- bind_rows(check_list) %>% 
@@ -137,19 +138,14 @@ if(!file.exists(pace_sum_file)) {
   area_df <- bind_rows(check_list) %>%
     select(-pct_sig) %>%
     spread(range, pct_area) %>%
-    # mutate(incr = incr + rapid_incr,
-    #        small_incr = small_incr + incr,
-    #        decr = decr + rapid_decr,
-    #        small_decr = small_decr + decr) %>%
-    select(stressor, rapid_incr, incr, small_incr, small_decr, decr, rapid_decr)
+    select(stressor, incr3, incr2, incr1, decr1, decr2, decr3)
   
   write_csv(check_df, pace_sum_file)
 }
   
 check_df <- read_csv(pace_sum_file) %>%
-  mutate(range = factor(range, levels = c('rapid_incr', 'incr', 
-                                          'small_incr', 'small_decr', 
-                                          'decr', 'rapid_decr')))
+  mutate(range = factor(range, levels = c('incr3', 'incr2', 'incr1', 
+                                          'decr1', 'decr2', 'decr3')))
 
 knitr::kable(check_df, caption = '% total ocean area by significant trend')
 
