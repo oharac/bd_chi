@@ -197,7 +197,8 @@ georgn_lbls_df <- eez_plot_df %>%
   group_by(r1_label) %>%
   summarize(min_pos = min(pos),
             max_pos = max(pos),
-            pos = (max_pos + min_pos) / 2)
+            pos = (max_pos + min_pos) / 2) %>%
+  mutate(r1_label = str_replace(r1_label, ' and ', '\nand '))
 
 lims <- c(-.5, max(eez_lbls$pos) + .5)
 
@@ -253,12 +254,12 @@ fig4_rgn_labels <- ggplot(georgn_lbls_df,
         panel.grid.major = element_blank(),
         axis.text = element_blank())
 
-l_w <- .20
-c_w <- .16
+l_w <- .15
+c_w <- .168
 
 fig4_done <- ggdraw() +
   draw_plot(get_panel(fig4_eez_labels),
-            x = 0, y = 0.01, width = l_w, height = .96) + 
+            x = 0, y = 0.016, width = l_w, height = .96) + 
   draw_plot(get_panel(fig4_cumulative),
             x = l_w,         y = 0.01, width = c_w - .005, height = .96) + 
   draw_plot(get_panel(fig4_fishing),
@@ -270,7 +271,7 @@ fig4_done <- ggdraw() +
   draw_plot(get_panel(fig4_land),
             x = l_w + 4*c_w, y = 0.01, width = c_w - .005, height = .96) +
   draw_plot(get_panel(fig4_rgn_labels),
-            x = .95, y = 0.01, width = .05, height = .96) +
+            x = .90, y = 0.01, width = .085, height = .96) +
   draw_label(x = l_w, y = .98,         label = 'cumulative', 
              color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
   draw_label(x = l_w + c_w, y = .98,   label = 'fishing',
@@ -284,10 +285,10 @@ fig4_done <- ggdraw() +
 
   # draw_plot(get_legend(fig4_barplot), x = .9, y = .2, width = .1, height = .3)
 
-ggsave(plot = fig4_done, filename = here('ms_figs/fig4_impact_by_eez.png'), 
+ggsave(plot = fig4_done, filename = here('ms_figs/fig4.1_impact_by_eez.png'), 
        width = 12, height = 12, units = 'cm', dpi = 300)
 
-knitr::include_graphics(here('ms_figs/fig4_impact_by_eez.png'))
+knitr::include_graphics(here('ms_figs/fig4.1_impact_by_eez.png'))
 ```
 
 ``` {r plot abnj only}

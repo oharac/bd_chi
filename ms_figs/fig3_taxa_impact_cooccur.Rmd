@@ -137,7 +137,7 @@ mtxplot_df <- results_df %>%
          tx2_n = as.integer(tx2),
          str = factor(str),
          # r = log(area_km2) / log(max(area_km2, na.rm = TRUE)) / 2.5,
-         r = (area_km2 / max(area_km2, na.rm = TRUE))^(1/2) / 2.5 + .08,
+         r = (area_km2 / max(area_km2, na.rm = TRUE))^(1/2) / 2 + .08,
          start = (as.integer(str) - 1) * pi/2,
          end   = (as.integer(str)) * pi/2)
 
@@ -173,7 +173,7 @@ fig3a_pairwise_plot <- ggplot() +
   scale_fill_viridis_d()
 
 legend_df <- data.frame(x = 0, y = 0, 
-                        r = c(.08, .18, .28, .38, .48),
+                        r = c(.08, .2, .3, .4, .5),
                         str = c('land-based', 'ocean', 'climate', 'fishing', 'all')) %>%
   mutate(str = factor(str, levels = levels(mtxplot_df$str)),
          # r = log(area_km2) / log(max(area_km2, na.rm = TRUE)) / 2.5,
@@ -197,6 +197,7 @@ fig3a_legend <- ggplot() +
 # fig3a_pairwise_plot
 # fig3a_legend
 ```
+
 ## Combine Fig 3a pieces
 
 ```{r}
@@ -353,18 +354,19 @@ fig3b <- ggdraw() +
 # fig3b
 ```
 
-# Combine figs 3a and 3b
+# Save figure 3
+
+Dropping figure 3b - just saving figure 3a as the entire figure.
 
 ``` {r}
 fig3_file <- here('ms_figs/fig3_taxa_cooccurrence.png')
 
-fig3 <- plot_grid(fig3a, fig3b, nrow = 2, 
-                  labels = c('A', 'B'), label_size = 9, label_colour = 'grey20',
-                  rel_heights = c(2, 1))
+# fig3 <- plot_grid(fig3a, fig3b, nrow = 2, 
+#                   labels = c('A', 'B'), label_size = 9, label_colour = 'grey20',
+#                   rel_heights = c(2, 1))
 
-ggsave(plot = fig3, filename = fig3_file,
-       width = 12, height = 18, units = 'cm', dpi = 300)
+ggsave(plot = fig3a, filename = fig3_file,
+       width = 12, height = 12, units = 'cm', dpi = 300)
 
 knitr::include_graphics(fig3_file)
-# unlink(fig1_file)
 ```
