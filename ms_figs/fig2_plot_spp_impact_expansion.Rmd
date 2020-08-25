@@ -224,7 +224,7 @@ if(!file.exists(spp_intens_sum_file)) {
       }, mc.cores = 24)
   
   ### Note that the incr1 includes levels 2 and 3 in it, and so on. Need
-  ### to disaggregate the levels.
+  ### to disaggregate the levels for proper plotting.
   spp_sum_df <- spp_sum_list %>%
     bind_rows() %>%
     filter(eez == 0) %>%
@@ -301,14 +301,15 @@ plot_tax_sum_df <- tax_sum_df %>%
   bind_rows(all_sum_df %>% 
               filter(stressor == 'cumulative')) %>%
   mutate(desc = fct_inorder(desc)) %>%
+  ### no change is (total) - (all the other categories)
   mutate(mean_pct_nochange = mean_pct_imp - 
            (mean_pct_decr1 + mean_pct_incr1 + 
             mean_pct_decr2 + mean_pct_incr2 +
             mean_pct_decr3 + mean_pct_incr3)) %>%
   gather(var, val, starts_with('mean_pct_incr'), starts_with('mean_pct_decr'), mean_pct_nochange) %>%
-  mutate(var = case_when(var == 'mean_pct_incr1' ~ intens_lvls[1],
+  mutate(var = case_when(var == 'mean_pct_incr3' ~ intens_lvls[1],
                          var == 'mean_pct_incr2' ~ intens_lvls[2],
-                         var == 'mean_pct_incr3' ~ intens_lvls[3],
+                         var == 'mean_pct_incr1' ~ intens_lvls[3],
                          var == 'mean_pct_decr1' ~ intens_lvls[5],
                          var == 'mean_pct_decr2' ~ intens_lvls[6],
                          var == 'mean_pct_decr3' ~ intens_lvls[7],
