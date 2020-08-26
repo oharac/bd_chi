@@ -43,7 +43,7 @@ Read in the various impact summaries for each species.  These are created in the
 Reading in the summary files, we need to note that "cumulative" is calculated for each stressor category as well as overall.  So fix this by stressor category.
 
 ```{r define functions}
-get_impact_cat <- function(f) {
+get_impact_cat <- function(f, yr = 2013) {
   y <- read_csv(f, col_types = cols(.default = 'd',
                                     stressor = 'c', year = 'i',
                                     eez = 'i', iucn_sid = 'i'))
@@ -53,20 +53,28 @@ get_impact_cat <- function(f) {
   
   y <- y %>%
     filter(stressor == 'cumulative') %>%
-    filter(year == 2013 | is.na(year)) %>% ### year == NA for unimpacted
-    mutate(stressor = str_cat) %>%
-    select(stressor, impact_km2, incr_km2, decr_km2, eez, range_km2, iucn_sid)
+    filter(year %in% yr | is.na(year)) %>% ### year == NA for unimpacted
+    mutate(stressor = str_cat) 
+  
+  if(length(yr) > 1) {
+    y <- y %>%
+      select(stressor, impact_km2, eez, range_km2, iucn_sid, year)
+  } else {
+    y <- y %>%
+      select(stressor, impact_km2, eez, range_km2, iucn_sid)
+  }
+  
 
   return(y)
 }
 
-get_spp_impacts <- function(id) {
+get_spp_impacts <- function(id, yr = 2013) {
   str_cats <- c('all', 'fishing', 'climate', 'land-based', 'ocean')
   
   impact_fstem <- file.path(dir_bd_anx, 'spp_impacts', 'spp_impacts_%s_%s.csv')
   f <- sprintf(impact_fstem, id, str_cats)
 
-  z <- lapply(f, get_impact_cat) %>%
+  z <- lapply(f, get_impact_cat, yr = yr) %>%
     bind_rows()
   
   return(z)
@@ -130,7 +138,7 @@ if(!file.exists(imp_by_eez_file)) {
 ```{r plot impacts by eez}
 eez_summary_df <- read_csv(here('_output/impacts_by_eez.csv'))
 
-eez_impact_sf <- read_sf(file.path(dir_bd_anx, 'spatial/ohi_rgns/rgns_mol_1k.gpkg')) %>%
+eez_impact_sf <- read_sf(here('_spatial/rgns_mol_1k.gpkg')) %>%
   filter(rgn_type %in% c('eez', 'fao')) %>%
   left_join(eez_summary_df, by = c('rgn_id' = 'eez'))
 
@@ -262,5 +270,60 @@ ggplot(abnj_cum_impacts, aes(x = stressor, y = rgn_label, fill = a_wt_mean_imp_p
 
 # ggsave(here('ms_figs/impact_by_abnj.png'), width = 5, height = 2, dpi = 300)
 
+```
+
+# Plot Phoenix Group over time
+
+EEZ 157
+
+```{r}
+
+spp_ids <- get_incl_spp()$iucn_sid %>% unique() %>% sort()
+
+impact_summary_df <- parallel::mclapply(spp_ids, # spp_id <- spp_ids[1]
+                                        FUN = get_spp_impacts,
+                                        yr = 2003:2013,
+                                        mc.cores = 30) %>%
+  bind_rows() 
+
+phoenix_df <- impact_summary_df %>%
+  filter(eez == 157) %>%
+  left_join(rgn_names, by = c('eez' = 'rgn_id')) %>%
+  mutate(imp_pct = impact_km2 / range_km2) %>%
+  mutate(imp_pct = ifelse(is.na(imp_pct), 0, imp_pct)) %>%
+  ungroup()
+
+phoenix_summary_df <- phoenix_df %>%
+  group_by(stressor, year) %>%
+  summarize(n_spp = n_distinct(iucn_sid),
+            n_imp = sum(imp_pct > 0),
+            mean_imp_pct = mean(imp_pct, na.rm = TRUE),
+            a_wt_mean_imp_pct = sum(imp_pct * range_km2) / sum(range_km2),
+            med_imp_pct  = median(imp_pct, na.rm = TRUE),
+            sd_imp_pct   = sd(imp_pct, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(stressor = factor(stressor, 
+                           levels = c('cumulative', 'fishing', 'climate', 'ocean', 'land-based')))
+
+phx_plot <- ggplot(phoenix_summary_df, aes(x = year, y = a_wt_mean_imp_pct)) +
+  ggtheme_plot(base_size = 7) +
+  theme(axis.title.x = element_blank()) +
+  geom_line(aes(color = stressor, size = stressor)) +
+  scale_x_continuous(limits = c(2002.8, 2015.2), breaks = 2003:2015, expand = c(0, 0)) +
+  scale_color_manual(values = c('grey20', '#a6cee3', '#1f78b4', '#b2df8a', '#33a02c')) +
+  scale_size_manual(values = c(1, .5, .5, .5, .5)) +
+  geom_smooth(aes(color = stressor), method = 'lm', 
+              size = .25, linetype = 'dashed', se = FALSE, fullrange = TRUE) +
+  geom_vline(xintercept = c(2008, 2015), 
+             color = 'red', size = .25) +
+  annotate(geom = 'text', label = '2008: PIPA legal\ndesignation', 
+           x = 2008.1, y = .145, vjust = 1, hjust = 1, angle = 90, size = 2) +
+  annotate(geom = 'text', label = '2015: PIPA Closure to\nall commercial fishing', 
+           x = 2014.9, y = .145, vjust = 0, hjust = 1, angle = 90, size = 2) +
+  labs(y = 'Mean proportion of species ranges impacted')
+
+ggsave(here('ms_figs/si_phx_status_over_time.png'), width = 6, height = 2.5, dpi = 300)
+
+knitr::include_graphics(here('ms_figs/si_phx_status_over_time.png'))
 ```
 

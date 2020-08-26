@@ -57,7 +57,7 @@ land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
   st_transform(crs(nspp))
 
 nspp_map <- ggplot() +
-  ggtheme_map(base_size = 7) +
+  ggtheme_map(base_size = 9) +
   geom_raster(data = nspp_df, aes(x, y, fill = xfm_n), size = .1) +
   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
   scale_fill_viridis_c(breaks = ct_breaks, labels = ct_labels) +
@@ -71,7 +71,7 @@ nspp_map <- ggplot() +
 # nspp_map
 
 ggsave(plot = nspp_map, filename = here('ms_figs/si_spp_richness.png'),
-       height = 5, width = 12, units = 'cm', dpi = 300)
+       height = 2.7, width = 6.5, units = 'in', dpi = 300)
 
 knitr::include_graphics(here('ms_figs/si_spp_richness.png'))
 ```
@@ -84,7 +84,7 @@ Load rasters of impacted spp and species count for 2013; generate impacted spp b
 
 figfile <- here('ms_figs/si_impact_pct_four_stressors.png')
 
-if(!file.exists(figfile)) {
+# if(!file.exists(figfile)) {
 
   nspp <- raster(here('_output/rasters/n_spp_map.tif')) 
   land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
@@ -106,7 +106,7 @@ if(!file.exists(figfile)) {
       rename(imp_pct = layer)
   
     str_imp_map <- ggplot() +
-      ggtheme_map(base_size = 7) +
+      ggtheme_map(base_size = 9) +
       geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
       scale_fill_viridis_c(breaks = seq(0, 1, .25), 
                            labels = paste0(seq(0, 100, 25), '%'),
@@ -154,34 +154,34 @@ if(!file.exists(figfile)) {
     draw_plot(p_d,  x = .45, y = 0.01, width = .42, height = .45) +
     draw_plot(lgd, x = .90, y = 0.01, width = .05, height = 1) +
     draw_label('A', x = .01, y = .99, hjust = 0, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
+               size = 9, color = 'grey20', fontface = 'bold') +
     draw_label('B', x = .45, y = .99, hjust = 0, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
+               size = 9, color = 'grey20', fontface = 'bold') +
     draw_label('C', x = .01, y = .49, hjust = 0, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
+               size = 9, color = 'grey20', fontface = 'bold') +
     draw_label('D', x = .45, y = .49, hjust = 0, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
+               size = 9, color = 'grey20', fontface = 'bold') +
     draw_label('Fishing impacts',
                x = .22, y = .99, hjust = .5, vjust = 1, 
-               size = 5, color = 'grey20', fontface = 'bold') +
+               size = 6, color = 'grey20', fontface = 'bold') +
     draw_label('Climate impacts',
                x = .67, y = .99, hjust = .5, vjust = 1, 
-               size = 5, color = 'grey20', fontface = 'bold') +
+               size = 6, color = 'grey20', fontface = 'bold') +
     draw_label('Land-based impacts',
                x = .22, y = .49, hjust = .5, vjust = 1, 
-               size = 5, color = 'grey20', fontface = 'bold') +
+               size = 6, color = 'grey20', fontface = 'bold') +
     draw_label('Ocean-based impacts',
                x = .67, y = .49, hjust = .5, vjust = 1, 
-               size = 5, color = 'grey20', fontface = 'bold') +
+               size = 6, color = 'grey20', fontface = 'bold') +
     draw_label('Species impacted\n(percent)',
-               x = .92, y = .9, hjust = .5, vjust = 1, 
-               size = 5, color = 'grey20', fontface = 'bold')
+               x = .93, y = .80, hjust = .5, vjust = 1, 
+               size = 6, color = 'grey20', fontface = 'bold')
 
 
   ggsave(plot = fig_si, filename = figfile,
-         height = 5, width = 12, units = 'cm', dpi = 300)
+         height = 2.9, width = 6.5, units = 'in', dpi = 300)
   
-}
+# }
 knitr::include_graphics(figfile)
 
 ```
@@ -249,7 +249,7 @@ if(!file.exists(figfile)) {
                        'hagfishes', 'mangrove plants', 'seagrasses'))
 
   tx_imp_map <- ggplot(tx_map_df) +
-    ggtheme_map(base_size = 7) +
+    ggtheme_map(base_size = 9) +
     ### add grey background fill:
     geom_raster(data = ocean_a_df, aes(x, y), fill = 'grey80') +
     geom_raster(aes(x, y, fill = imp_pct)) +
@@ -277,7 +277,7 @@ if(!file.exists(figfile)) {
     facet_wrap(~ desc, ncol = 2)
   
   ggsave(plot = tx_imp_map, filename = figfile,
-         height = 15, width = 12, units = 'cm', dpi = 300)
+         height = 7.6, width = 6.5, units = 'in', dpi = 300)
 
 }
 knitr::include_graphics(figfile)

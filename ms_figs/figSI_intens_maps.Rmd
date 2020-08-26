@@ -1,0 +1,163 @@
+---
+title: 'Fig SI: intensification maps by stressor'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+source(here('common_fxns.R'))
+reload <- FALSE
+```
+
+
+# Summary
+
+Create figure for SI: map of intensifying spp by count, map of # of species.
+
+# Methods
+
+# SI: Maps of pct intensification by stressor
+
+Load rasters of intensifying spp and species count for 2013; generate intensifying spp by pct; make a cool map.
+
+``` {r figure si impact by stressor, results = 'asis'}
+
+figfile <- here('ms_figs/si_intens_pct_four_stressors.png')
+
+# if(!file.exists(figfile)) {
+
+  nspp <- raster(here('_output/rasters/n_spp_map.tif'))
+  land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+    st_transform(crs(nspp))
+  stressors <- c('fishing', 'climate', 'land-based', 'ocean')
+  panel_list <- vector('list', length = 4)
+
+  for(i in seq_along(stressors)) { ### i <- 1
+    
+    str <- stressors[i]
+    
+    rast_stem  <- here('_output/rasters/intens_maps/intens_%s_%s.tif')
+    incr_count <- raster(sprintf(rast_stem, str, 'incr2'))
+    decr_count <- raster(sprintf(rast_stem, str, 'decr2'))
+  
+    net_intens_pct <- (incr_count - decr_count) / nspp
+  
+    intens_pct_df <- rasterToPoints(net_intens_pct) %>%
+      as.data.frame() %>%
+      rename(intens_pct = layer)
+  
+    pt_df <- intens_pct_df %>%
+      arrange(abs(intens_pct)) # %>%
+      # filter(intens_pct != 0)
+
+    str_intens_map <- ggplot() +
+      ggtheme_map(base_size = 9) +
+      geom_tile(data = pt_df, aes(x, y, fill = intens_pct, color = intens_pct), 
+                size = ifelse(str == 'land-based', .3, .2)) +
+      scale_color_gradient2(low = '#4dac26', mid = '#f7f7f7', high = '#d01c8b',
+                        breaks = seq(-1, 1, .5), 
+                        labels = paste0(seq(-100, 100, 50), '%'),
+                        na.value = 'grey80') +
+      scale_fill_gradient2(low = '#4dac26', mid = '#f7f7f7', high = '#d01c8b',
+                        breaks = seq(-1, 1, .5), 
+                        labels = paste0(seq(-100, 100, 50), '%'),
+                        na.value = 'grey80') +
+      geom_sf(data = land_sf, fill = 'grey90', color = 'grey40', size = .10) +
+      theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+            legend.background = element_blank(),
+            legend.key.width = unit(.25, 'cm'),
+            legend.title = element_blank()) +
+      coord_sf(datum = NA) + ### ditch graticules
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0))
+    
+    # if(str == 'land-based') {
+    #   pt_df <- intens_pct_df %>%
+    #     filter(intens_pct > 0) %>%
+    #     arrange(intens_pct)
+    #   
+    #   str_intens_map <- str_intens_map +
+    #     geom_tile(data = pt_df, aes(x, y, fill = intens_pct, color = intens_pct), 
+    #               size = .2, show.legend = FALSE) +
+    #     # geom_point(data = pt_df, aes(x = x_pt, y = y_pt, color = intens_pct),
+    #     #            size = .05, show.legend = FALSE) +
+    #     geom_sf(data = land_sf, fill = 'grey96', color = 'grey90', size = .05) +
+    #     scale_color_gradient2(low = '#4dac26', mid = '#f7f7f7', high = '#d01c8b',
+    #                       breaks = seq(-1, 1, .5), 
+    #                       labels = paste0(seq(-100, 100, 50), '%'),
+    #                       na.value = 'grey80')
+    # }
+      
+    panel_list[[i]] <- str_intens_map
+      
+  }
+  
+  p_a <- get_panel(panel_list[[1]])
+  p_b <- get_panel(panel_list[[2]])
+  p_c <- get_panel(panel_list[[3]])
+  p_d <- get_panel(panel_list[[4]])
+  lgd <- get_legend(panel_list[[4]])
+  
+  # ggdraw() + draw_plot(p_d)
+  
+  fig_si <- ggdraw() +
+    draw_plot(p_a,  x = .01, y = 0.51, width = .42, height = .45) +
+    draw_plot(p_b,  x = .45, y = 0.51, width = .42, height = .45) +
+    draw_plot(p_c,  x = .01, y = 0.01, width = .42, height = .45) +
+    draw_plot(p_d,  x = .45, y = 0.01, width = .42, height = .45) +
+    draw_plot(lgd, x = .90, y = 0.01, width = .05, height = 1) +
+    draw_label('A', x = .01, y = .99, hjust = 0, vjust = 1, 
+               size = 9, color = 'grey20', fontface = 'bold') +
+    draw_label('B', x = .45, y = .99, hjust = 0, vjust = 1, 
+               size = 9, color = 'grey20', fontface = 'bold') +
+    draw_label('C', x = .01, y = .49, hjust = 0, vjust = 1, 
+               size = 9, color = 'grey20', fontface = 'bold') +
+    draw_label('D', x = .45, y = .49, hjust = 0, vjust = 1, 
+               size = 9, color = 'grey20', fontface = 'bold') +
+    draw_label('Fishing',
+               x = .22, y = .99, hjust = .5, vjust = 1, 
+               size = 7, color = 'grey20', fontface = 'bold') +
+    draw_label('Climate',
+               x = .67, y = .99, hjust = .5, vjust = 1, 
+               size = 7, color = 'grey20', fontface = 'bold') +
+    draw_label('Land-based',
+               x = .22, y = .49, hjust = .5, vjust = 1, 
+               size = 7, color = 'grey20', fontface = 'bold') +
+    draw_label('Ocean-based',
+               x = .67, y = .49, hjust = .5, vjust = 1, 
+               size = 7, color = 'grey20', fontface = 'bold') +
+    draw_label('Intensification\n(percent)',
+               x = .92, y = .81, hjust = .5, vjust = 1, 
+               size = 7, color = 'grey20', fontface = 'bold')
+
+
+  ggsave(plot = fig_si, filename = figfile,
+         height = 2.7, width = 6.5, units = 'in', dpi = 300)
+  
+# }
+knitr::include_graphics(figfile)
+
+```
+
+NOTE: Land-based pixels are exaggerated in size for display purposes
+
