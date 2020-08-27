@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Compiled on Wed Aug 12 19:22:28 2020 by ohara" />
+<meta name="author" content="Compiled on Wed Aug 26 19:03:34 2020 by ohara" />
 
 
 <title>Fig 1: impacts and intensification maps</title>
@@ -1676,7 +1676,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Fig 1: impacts and intensification maps</h1>
-<h4 class="author"><em>Compiled on Wed Aug 12 19:22:28 2020 by ohara</em></h4>
+<h4 class="author"><em>Compiled on Wed Aug 26 19:03:34 2020 by ohara</em></h4>
 
 </div>
 
@@ -1706,31 +1706,41 @@ div.tocify {
 <span id="cb2-5"><a href="#cb2-5"></a>imp_ct_df &lt;-<span class="st"> </span><span class="kw">rasterToPoints</span>(imp_count) <span class="op">%&gt;%</span></span>
 <span id="cb2-6"><a href="#cb2-6"></a><span class="st">  </span><span class="kw">as.data.frame</span>() <span class="op">%&gt;%</span></span>
 <span id="cb2-7"><a href="#cb2-7"></a><span class="st">  </span><span class="kw">setNames</span>(<span class="kw">c</span>(<span class="st">&#39;x&#39;</span>, <span class="st">&#39;y&#39;</span>, <span class="st">&#39;imp_ct&#39;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">xfm_imp_ct =</span> <span class="kw">xfm</span>(imp_ct))</span>
-<span id="cb2-9"><a href="#cb2-9"></a></span>
-<span id="cb2-10"><a href="#cb2-10"></a>max_ct &lt;-<span class="st"> </span><span class="kw">max</span>(imp_ct_df<span class="op">$</span>imp_ct, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb2-11"><a href="#cb2-11"></a>ct_labels &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">10</span>, <span class="dv">100</span>, max_ct)</span>
-<span id="cb2-12"><a href="#cb2-12"></a>ct_breaks &lt;-<span class="st"> </span><span class="kw">xfm</span>(ct_labels)</span>
-<span id="cb2-13"><a href="#cb2-13"></a></span>
-<span id="cb2-14"><a href="#cb2-14"></a>land_sf &lt;-<span class="st"> </span><span class="kw">read_sf</span>(<span class="kw">here</span>(<span class="st">&#39;_spatial/ne_10m_land/ne_10m_land_no_casp.shp&#39;</span>)) <span class="op">%&gt;%</span></span>
-<span id="cb2-15"><a href="#cb2-15"></a><span class="st">  </span><span class="kw">st_transform</span>(<span class="kw">crs</span>(imp_count))</span>
-<span id="cb2-16"><a href="#cb2-16"></a></span>
-<span id="cb2-17"><a href="#cb2-17"></a>fig1a_impact_ct_map &lt;-<span class="st"> </span><span class="kw">ggplot</span>() <span class="op">+</span></span>
-<span id="cb2-18"><a href="#cb2-18"></a><span class="st">  </span><span class="kw">ggtheme_map</span>(<span class="dt">base_size =</span> <span class="dv">7</span>) <span class="op">+</span></span>
-<span id="cb2-19"><a href="#cb2-19"></a><span class="st">  </span><span class="kw">geom_raster</span>(<span class="dt">data =</span> imp_ct_df, <span class="kw">aes</span>(x, y, <span class="dt">fill =</span> xfm_imp_ct)) <span class="op">+</span></span>
-<span id="cb2-20"><a href="#cb2-20"></a><span class="st">  </span><span class="kw">geom_sf</span>(<span class="dt">data =</span> land_sf, <span class="dt">fill =</span> <span class="st">&#39;grey96&#39;</span>, <span class="dt">color =</span> <span class="st">&#39;grey40&#39;</span>, <span class="dt">size =</span> <span class="fl">.10</span>) <span class="op">+</span></span>
-<span id="cb2-21"><a href="#cb2-21"></a><span class="st">  </span><span class="kw">scale_fill_viridis_c</span>(<span class="dt">breaks =</span> ct_breaks,</span>
-<span id="cb2-22"><a href="#cb2-22"></a>                       <span class="dt">labels =</span> ct_labels,</span>
-<span id="cb2-23"><a href="#cb2-23"></a>                       <span class="dt">na.value =</span> <span class="st">&#39;grey80&#39;</span>) <span class="op">+</span></span>
-<span id="cb2-24"><a href="#cb2-24"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.margin =</span> <span class="kw">unit</span>(<span class="kw">c</span>(.<span class="dv">05</span>, <span class="dv">0</span>, <span class="fl">.05</span>, <span class="dv">0</span>), <span class="dt">units =</span> <span class="st">&#39;cm&#39;</span>),</span>
-<span id="cb2-25"><a href="#cb2-25"></a>        <span class="dt">legend.background =</span> <span class="kw">element_blank</span>(),</span>
-<span id="cb2-26"><a href="#cb2-26"></a>        <span class="dt">legend.key.width =</span> <span class="kw">unit</span>(.<span class="dv">25</span>, <span class="st">&#39;cm&#39;</span>),</span>
-<span id="cb2-27"><a href="#cb2-27"></a>        <span class="dt">legend.title =</span> <span class="kw">element_blank</span>()) <span class="op">+</span></span>
-<span id="cb2-28"><a href="#cb2-28"></a><span class="st">  </span><span class="kw">coord_sf</span>(<span class="dt">datum =</span> <span class="ot">NA</span>) <span class="op">+</span><span class="st"> </span><span class="co">### ditch graticules</span></span>
-<span id="cb2-29"><a href="#cb2-29"></a><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">expand =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">+</span></span>
-<span id="cb2-30"><a href="#cb2-30"></a><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">expand =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>))</span>
-<span id="cb2-31"><a href="#cb2-31"></a></span>
-<span id="cb2-32"><a href="#cb2-32"></a><span class="co"># fig1a_impact_ct_map</span></span></code></pre></div>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">xfm_imp_ct =</span> <span class="kw">xfm</span>(imp_ct),</span>
+<span id="cb2-9"><a href="#cb2-9"></a>         <span class="dt">xfm_imp_ct =</span> <span class="kw">ifelse</span>(<span class="kw">is.infinite</span>(xfm_imp_ct), <span class="ot">NA</span>, xfm_imp_ct))</span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a>max_ct &lt;-<span class="st"> </span><span class="kw">max</span>(imp_ct_df<span class="op">$</span>imp_ct, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb2-12"><a href="#cb2-12"></a>ct_labels &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">10</span>, <span class="dv">100</span>, max_ct)</span>
+<span id="cb2-13"><a href="#cb2-13"></a>ct_breaks &lt;-<span class="st"> </span><span class="kw">xfm</span>(ct_labels)</span>
+<span id="cb2-14"><a href="#cb2-14"></a></span>
+<span id="cb2-15"><a href="#cb2-15"></a>land_sf &lt;-<span class="st"> </span><span class="kw">read_sf</span>(<span class="kw">here</span>(<span class="st">&#39;_spatial/ne_10m_land/ne_10m_land_no_casp.shp&#39;</span>)) <span class="op">%&gt;%</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a><span class="st">  </span><span class="kw">st_transform</span>(<span class="kw">crs</span>(imp_count))</span>
+<span id="cb2-17"><a href="#cb2-17"></a></span>
+<span id="cb2-18"><a href="#cb2-18"></a>fig1a_impact_ct_map &lt;-<span class="st"> </span><span class="kw">ggplot</span>() <span class="op">+</span></span>
+<span id="cb2-19"><a href="#cb2-19"></a><span class="st">  </span><span class="kw">ggtheme_map</span>(<span class="dt">base_size =</span> <span class="dv">7</span>) <span class="op">+</span></span>
+<span id="cb2-20"><a href="#cb2-20"></a><span class="st">  </span><span class="kw">geom_raster</span>(<span class="dt">data =</span> imp_ct_df, <span class="kw">aes</span>(x, y, <span class="dt">fill =</span> xfm_imp_ct)) <span class="op">+</span></span>
+<span id="cb2-21"><a href="#cb2-21"></a><span class="st">  </span><span class="kw">geom_sf</span>(<span class="dt">data =</span> land_sf, <span class="dt">fill =</span> <span class="st">&#39;grey96&#39;</span>, <span class="dt">color =</span> <span class="st">&#39;grey40&#39;</span>, <span class="dt">size =</span> <span class="fl">.10</span>) <span class="op">+</span></span>
+<span id="cb2-22"><a href="#cb2-22"></a><span class="st">  </span><span class="kw">scale_fill_viridis_c</span>(<span class="dt">breaks =</span> ct_breaks,</span>
+<span id="cb2-23"><a href="#cb2-23"></a>                       <span class="dt">labels =</span> ct_labels,</span>
+<span id="cb2-24"><a href="#cb2-24"></a>                       <span class="dt">na.value =</span> <span class="st">&#39;grey80&#39;</span>) <span class="op">+</span></span>
+<span id="cb2-25"><a href="#cb2-25"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">plot.margin =</span> <span class="kw">unit</span>(<span class="kw">c</span>(.<span class="dv">05</span>, <span class="dv">0</span>, <span class="fl">.05</span>, <span class="dv">0</span>), <span class="dt">units =</span> <span class="st">&#39;cm&#39;</span>),</span>
+<span id="cb2-26"><a href="#cb2-26"></a>        <span class="dt">legend.background =</span> <span class="kw">element_blank</span>(),</span>
+<span id="cb2-27"><a href="#cb2-27"></a>        <span class="dt">legend.key.width =</span> <span class="kw">unit</span>(.<span class="dv">25</span>, <span class="st">&#39;cm&#39;</span>),</span>
+<span id="cb2-28"><a href="#cb2-28"></a>        <span class="dt">legend.title =</span> <span class="kw">element_blank</span>()) <span class="op">+</span></span>
+<span id="cb2-29"><a href="#cb2-29"></a><span class="st">  </span><span class="kw">coord_sf</span>(<span class="dt">datum =</span> <span class="ot">NA</span>) <span class="op">+</span><span class="st"> </span><span class="co">### ditch graticules</span></span>
+<span id="cb2-30"><a href="#cb2-30"></a><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">expand =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">+</span></span>
+<span id="cb2-31"><a href="#cb2-31"></a><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">expand =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>))</span>
+<span id="cb2-32"><a href="#cb2-32"></a></span>
+<span id="cb2-33"><a href="#cb2-33"></a><span class="co"># fig1a_impact_ct_map</span></span>
+<span id="cb2-34"><a href="#cb2-34"></a><span class="co"># zeros &lt;- imp_ct_df %&gt;%</span></span>
+<span id="cb2-35"><a href="#cb2-35"></a><span class="co">#   filter(imp_ct == 0)</span></span>
+<span id="cb2-36"><a href="#cb2-36"></a><span class="co"># </span></span>
+<span id="cb2-37"><a href="#cb2-37"></a><span class="co"># ggplot() +</span></span>
+<span id="cb2-38"><a href="#cb2-38"></a><span class="co">#   ggtheme_map(base_size = 7) +</span></span>
+<span id="cb2-39"><a href="#cb2-39"></a><span class="co">#   geom_raster(data = zeros, aes(x, y), fill = &#39;orange&#39;) +</span></span>
+<span id="cb2-40"><a href="#cb2-40"></a><span class="co">#   geom_sf(data = land_sf, fill = &#39;grey96&#39;, color = &#39;grey40&#39;, size = .10)</span></span>
+<span id="cb2-41"><a href="#cb2-41"></a><span class="co"># </span></span>
+<span id="cb2-42"><a href="#cb2-42"></a><span class="co"># ggsave(plot = fig1a_impact_ct_map, filename = &#39;test.png&#39;, width = 12, height = 5, dpi = 600)</span></span></code></pre></div>
 </div>
 <div id="fig.-1b" class="section level2">
 <h2><span class="header-section-number">2.2</span> Fig. 1B</h2>

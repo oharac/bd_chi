@@ -49,7 +49,8 @@ xfm <- function(x) log10(x) ### how are we transforming count?
 imp_ct_df <- rasterToPoints(imp_count) %>%
   as.data.frame() %>%
   setNames(c('x', 'y', 'imp_ct')) %>%
-  mutate(xfm_imp_ct = xfm(imp_ct))
+  mutate(xfm_imp_ct = xfm(imp_ct),
+         xfm_imp_ct = ifelse(is.infinite(xfm_imp_ct), NA, xfm_imp_ct))
 
 max_ct <- max(imp_ct_df$imp_ct, na.rm = TRUE)
 ct_labels <- c(1, 10, 100, max_ct)
@@ -74,6 +75,15 @@ fig1a_impact_ct_map <- ggplot() +
   scale_y_continuous(expand = c(0, 0))
 
 # fig1a_impact_ct_map
+# zeros <- imp_ct_df %>%
+#   filter(imp_ct == 0)
+# 
+# ggplot() +
+#   ggtheme_map(base_size = 7) +
+#   geom_raster(data = zeros, aes(x, y), fill = 'orange') +
+#   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10)
+# 
+# ggsave(plot = fig1a_impact_ct_map, filename = 'test.png', width = 12, height = 5, dpi = 600)
 
 ```
 
