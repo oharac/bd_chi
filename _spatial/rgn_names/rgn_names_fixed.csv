@@ -1,0 +1,239 @@
+rgn_id,rgn_label,m49_code,iso3c,georgn,geosubrgn
+1,Cocos Islands,166,CCK,Oceania,Australia and New Zealand
+2,Christmas Island,162,CXR,Oceania,Australia and New Zealand
+3,Norfolk Island,574,NFK,Oceania,Australia and New Zealand
+5,New Caledonia,540,NCL,Oceania,Melanesia
+6,Vanuatu,548,VUT,Oceania,Melanesia
+7,Solomon Islands,90,SLB,Oceania,Melanesia
+8,Palau,585,PLW,Oceania,Micronesia
+9,Micronesia,583,FSM,Oceania,Micronesia
+10,Nauru,520,NRU,Oceania,Micronesia
+11,Marshall Islands,584,MHL,Oceania,Micronesia
+13,Northern Mariana Islands and Guam,316,GUM,Oceania,Micronesia
+13,Northern Mariana Islands and Guam,580,MNP,Oceania,Micronesia
+14,Taiwan,NA,TWN,Asia,Eastern Asia
+15,Philippines,608,PHL,Asia,South-eastern Asia
+16,Australia,36,AUS,Oceania,Australia and New Zealand
+17,Papua New Guinea,598,PNG,Oceania,Melanesia
+18,Fiji,242,FJI,Oceania,Melanesia
+19,Tuvalu,798,TUV,Oceania,Polynesia
+20,Republic of Korea,410,KOR,Asia,Eastern Asia
+21,Democratic People's Republic of Korea,408,PRK,Asia,Eastern Asia
+24,Cambodia,116,KHM,Asia,South-eastern Asia
+25,Thailand,764,THA,Asia,South-eastern Asia
+29,Mayotte,175,MYT,Africa,Eastern Africa
+31,Seychelles,690,SYC,Africa,Eastern Africa
+32,Réunion,638,REU,Africa,Eastern Africa
+37,Mauritius,480,MUS,Africa,Eastern Africa
+38,British Indian Ocean Territory,86,IOT,Africa,Eastern Africa
+39,Maldives,462,MDV,Asia,Southern Asia
+40,Sri Lanka,144,LKA,Asia,Southern Asia
+41,Mozambique,508,MOZ,Africa,Eastern Africa
+42,Madagascar,450,MDG,Africa,Eastern Africa
+43,Kenya,404,KEN,Africa,Eastern Africa
+44,Somalia,706,SOM,Africa,Eastern Africa
+45,Eritrea,232,ERI,Africa,Eastern Africa
+46,Djibouti,262,DJI,Africa,Eastern Africa
+47,Yemen,887,YEM,Asia,Western Asia
+48,Oman,512,OMN,Asia,Western Asia
+49,Sudan,729,SDN,Africa,Northern Africa
+50,Saudi Arabia,682,SAU,Asia,Western Asia
+51,Kuwait,414,KWT,Asia,Western Asia
+52,Bahrain,48,BHR,Asia,Western Asia
+53,Pakistan,586,PAK,Asia,Southern Asia
+54,United Arab Emirates,784,ARE,Asia,Western Asia
+59,Belgium,56,BEL,Europe,Western Europe
+60,Gibraltar,292,GIB,Europe,Southern Europe
+61,Tunisia,788,TUN,Africa,Northern Africa
+62,Morocco,504,MAR,Africa,Northern Africa
+63,Western Sahara,732,ESH,Africa,Northern Africa
+64,Mauritania,478,MRT,Africa,Western Africa
+65,Gambia,270,GMB,Africa,Western Africa
+66,Senegal,686,SEN,Africa,Western Africa
+67,Libya,434,LBY,Africa,Northern Africa
+68,Malta,470,MLT,Europe,Southern Europe
+69,Latvia,428,LVA,Europe,Northern Europe
+70,Estonia,233,EST,Europe,Northern Europe
+71,Bulgaria,100,BGR,Europe,Eastern Europe
+72,Romania,642,ROU,Europe,Eastern Europe
+73,Russian Federation,643,RUS,Europe,Eastern Europe
+74,Georgia,268,GEO,Asia,Western Asia
+75,Ukraine,804,UKR,Europe,Eastern Europe
+76,Turkey,792,TUR,Asia,Western Asia
+78,Lebanon,422,LBN,Asia,Western Asia
+79,Israel,376,ISR,Asia,Western Asia
+80,Greece,300,GRC,Europe,Southern Europe
+81,Cyprus,196,CYP,Asia,Western Asia
+82,Albania,8,ALB,Europe,Southern Europe
+84,Algeria,12,DZA,Africa,Northern Africa
+86,Saint Helena,654,SHN,Africa,Western Africa
+89,South Georgia and the South Sandwich Islands,239,SGS,Latin America and the Caribbean,South America
+95,Falkland Islands,238,FLK,Latin America and the Caribbean,South America
+96,Sierra Leone,694,SLE,Africa,Western Africa
+97,Liberia,430,LBR,Africa,Western Africa
+98,Togo,768,TGO,Africa,Western Africa
+99,Benin,204,BEN,Africa,Western Africa
+101,Namibia,516,NAM,Africa,Southern Africa
+102,South Africa,710,ZAF,Africa,Southern Africa
+103,Sao Tome and Principe,678,STP,Africa,Middle Africa
+104,Equatorial Guinea,226,GNQ,Africa,Middle Africa
+105,Bouvet Island,74,BVT,Latin America and the Caribbean,South America
+106,Ghana,288,GHA,Africa,Western Africa
+108,Bermuda,60,BMU,Northern America,Northern America
+110,Bahamas,44,BHS,Latin America and the Caribbean,Caribbean
+111,Turks and Caicos Islands,796,TCA,Latin America and the Caribbean,Caribbean
+112,Cuba,192,CUB,Latin America and the Caribbean,Caribbean
+113,Cayman Islands,136,CYM,Latin America and the Caribbean,Caribbean
+114,Haiti,332,HTI,Latin America and the Caribbean,Caribbean
+115,Dominican Republic,214,DOM,Latin America and the Caribbean,Caribbean
+117,British Virgin Islands,92,VGB,Latin America and the Caribbean,Caribbean
+118,Anguilla,660,AIA,Latin America and the Caribbean,Caribbean
+119,Saint Kitts and Nevis,659,KNA,Latin America and the Caribbean,Caribbean
+120,Antigua and Barbuda,28,ATG,Latin America and the Caribbean,Caribbean
+121,Montserrat,500,MSR,Latin America and the Caribbean,Caribbean
+122,Saint Lucia,662,LCA,Latin America and the Caribbean,Caribbean
+123,Dominica,212,DMA,Latin America and the Caribbean,Caribbean
+124,Barbados,52,BRB,Latin America and the Caribbean,Caribbean
+125,Grenada,308,GRD,Latin America and the Caribbean,Caribbean
+126,Trinidad and Tobago,780,TTO,Latin America and the Caribbean,Caribbean
+127,Saint Vincent and the Grenadines,670,VCT,Latin America and the Caribbean,Caribbean
+129,Panama,591,PAN,Latin America and the Caribbean,Central America
+130,Costa Rica,188,CRI,Latin America and the Caribbean,Central America
+131,Nicaragua,558,NIC,Latin America and the Caribbean,Central America
+132,Colombia,170,COL,Latin America and the Caribbean,South America
+133,Honduras,340,HND,Latin America and the Caribbean,Central America
+134,El Salvador,222,SLV,Latin America and the Caribbean,Central America
+135,Mexico,484,MEX,Latin America and the Caribbean,Central America
+136,Guatemala,320,GTM,Latin America and the Caribbean,Central America
+137,Ecuador,218,ECU,Latin America and the Caribbean,South America
+138,Peru,604,PER,Latin America and the Caribbean,South America
+139,Venezuela,862,VEN,Latin America and the Caribbean,South America
+143,Iceland,352,ISL,Europe,Northern Europe
+145,Greenland,304,GRL,Northern America,Northern America
+146,Pitcairn,612,PCN,Oceania,Polynesia
+147,French Polynesia,258,PYF,Oceania,Polynesia
+151,American Samoa,16,ASM,Oceania,Polynesia
+152,Samoa,882,WSM,Oceania,Polynesia
+153,Cook Islands,184,COK,Oceania,Polynesia
+154,Niue,570,NIU,Oceania,Polynesia
+155,Tonga,776,TON,Oceania,Polynesia
+156,Tokelau,772,TKL,Oceania,Polynesia
+162,New Zealand,554,NZL,Oceania,Australia and New Zealand
+163,United States of America,840,USA,Northern America,Northern America
+164,Belize,84,BLZ,Latin America and the Caribbean,Central America
+166,Jamaica,388,JAM,Latin America and the Caribbean,Caribbean
+167,Guyana,328,GUY,Latin America and the Caribbean,South America
+168,Suriname,740,SUR,Latin America and the Caribbean,South America
+169,French Guiana,254,GUF,Latin America and the Caribbean,South America
+171,Brazil,76,BRA,Latin America and the Caribbean,South America
+172,Argentina,32,ARG,Latin America and the Caribbean,South America
+173,Uruguay,858,URY,Latin America and the Caribbean,South America
+174,Finland,246,FIN,Europe,Northern Europe
+175,Denmark,208,DNK,Europe,Northern Europe
+176,Germany,276,DEU,Europe,Western Europe
+177,Netherlands,528,NLD,Europe,Western Europe
+178,Poland,616,POL,Europe,Eastern Europe
+179,France,250,FRA,Europe,Western Europe
+181,Ireland,372,IRL,Europe,Northern Europe
+182,Spain,724,ESP,Europe,Southern Europe
+183,Portugal,620,PRT,Europe,Southern Europe
+184,Italy,380,ITA,Europe,Southern Europe
+185,Monaco,492,MCO,Europe,Western Europe
+186,Montenegro,499,MNE,Europe,Southern Europe
+187,Croatia,191,HRV,Europe,Southern Europe
+188,Slovenia,705,SVN,Europe,Southern Europe
+189,Lithuania,440,LTU,Europe,Northern Europe
+190,Qatar,634,QAT,Asia,Western Asia
+191,Iran,364,IRN,Asia,Southern Asia
+192,Iraq,368,IRQ,Asia,Western Asia
+193,Guinea Bissau,624,GNB,Africa,Western Africa
+194,Guinea,324,GIN,Africa,Western Africa
+196,Nigeria,566,NGA,Africa,Western Africa
+197,Cameroon,120,CMR,Africa,Middle Africa
+198,Gabon,266,GAB,Africa,Middle Africa
+199,Democratic Republic of the Congo,180,COD,Africa,Middle Africa
+200,Angola,24,AGO,Africa,Middle Africa
+202,United Republic of Tanzania,834,TZA,Africa,Eastern Africa
+203,India,356,IND,Asia,Southern Asia
+204,Bangladesh,50,BGD,Asia,Southern Asia
+205,Myanmar,104,MMR,Asia,South-eastern Asia
+206,Malaysia,458,MYS,Asia,South-eastern Asia
+207,Vietnam,704,VNM,Asia,South-eastern Asia
+208,Singapore,702,SGP,Asia,South-eastern Asia
+209,China,156,CHN,Asia,Eastern Asia
+210,Japan,392,JPN,Asia,Eastern Asia
+212,Kiribati,296,KIR,Oceania,Micronesia
+213,Antarctica,10,ATA,Antarctica,Antarctica
+214,Egypt,818,EGY,Africa,Northern Africa
+215,Jordan,400,JOR,Asia,Western Asia
+216,Indonesia,360,IDN,Asia,South-eastern Asia
+218,Canada,124,CAN,Northern America,Northern America
+219,Saint Pierre and Miquelon,666,SPM,Northern America,Northern America
+220,Sint Maarten,534,SXM,Latin America and the Caribbean,Caribbean
+222,Sweden,752,SWE,Europe,Northern Europe
+223,Norway,578,NOR,Europe,Northern Europe
+224,Chile,152,CHL,Latin America and the Caribbean,South America
+227,Jersey,832,JEY,Europe,Northern Europe
+228,Guernsey,831,GGY,Europe,Northern Europe
+232,Bosnia and Herzegovina,70,BIH,Europe,Southern Europe
+244,Curaçao,531,CUW,Latin America and the Caribbean,Caribbean
+250,Aruba,533,ABW,Latin America and the Caribbean,Caribbean
+4,Macquarie Island,NA,NA,Oceania,Australia and New Zealand
+12,Wake Island,NA,NA,Oceania,Micronesia
+26,Andaman and Nicobar,NA,NA,Asia,South-Eastern Asia
+28,Comoro Islands,NA,NA,Africa,Eastern Africa
+30,Glorioso Islands,NA,NA,Africa,Eastern Africa
+33,Juan de Nova Island,NA,NA,Africa,Eastern Africa
+34,Bassas da India,NA,NA,Africa,Eastern Africa
+35,Ile Europa,NA,NA,Africa,Eastern Africa
+36,Ile Tromelin,NA,NA,Africa,Eastern Africa
+55,Azores,NA,NA,Europe,Southern Europe
+56,Cape Verde,NA,NA,Africa,Western Africa
+57,Madeira,NA,NA,Europe,Southern Europe
+58,Canary Islands,NA,NA,Europe,Southern Europe
+77,Syria,NA,NA,Asia,Western Asia
+85,Ascension,NA,NA,Europe,Northern Europe
+88,Tristan da Cunha,NA,NA,Europe,Northern Europe
+90,Prince Edward Islands,NA,NA,Southern Islands,Southern Islands
+91,Crozet Islands,NA,NA,Southern Islands,Southern Islands
+92,Amsterdam Island and Saint Paul Island,NA,NA,Southern Islands,Southern Islands
+93,Kerguelen Islands,NA,NA,Southern Islands,Southern Islands
+94,Heard and McDonald Islands,NA,NA,Southern Islands,Southern Islands
+100,Republique du Congo,NA,NA,Africa,Middle Africa
+107,Clipperton Island,NA,NA,Latin America and the Caribbean,Central America
+116,Puerto Rico and Virgin Islands of the United States,NA,NA,Latin America and the Caribbean,Caribbean
+140,Guadeloupe and Martinique,NA,NA,Latin America and the Caribbean,Caribbean
+141,Faeroe Islands,NA,NA,Europe,Northern Europe
+144,Jan Mayen,NA,NA,Europe,Northern Europe
+148,Line Group,NA,NA,Oceania,Micronesia
+149,Jarvis Island,NA,NA,Oceania,Micronesia
+150,Palmyra Atoll,NA,NA,Oceania,Micronesia
+157,Phoenix Group,NA,NA,Oceania,Micronesia
+158,Howland Island and Baker Island,NA,NA,Oceania,Micronesia
+159,Johnston Atoll,NA,NA,Oceania,Micronesia
+161,Wallis and Futuna,NA,NA,Oceania,Polynesia
+180,United Kingdom,NA,NA,Europe,Northern Europe
+195,Ivory Coast,NA,NA,Africa,Western Africa
+221,Northern Saint-Martin,NA,NA,Latin America and the Caribbean,Caribbean
+231,East Timor,NA,NA,Asia,South-Eastern Asia
+237,Oecussi Ambeno,NA,NA,Asia,South-Eastern Asia
+245,Bonaire,NA,NA,Latin America and the Caribbean,Caribbean
+247,Brunei,NA,NA,Asia,South-Eastern Asia
+248,Saba,NA,NA,Latin America and the Caribbean,Caribbean
+249,Sint Eustatius,NA,NA,Latin America and the Caribbean,Caribbean
+255,disputed,NA,NA,disputed,disputed
+260,Arctic Sea,NA,NA,Arctic Sea,Arctic Sea
+261,Atlantic Northwest,NA,NA,Atlantic Ocean,Atlantic Northwest
+262,Atlantic Northeast,NA,NA,Atlantic Ocean,Atlantic Northeast
+263,Atlantic Western Central,NA,NA,Atlantic Ocean,Atlantic Western Central
+264,Atlantic Eastern Central,NA,NA,Atlantic Ocean,Atlantic Eastern Central
+266,Atlantic Southwest,NA,NA,Atlantic Ocean,Atlantic Southwest
+267,Atlantic Southeast,NA,NA,Atlantic Ocean,Atlantic Southeast
+269,Indian Ocean Western,NA,NA,Indian Ocean,Indian Ocean Western
+270,Indian Ocean Eastern,NA,NA,Indian Ocean,Indian Ocean Eastern
+272,Pacific Northwest,NA,NA,Pacific Ocean,Pacific Northwest
+273,Pacific Northeast,NA,NA,Pacific Ocean,Pacific Northeast
+274,Pacific Western Central,NA,NA,Pacific Ocean,Pacific Western Central
+275,Pacific Eastern Central,NA,NA,Pacific Ocean,Pacific Eastern Central
+276,Pacific Southwest,NA,NA,Pacific Ocean,Pacific Southwest
+277,Pacific Southeast,NA,NA,Pacific Ocean,Pacific Southeast

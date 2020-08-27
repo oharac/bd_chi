@@ -1,0 +1,364 @@
+---
+title: 'Aggregate impacts to country level'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+library(sf)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Using the impact category level global maps, aggregate species impacts (for 2013) and intensification (across 2003-2013) to country level.   Values indicate the proportion of species range inside the political boundary that is impacted by each stressor group, for each species, and then combining these for a country score.
+
+The final plot will look something like: x axis, number of threatened species; y axis, mean proportion of range impacted across all species; points as rose plots with four quadrants indicating mean prop of range impacted by each stressor.
+
+# Methods
+
+## Calculate impacts
+
+Read in the various impact summaries for each species.  These are created in the `calc_impacts_and_trends_per_spp.Rmd` script.  They contain impacted area for each species by stressor, stressor category, and cumulative, for total range and per EEZ.  As these are already summarized, there is no need for spatial manipulation.  We are only interested in the stressor category level for 2013 at this point, so can drop the calcs for individual stressors and other years.
+
+Reading in the summary files, we need to note that "cumulative" is calculated for each stressor category as well as overall.  So fix this by stressor category.
+
+```{r define functions}
+get_impact_cat <- function(f, yr = 2013) {
+  y <- read_csv(f, col_types = cols(.default = 'd',
+                                    stressor = 'c', year = 'i',
+                                    eez = 'i', iucn_sid = 'i'))
+  
+  str_cat <- str_replace_all(basename(f), '.+[0-9]_|.csv', '')
+  if(str_cat == 'all') str_cat = 'cumulative'
+  
+  y <- y %>%
+    filter(stressor == 'cumulative') %>%
+    filter(year %in% yr | is.na(year)) %>% ### year == NA for unimpacted
+    mutate(stressor = str_cat) 
+  
+  if(length(yr) > 1) {
+    y <- y %>%
+      select(stressor, impact_km2, eez, range_km2, iucn_sid, year)
+  } else {
+    y <- y %>%
+      select(stressor, impact_km2, eez, range_km2, iucn_sid)
+  }
+  
+
+  return(y)
+}
+
+get_spp_impacts <- function(id, yr = 2013) {
+  str_cats <- c('all', 'fishing', 'climate', 'land-based', 'ocean')
+  
+  impact_fstem <- file.path(dir_bd_anx, 'spp_impacts', 'spp_impacts_%s_%s.csv')
+  f <- sprintf(impact_fstem, id, str_cats)
+
+  z <- lapply(f, get_impact_cat, yr = yr) %>%
+    bind_rows()
+  
+  return(z)
+}
+
+```
+
+For mean/median/sd impacts, we want to include all spp, even those not impacted (so for those species, impact = 0).
+
+``` {r summarize impacts by eez}
+
+imp_by_eez_file <- here('_output/impacts_by_eez.csv')
+# unlink(imp_by_eez_file)
+if(!file.exists(imp_by_eez_file)) {
+    
+  spp_ids <- get_incl_spp()$iucn_sid %>% unique() %>% sort()
+  
+  impact_summary_df <- parallel::mclapply(spp_ids, 
+                                          FUN = get_spp_impacts,
+                                          mc.cores = 30) %>%
+    bind_rows()
+  
+  str_cats <-  unique(impact_summary_df$stressor)
+  eez_complete_df <- parallel::mclapply(spp_ids, mc.cores = 30,
+    FUN = function(id) {
+      df <- impact_summary_df %>%
+        filter(iucn_sid == id) %>%
+        group_by(eez, range_km2) %>%
+        complete(stressor = str_cats, nesting(iucn_sid)) %>%
+        mutate(imp_pct = impact_km2 / range_km2) %>%
+        mutate(imp_pct = ifelse(is.na(imp_pct), 0, imp_pct)) %>%
+        ungroup()
+      return(df)
+    }) %>%
+    bind_rows()
+  
+  eez_summary_df <- eez_complete_df %>%
+    group_by(eez, stressor) %>%
+    summarize(n_spp = n_distinct(iucn_sid),
+              n_imp = sum(imp_pct > 0),
+              mean_imp_pct = mean(imp_pct, na.rm = TRUE),
+              a_wt_mean_imp_pct = sum(imp_pct * range_km2) / sum(range_km2),
+              med_imp_pct  = median(imp_pct, na.rm = TRUE),
+              sd_imp_pct   = sd(imp_pct, na.rm = TRUE))
+  
+  # eez_sum_drop_unimpacted <- impact_summary_df %>%
+  #   filter(impact_km2 > 0) %>%
+  #   mutate(imp_pct = impact_km2 / range_km2) %>%
+  #   group_by(eez, stressor) %>%
+  #   summarize(n_spp = n_distinct(iucn_sid),
+  #             mean_imp_pct = mean(imp_pct, na.rm = TRUE),
+  #             med_imp_pct  = median(imp_pct, na.rm = TRUE),
+  #             sd_imp_pct   = sd(imp_pct, na.rm = TRUE))
+  
+  write_csv(eez_summary_df, here('_output/impacts_by_eez.csv'))
+}
+```
+
+### Map by EEZ
+
+```{r plot impacts by eez}
+eez_summary_df <- read_csv(here('_output/impacts_by_eez.csv'))
+
+eez_impact_sf <- read_sf(here('_spatial/rgns_mol_1k.gpkg')) %>%
+  filter(rgn_type %in% c('eez', 'fao')) %>%
+  left_join(eez_summary_df, by = c('rgn_id' = 'eez'))
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(st_crs(eez_impact_sf))
+
+for(str in c('cumulative', 'fishing', 'ocean', 'land-based', 'climate')) {
+  x <- ggplot() +
+    ggtheme_map() +
+    geom_sf(data = eez_impact_sf %>% filter(rgn_id > 0 & stressor == str), 
+            aes(fill = mean_imp_pct, color = mean_imp_pct), 
+            alpha = .8, size = .25) +
+    geom_sf(data = land_sf, fill = 'grey95', color = 'grey30', size = .1) +
+    scale_fill_viridis_c() +
+    scale_color_viridis_c() +
+    labs(title = sprintf('%s impacts, pct', str))
+  print(x)
+}
+  
+```
+
+### Heatmap by EEZ
+
+```{r fix region names and georegions, eval = FALSE}
+rgn_names <- read_csv(here('_spatial/rgn_names/rgn_names_ohi_mod.csv')) %>%
+  mutate(rgn_match = str_replace_all(tolower(rgn_label), '[^a-z]', ''))
+new_rgn_names <- read_csv(here('_spatial/rgn_names/unsd_mod.csv')) %>%
+  mutate(region = str_replace(region, ' ?\\(.+\\) ?', ' ') %>% str_trim(),
+         rgn_match = str_replace_all(tolower(region), '[^a-z]', ''))
+
+propermatch_df <- rgn_names %>%
+  inner_join(new_rgn_names, by = c('rgn_match'))
+
+fuzzymatch_df <- rgn_names %>%
+  fuzzyjoin::stringdist_inner_join(new_rgn_names, by = c('rgn_match')) %>%
+  filter(!rgn_id %in% propermatch_df$rgn_id)
+
+nomatch1_df <- rgn_names %>%
+  anti_join(new_rgn_names, by = c('rgn_match'))
+nomatch2_df <- new_rgn_names %>%
+  fuzzyjoin::stringdist_anti_join(rgn_names, by = c( 'rgn_match'))
+
+good_enough <- propermatch_df %>%
+  bind_rows(nomatch1_df) %>%
+  mutate(georgn = ifelse(!is.na(region_name), region_name, r1_label),
+         georgn = ifelse(georgn == 'Americas' & !is.na(sub_region_name), sub_region_name, georgn),
+         geosubrgn = ifelse(!is.na(intermediate_region_name), intermediate_region_name, r2_label)) %>%
+  select(rgn_id, rgn_label, m49_code, iso3c, georgn, geosubrgn) %>%
+  distinct()
+
+good_enough$geosubrgn %>% unique() %>% sort()
+
+write_csv(good_enough, here('_spatial/rgn_names/rgn_names_fixed.csv'))
+```
+
+
+```{r heatmap impacts by eez}
+rgn_names <- read_csv(here('_spatial/rgn_names/rgn_names_fixed.csv'))
+
+eez_summary_df <- read_csv(here('_output/impacts_by_eez.csv')) %>%
+  left_join(rgn_names, by = c('eez' = 'rgn_id')) %>%
+  ### add in the cumulative score, for easier sorting
+  group_by(eez) %>%
+  mutate(cum_imp = max(a_wt_mean_imp_pct)) %>%
+  ungroup() %>%
+  arrange(desc(cum_imp))
+
+
+rgn_order <- eez_summary_df %>%
+  filter(eez < 255 & eez != 213) %>%
+  arrange(desc(cum_imp)) %>%
+  filter(stressor == 'cumulative') %>%
+  .$rgn_label
+
+
+n_eez <- length(rgn_order) ### 221
+n_select <- 15
+
+eez_top <- eez_summary_df %>%
+  filter(rgn_label %in% rgn_order[1:n_select])
+
+eez_btm <- eez_summary_df %>%
+  filter(rgn_label %in% rgn_order[(n_eez - n_select + 1):n_eez])
+
+large_eez <- read_sf(here('_spatial/rgns_mol_1k.gpkg')) %>%
+  as.data.frame() %>%
+  select(-geom) %>%
+  filter(rgn_type == 'eez') %>%
+  filter(rgn_id < 255 & rgn_id != 213) %>%
+  filter(!rgn_name %in% c(eez_top$rgn_label, eez_btm$rgn_label)) %>%
+  arrange(desc(area_km2)) %>%
+  head(10)
+
+eez_select <- eez_summary_df %>%
+  filter(rgn_label %in% large_eez$rgn_name)
+
+abnj_imp  <- eez_summary_df %>%
+  filter(eez > 255 | eez == 213) %>%
+  filter(eez != 260) %>%
+  mutate(rgn_label = str_replace(rgn_label, 'ific|antic', '.'),
+         rgn_label = str_replace(rgn_label, ' Ocean', ''))
+
+eez_to_plot <- eez_top %>%
+  bind_rows(data.frame(eez = NA, rgn_label = '', stressor = 'cumulative')) %>%
+  bind_rows(eez_select) %>%
+  bind_rows(data.frame(eez = NA, rgn_label = ' ', stressor = 'cumulative')) %>%
+  bind_rows(eez_btm) %>%
+  bind_rows(data.frame(eez = NA, rgn_label = '  ', stressor = 'cumulative')) %>%
+  bind_rows(abnj_imp) %>%
+  mutate(rgn_label = str_replace_all(rgn_label, 'Islands?', 'Is.'),
+         rgn_label = str_replace_all(rgn_label, ' and ', '/'),
+         rgn_label = fct_inorder(rgn_label) %>% fct_rev(),
+         stressor = factor(stressor, 
+                           levels = c('cumulative', 'fishing', 'ocean', 'climate', 'land-based')))
+
+fig4_heatmap <- ggplot(eez_to_plot, aes(x = stressor, y = rgn_label, fill = a_wt_mean_imp_pct)) +
+  ggtheme_plot(base_size = 7) +
+  geom_tile() +
+  theme(plot.margin = unit(c(.05, 0, .05, .4), units = 'cm')) +
+  scale_x_discrete(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0)) +
+  scale_fill_viridis_c(na.value = rgb(0, 0, 0, 0)) +
+  theme(axis.title = element_blank(),
+        panel.grid.major = element_blank(),
+        legend.key.width = unit(.28, 'cm'),
+        legend.text = element_text(angle = 90, hjust = .5),
+        legend.title = element_blank()) +
+        # legend.title = element_text(angle = 90, size = 8)) +
+  labs(fill = 'Mean impact')
+
+fig4_done <- ggdraw() +
+  draw_plot(fig4_heatmap + theme(legend.position = 'none'),
+            x = 0, y = 0, width = .9, height = 1) + 
+  draw_plot(get_legend(fig4_heatmap), x = .9, y = .2, width = .1, height = .3) +
+  draw_label('Mean impact', x = .937, y = .57, color = 'grey20', size = 9, angle = 90) +
+  draw_label('A', x = .87, y = .86, colour = 'white', size = 9, fontface = 'bold') +
+  draw_label('B', x = .87, y = .65, colour = 'white', size = 9, fontface = 'bold') +
+  draw_label('C', x = .87, y = .42, colour = 'white', size = 9, fontface = 'bold') +
+  draw_label('D', x = .87, y = .16, colour = 'white', size = 9, fontface = 'bold')
+
+ggsave(plot = fig4_done, filename = here('ms_figs/fig4x_impact_by_eez.png'), 
+       width = 12, height = 12, units = 'cm', dpi = 300)
+
+knitr::include_graphics(here('ms_figs/fig4x_impact_by_eez.png'))
+```
+
+``` {r plot abnj only}
+abnj_cum_impacts <- eez_summary_df %>%
+  filter(eez > 255 | eez == 213) %>%
+  filter(eez != 260) %>%
+  arrange(desc(cum_imp)) %>%
+  mutate(rgn_label = fct_inorder(rgn_label) %>% fct_rev(),
+         stressor = factor(stressor, 
+                           levels = c('cumulative', 'fishing', 'ocean', 'climate', 'land-based')))
+  
+ggplot(abnj_cum_impacts, aes(x = stressor, y = rgn_label, fill = a_wt_mean_imp_pct)) +
+  ggtheme_plot() +
+  geom_tile() +
+  scale_fill_viridis_c(na.value = rgb(0, 0, 0, 0),
+                       limits = c(0, 1)) +
+  theme(axis.title = element_blank(),
+        panel.grid.major = element_blank()) +
+  labs(fill = 'mean impact')
+
+# ggsave(here('ms_figs/impact_by_abnj.png'), width = 5, height = 2, dpi = 300)
+
+```
+
+# Plot Phoenix Group over time
+
+EEZ 157
+
+```{r}
+
+spp_ids <- get_incl_spp()$iucn_sid %>% unique() %>% sort()
+
+impact_summary_df <- parallel::mclapply(spp_ids, # spp_id <- spp_ids[1]
+                                        FUN = get_spp_impacts,
+                                        yr = 2003:2013,
+                                        mc.cores = 30) %>%
+  bind_rows() 
+
+phoenix_df <- impact_summary_df %>%
+  filter(eez == 157) %>%
+  left_join(rgn_names, by = c('eez' = 'rgn_id')) %>%
+  mutate(imp_pct = impact_km2 / range_km2) %>%
+  mutate(imp_pct = ifelse(is.na(imp_pct), 0, imp_pct)) %>%
+  ungroup()
+
+phoenix_summary_df <- phoenix_df %>%
+  group_by(stressor, year) %>%
+  summarize(n_spp = n_distinct(iucn_sid),
+            n_imp = sum(imp_pct > 0),
+            mean_imp_pct = mean(imp_pct, na.rm = TRUE),
+            a_wt_mean_imp_pct = sum(imp_pct * range_km2) / sum(range_km2),
+            med_imp_pct  = median(imp_pct, na.rm = TRUE),
+            sd_imp_pct   = sd(imp_pct, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(stressor = factor(stressor, 
+                           levels = c('cumulative', 'fishing', 'climate', 'ocean', 'land-based')))
+
+phx_plot <- ggplot(phoenix_summary_df, aes(x = year, y = a_wt_mean_imp_pct)) +
+  ggtheme_plot(base_size = 7) +
+  theme(axis.title.x = element_blank()) +
+  geom_line(aes(color = stressor, size = stressor)) +
+  scale_x_continuous(limits = c(2002.8, 2015.2), breaks = 2003:2015, expand = c(0, 0)) +
+  scale_color_manual(values = c('grey20', '#a6cee3', '#1f78b4', '#b2df8a', '#33a02c')) +
+  scale_size_manual(values = c(1, .5, .5, .5, .5)) +
+  geom_smooth(aes(color = stressor), method = 'lm', 
+              size = .25, linetype = 'dashed', se = FALSE, fullrange = TRUE) +
+  geom_vline(xintercept = c(2008, 2015), 
+             color = 'red', size = .25) +
+  annotate(geom = 'text', label = '2008: PIPA legal\ndesignation', 
+           x = 2008.1, y = .145, vjust = 1, hjust = 1, angle = 90, size = 2) +
+  annotate(geom = 'text', label = '2015: PIPA Closure to\nall commercial fishing', 
+           x = 2014.9, y = .145, vjust = 0, hjust = 1, angle = 90, size = 2) +
+  labs(y = 'Mean proportion of species ranges impacted')
+
+ggsave(here('ms_figs/si_phx_status_over_time.png'), width = 6, height = 2.5, dpi = 300)
+
+knitr::include_graphics(here('ms_figs/si_phx_status_over_time.png'))
+```
+
