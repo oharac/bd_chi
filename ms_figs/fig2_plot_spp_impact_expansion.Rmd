@@ -153,8 +153,10 @@ taxon_df <- get_spp_taxon()
 range_summary_all <- imp_2030_df %>%
   group_by(stressor, year) %>%
   summarize(mean_pct_imp = mean(pct_impact),
+            med_pct_imp  = median(pct_impact),
             sd_pct_imp   = sd(pct_impact),
             mean_pct_2plus = mean(pct_impact_2plus),
+            med_pct_2plus  = median(pct_impact_2plus),
             sd_pct_2plus = sd(pct_impact_2plus)) %>%
   mutate(desc = 'all spp')
 
@@ -162,7 +164,9 @@ range_summary_taxon <- imp_2030_df %>%
   left_join(taxon_df, by = 'iucn_sid') %>%
   group_by(desc, stressor, year) %>%
   summarize(mean_pct_imp = mean(pct_impact),
+            med_pct_imp  = median(pct_impact),
             sd_pct_imp   = sd(pct_impact),
+            mean_pct_2plus = mean(pct_impact_2plus),
             mean_pct_2plus = mean(pct_impact_2plus),
             sd_pct_2plus = sd(pct_impact_2plus)) %>%
   ungroup()
@@ -332,6 +336,7 @@ plot_tax_sum_df <- tax_sum_df %>%
 ```
 
 # Assemble plot
+
 ```{r fig 2a mean sd}
 
 # ttest_expansion <- read_csv(here('ms_figs/fig2a_ttest_by_stressor.csv')) %>%
@@ -417,8 +422,14 @@ fig2a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
                width = .2, size = .2,
                outlier.size = .02, outlier.color = 'grey80',
                position = position_dodge(width = -.6)) +
+  ### median point is solid
   geom_point(data = boxplot_summary_df, aes(y = med, color = year),
              size = .8, position = position_dodge(width = -.6)) +
+  ### mean point is hollow
+  geom_point(data = boxplot_summary_df, aes(y = mean, color = year), 
+             size = .8, position = position_dodge(width = -.6)) +
+  geom_point(data = boxplot_summary_df, aes(y = mean, group = year), color = 'white',
+             size = .3, position = position_dodge(width = -.6)) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   scale_fill_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
   scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
