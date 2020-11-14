@@ -107,9 +107,9 @@ if(!file.exists(spp_expansion_trend_file)) {
   trend_df <- read_csv(imp_range_file) %>%
     group_by(stressor, iucn_sid) %>%
     filter(n_distinct(pct_impact, na.rm = TRUE) > 1) %>%
+    mutate(year = year - 2003) %>%
     do(mdl = lm(pct_impact ~ year, data = .)) %>%
-    broom::tidy(mdl) %>%
-    filter(term == 'year')
+    broom::tidy(mdl)
   
   write_csv(trend_df, spp_expansion_trend_file)
 }
@@ -119,7 +119,8 @@ Use trends to predict species impacted range in 2030.
 
 ```{r}
 
-trend_df <- read_csv(spp_expansion_trend_file)
+trend_df <- read_csv(spp_expansion_trend_file) %>%
+  filter(term == 'year')
 
 imp_range_df <- read_csv(imp_range_file) %>%
   select(stressor, year, impact_km2, impact_2plus_km2, range_km2, iucn_sid, pct_impact) %>%
