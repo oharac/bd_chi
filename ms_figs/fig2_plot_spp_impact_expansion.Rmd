@@ -24,6 +24,7 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
 library(raster)
 library(sf)
 library(cowplot)
+library(ggthemes)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
@@ -153,8 +154,10 @@ taxon_df <- get_spp_taxon()
 range_summary_all <- imp_2030_df %>%
   group_by(stressor, year) %>%
   summarize(mean_pct_imp = mean(pct_impact),
+            med_pct_imp  = median(pct_impact),
             sd_pct_imp   = sd(pct_impact),
             mean_pct_2plus = mean(pct_impact_2plus),
+            med_pct_2plus  = median(pct_impact_2plus),
             sd_pct_2plus = sd(pct_impact_2plus)) %>%
   mutate(desc = 'all spp')
 
@@ -162,10 +165,15 @@ range_summary_taxon <- imp_2030_df %>%
   left_join(taxon_df, by = 'iucn_sid') %>%
   group_by(desc, stressor, year) %>%
   summarize(mean_pct_imp = mean(pct_impact),
+            med_pct_imp  = median(pct_impact),
             sd_pct_imp   = sd(pct_impact),
+            mean_pct_2plus = mean(pct_impact_2plus),
             mean_pct_2plus = mean(pct_impact_2plus),
             sd_pct_2plus = sd(pct_impact_2plus)) %>%
   ungroup()
+```
+
+``` {r, eval = FALSE}
 
 ttest_2003_2013_all <- imp_2030_df %>%
   filter(str_detect(stressor, '^cum_')) %>%
@@ -173,6 +181,7 @@ ttest_2003_2013_all <- imp_2030_df %>%
   spread(year, pct_impact) %>%
   group_by(stressor) %>%
   do(t = t.test(.$`2013`, .$`2003`, paired = TRUE)) %>%
+  ungroup() %>%
   broom::tidy(t) %>%
   mutate(desc = 'all spp')
 ttest_2003_2013_taxa <- imp_2030_df %>%
@@ -328,16 +337,17 @@ plot_tax_sum_df <- tax_sum_df %>%
 ```
 
 # Assemble plot
-```{r fig 2a}
 
-ttest_expansion <- read_csv(here('ms_figs/fig2a_ttest_by_stressor.csv')) %>%
-  filter(stressor == 'cum_all') %>%
-  mutate(stars = case_when(p.value > .05 ~ '',
-                           p.value > .01 ~ '*',
-                           p.value > .001 ~ '**',
-                           TRUE ~ '***'),
-         lbl   = ifelse(p.value > .001 , 
-                        sprintf('p = %s', round(p.value, 3)), 'p < 0.001'))
+```{r fig 2a mean sd}
+
+# ttest_expansion <- read_csv(here('ms_figs/fig2a_ttest_by_stressor.csv')) %>%
+#   filter(stressor == 'cum_all') %>%
+#   mutate(stars = case_when(p.value > .05 ~ '',
+#                            p.value > .01 ~ '*',
+#                            p.value > .001 ~ '**',
+#                            TRUE ~ '***'),
+#          lbl   = ifelse(p.value > .001 , 
+#                         sprintf('p = %s', round(p.value, 3)), 'p < 0.001'))
 
 fig2a <- ggplot(cum_impact_df) +
   ggtheme_plot(base_size = 7) +
@@ -374,6 +384,77 @@ fig2a <- ggplot(cum_impact_df) +
         legend.title = element_blank())
 
 # fig2a
+```
+
+```{r fig 2a boxplot}
+spp_impact_df <- imp_2030_df %>%
+  left_join(taxon_df, by = 'iucn_sid') %>%
+  filter(stressor == 'cum_all')
+
+taxon_levels <- spp_impact_df %>%
+  filter(year == 2013) %>%
+  group_by(desc) %>%
+  summarize(med = median(pct_impact),
+            mean = mean(pct_impact),
+            diff = abs(med - mean),
+            n = n_distinct(iucn_sid)) %>%
+  arrange(med, mean) %>%
+  .$desc
+
+boxplot_all_df <- spp_impact_df %>%
+  mutate(desc = 'all spp')
+
+boxplot_df <- bind_rows(boxplot_all_df, spp_impact_df) %>%
+  mutate(year = factor(year, levels = c('2030', '2013', '2003')),
+         desc = factor(desc, levels = c(taxon_levels, 'all spp')))
+
+boxplot_summary_df <- boxplot_df %>%
+  group_by(year, desc) %>%
+  summarize(med = median(pct_impact),
+            mean = mean(pct_impact),
+            sd  = sd(pct_impact))
+
+fig2a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
+  ggtheme_plot(base_size = 7) +
+  ### suppress gridlines behind legend:
+  geom_rect(xmin = 1, xmax = 3, ymin = 0.50, ymax = 1,
+            fill = 'white', color = 'grey90', size = .1, alpha = .5) +
+  geom_boxplot(aes(fill = year, color = year), 
+               width = .2, size = .2,
+               outlier.size = .02, outlier.color = 'grey80',
+               position = position_dodge(width = -.6)) +
+  ### median point is solid
+  geom_point(data = boxplot_summary_df, aes(y = med, color = year),
+             size = .8, position = position_dodge(width = -.6)) +
+  ### mean point is hollow
+  geom_point(data = boxplot_summary_df, aes(y = mean, color = year), 
+             size = .8, position = position_dodge(width = -.6)) +
+  geom_point(data = boxplot_summary_df, aes(y = mean, group = year), color = 'white',
+             size = .3, position = position_dodge(width = -.6)) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
+  scale_fill_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
+  scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
+  scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
+  # geom_text(data = ttest_expansion, aes(x = desc, label = lbl), 
+  #           y = .80, size = 1.9, color = 'grey20', 
+  #           vjust = 0, hjust = 0, nudge_x = .06) +
+  # geom_text(data = ttest_expansion, aes(x = desc, label = stars), 
+  #           y = .79, size = 1.9, color = 'grey20', 
+  #           vjust = 0, hjust = 1, nudge_x = .06) +
+  scale_y_continuous(expand = c(0, 0), 
+                     limits = c(-.02, 1.02),
+                     breaks = seq(0, 1, .25),
+                     labels = paste0(seq(0, 100, 25), '%')) +
+  scale_x_discrete(expand = c(0.02, 0.02)) +
+  labs(y = 'Percent of range impacted') +
+  coord_flip() +
+  theme(axis.title.y = element_blank(),
+        legend.key.size = unit(.25, 'cm'),
+        legend.background = element_blank(),
+        legend.title = element_blank())
+
+fig2a_box
+
 ```
 
 ```{r fig 2b}
@@ -425,13 +506,14 @@ fig2b <- ggplot(plot_tax_sum_df) +
 ## Combine
 
 ```{r}
-legend_2a <- get_legend(fig2a)
+legend_2a <- get_legend(fig2a_box)
 legend_2b <- get_legend(fig2b)
-fig2 <- plot_grid(fig2a + theme(legend.position = 'none'), ### drop legend for manual placement
+fig2 <- plot_grid(fig2a_box + theme(legend.position = 'none'), 
+                    ### drop legend for manual placement
                   fig2b + theme(legend.position = 'none'), 
                   rel_widths = c(1.2, 1),
                   align = 'h', nrow = 1)  +
-  draw_plot(legend_2a, x = .38, y = .22, width = .2, height = .2) +
+  draw_plot(legend_2a, x = .34, y = .15, width = .2, height = .2) +
   draw_plot(legend_2b, x = .73, y = .215, width = .2, height = .4) +
   draw_label('A', x = .05, y = .99, vjust = 1, 
              fontface = 'bold', size = 9, colour = 'grey20') +

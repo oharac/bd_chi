@@ -94,7 +94,7 @@ plot_df <- str_count_df %>%
          ct = fct_inorder(ct))
 
 n_str_spp <- ggplot(plot_df, aes(x = ct)) +
-  ggtheme_plot(base_size = 7) +
+  ggtheme_plot(base_size = 9) +
   geom_bar(position = 'dodge', fill = 'grey20') +
   theme(axis.title.x = element_blank()) +
   labs(y = 'Number of species') +
@@ -105,14 +105,14 @@ z <- cowplot::plot_grid(n_spp_str, n_str_spp,
                         labels = c('A', 'B'), label_size = 9, label_colour = 'grey20')
 
 ggsave(plot = z, filename = here('ms_figs/si_n_sensitivity.png'), 
-       width = 12, height = 8, units = 'cm', dpi = 300)
+       width = 6.5, height = 4.3, units = 'in', dpi = 300)
 
 knitr::include_graphics(here('ms_figs/si_n_sensitivity.png'))
 ```
 
-## Try a pairwise table to examine # of spp with pairwise combos of stressors
+<!-- ## Try a pairwise table to examine # of spp with pairwise combos of stressors -->
 
-```{r}
+```{r, eval = FALSE}
 library(widyr)
 
 spp_str_incidence <- get_incl_spp() %>%
@@ -121,8 +121,8 @@ spp_str_incidence <- get_incl_spp() %>%
   distinct()
 
 result_df <- pairwise_count(spp_str_incidence,
-                             item = stressor, feature = iucn_sid, 
-                             sort = TRUE, diag = TRUE) %>%
+                            item = stressor, feature = iucn_sid, 
+                            sort = TRUE, diag = TRUE) %>%
   rename(str1 = item1, str2 = item2)
 
 result_mtx <- result_df %>%

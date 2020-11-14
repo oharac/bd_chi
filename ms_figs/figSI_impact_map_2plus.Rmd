@@ -59,7 +59,7 @@ land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
   st_transform(crs(imp_count))
 
 fig_sia_impact_ct_map <- ggplot() +
-  ggtheme_map(base_size = 7) +
+  ggtheme_map(base_size = 9) +
   geom_raster(data = imp_ct_df, aes(x, y, fill = xfm_imp_ct)) +
   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
   scale_fill_viridis_c(breaks = ct_breaks,
@@ -95,7 +95,7 @@ land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
   st_transform(crs(imp_pct))
 
 fig_sib_impact_pct_map <- ggplot() +
-  ggtheme_map(base_size = 7) +
+  ggtheme_map(base_size = 9) +
   geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
   scale_fill_viridis_c(breaks = seq(0, 1, .25), 
@@ -132,14 +132,14 @@ if(!file.exists(figSI_file)) {
     draw_label('A', x = .05, y = .95, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
     draw_label('B', x = .05, y = .45, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
     draw_label('Species impacted\nby 2+ stressors\n(count)', 
-               x = .93, y = .98, hjust = 1, vjust = 1, 
+               x = .93, y = .93, hjust = 1, vjust = 1, 
                size = 7, color = 'grey20', fontface = 'bold') +
     draw_label('Species impacted\nby 2+ stressors\n(percent)', 
-               x = .93, y = .48, hjust = 1, vjust = 1, 
+               x = .93, y = .43, hjust = 1, vjust = 1, 
                size = 7, color = 'grey20', fontface = 'bold') 
     
   ggsave(plot = fig_si, filename = figSI_file,
-         height = 10, width = 12, units = 'cm', dpi = 300)
+         height = 5.4, width = 6.5, units = 'in', dpi = 300)
 }
 
 knitr::include_graphics(figSI_file)
