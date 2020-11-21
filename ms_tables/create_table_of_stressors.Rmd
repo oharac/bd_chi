@@ -29,9 +29,7 @@ library(flextable)
 
 # Summary
 
-Stressor sensitivity is a very simplified version of stressor weights (see draft1 folder for complicated version).  Here, we will simply note whether a given species is sensitive to a given stressor, using the IUCN impact weights (i.e. non-negligible impact score), ranked as 0-3 (no, low, medium, high impact) for later differentiation if necessary.  For species with NA impact scores, we can imply sensitivity based on other fields, e.g. severity.  This version of sensitivity is not related to the range of exposure, as the weight calculation was doing.
-
-Sensitivity will denote whether a species range overlapping a stressor range constitutes an impact.
+This script creates table S1, aligning IUCN threats with CHI stressors
 
 # Methods
 
@@ -62,6 +60,8 @@ thr_to_spp <- spp_incl %>%
   filter(!is.na(stressor)) %>%
   distinct()
 
+repeated_strs <- c('Nutrient pollution', 'Direct human')
+
 threat_table <- thr_to_spp %>%
   left_join(read_csv(here('_raw/stressor_names.csv')), by = 'stressor') %>%
   group_by(code_main, desc_main, desc_sub, str_desc)  %>%
@@ -69,6 +69,7 @@ threat_table <- thr_to_spp %>%
   ungroup() %>%
   arrange(code_main, str_desc) %>%
   select(-code_main) %>%
+  mutate(str_desc = ifelse(str_desc %in% repeated_strs, paste0(str_desc, '*'), str_desc)) %>%
   setNames(c('Threat category', 'Threat subcategory', 'Stressor', 'n spp'))
 
 write_csv(threat_table, here('ms_tables/s1_table_threat_spp.csv'))

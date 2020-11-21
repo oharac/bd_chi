@@ -83,7 +83,6 @@ fig1a_impact_ct_map <- ggplot() +
 #   geom_raster(data = zeros, aes(x, y), fill = 'orange') +
 #   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10)
 # 
-# ggsave(plot = fig1a_impact_ct_map, filename = 'test.png', width = 12, height = 5, dpi = 600)
 
 ```
 
