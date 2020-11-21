@@ -175,19 +175,21 @@ cum_range_sum <- cum_range %>%
 
 ```{r plot for full range}
 
+barwidth = .8
+
 imp_full_range_plot <- ggplot(cum_range, aes(x = code)) +
   ggtheme_plot() +
   # geom_violin(aes(y = imp_range_pct), fill = 'grey40') +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank()) +
-  geom_boxplot(aes(y = imp_range_pct), 
+  geom_boxplot(aes(y = imp_range_pct), width = barwidth,
                fill = 'grey80', size = .25, outlier.size = .5) +
   geom_point(data = cum_range_sum, aes(y = mean_range_imp), 
-             size = .8, color = 'red') +
+             size = 1, color = 'red') +
   geom_errorbar(data = cum_range_sum,
                 aes(ymin = mean_range_imp - se_range_imp,
                     ymax = mean_range_imp + se_range_imp),
-                color = 'red', width = .2, size = .5) +
+                color = 'red', width = .25, size = .6) +
   labs(y = '% range impacted') +
   scale_y_continuous(breaks = seq(0, 1, .25), labels = paste0(seq(0, 100, 25), '%')) +
   # geom_smooth(aes(y = imp_range_pct), method = 'lm', color = 'yellow') +
@@ -236,14 +238,14 @@ imp_coastal_range_plot <- ggplot(cum_range_coastal, aes(x = code)) +
         strip.text = element_blank(),
         strip.background = element_blank()) +
   # geom_violin(aes(y = imp_range_pct), fill = 'grey40') +
-  geom_boxplot(aes(y = imp_range_pct), 
+  geom_boxplot(aes(y = imp_range_pct), width = barwidth,
                fill = 'grey80', size = .25, outlier.size = .5) +
   geom_point(data = cum_range_coastal_sum, aes(y = mean_range_imp), 
-             size = .8, color = 'red') +
+             size = 1, color = 'red') +
   geom_errorbar(data = cum_range_coastal_sum,
                 aes(ymin = mean_range_imp - se_range_imp,
                     ymax = mean_range_imp + se_range_imp),
-                color = 'red', width = .2, size = .5) +
+                color = 'red', width = .25, size = .6) +
   labs(y = '% range impacted') +
   scale_y_continuous(breaks = seq(0, 1, .25), labels = paste0(seq(0, 100, 25), '%')) +
   # geom_smooth(aes(y = imp_range_pct), method = 'lm', color = 'yellow') +
@@ -289,13 +291,13 @@ taxon_n_labels <- taxon_pct_range_risk %>%
 
 taxon_incl_plot <- ggplot(taxon_pct_range_risk, aes(x = code, y = pct)) +
   ggtheme_plot() +
-  geom_col(aes(fill = desc), color = 'white', size = .25) +
+  geom_col(aes(fill = desc), color = 'black', size = .25, width = barwidth) +
   scale_fill_manual(values = taxon_colors$fill) +
   theme(legend.position = 'bottom',
         strip.text = element_blank(),
         strip.background = element_blank(),
         legend.key.size = unit(.3, 'cm')) +
-  geom_text(data = taxon_n_labels, y = .06, aes(label = n_lbl),
+  geom_text(data = taxon_n_labels, y = .07, aes(label = n_lbl),
             size = 2.5, color = 'white') +
   labs(fill = 'taxon:', 
        x = 'IUCN Red List extinction risk category',
@@ -311,13 +313,13 @@ taxon_incl_plot
 # c <- get_panel(taxon_incl_plot)
 # 
 x <- ggdraw() +
-  draw_plot(imp_full_range_plot, x = 0, y = .64, width = 1, height = .36) +
+  draw_plot(imp_full_range_plot, x = 0, y = .64, width = 1, height = .35) +
   draw_plot(imp_coastal_range_plot, x = 0, y = .35, width = 1, height = .31) +
   draw_plot(get_legend(taxon_incl_plot), x = 0, y = 0, height = .07, width = 1) +
   draw_plot(taxon_incl_plot + theme(legend.position = 'none'), 
             x = 0, y = .06, width = 1, height = .31) +
   draw_label('Range quartiles', 
-             x = .5, y = 1, hjust = .5, vjust = 1,
+             x = .5, y = .99, hjust = .5, vjust = 1,
              fontface = 'bold', size = 9) +
   draw_label('A', x = 0.01, y = .946, hjust = 0, fontface = 'bold', size = 14) +
   draw_label('B', x = 0.01, y = .645, hjust = 0, fontface = 'bold', size = 14) +
@@ -329,9 +331,9 @@ x <- ggdraw() +
 #                rel_heights = c(.05, 1, .9, 1.4),
 #                ncol = 1)
 
-ggsave(plot = x, filename = 'si_compare_imp_range_to_risk.png', 
+ggsave(plot = x, filename = 'figS6_compare_imp_range_to_risk.png', 
        height = 6.5, width = 6.5)
-knitr::include_graphics('si_compare_imp_range_to_risk.png')
+knitr::include_graphics('figS6_compare_imp_range_to_risk.png')
 ```
 
 
