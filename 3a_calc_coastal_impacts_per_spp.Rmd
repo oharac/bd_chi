@@ -1,0 +1,262 @@
+---
+title: 'Calculate species stressor coastal impacts'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+options(dplyr.summarise.inform=F)
+
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+dir_str_trend <- file.path(dir_bd_anx, 'layers/stressor_trends')
+dir_spp_maps  <- file.path(dir_bd_anx, 'spp_rasts_mol_2020')
+dir_spp_intsx <- file.path(dir_bd_anx, 'spp_str_rasts')
+```
+
+
+# Summary
+
+For each species, for the 2013 year, pull in all associated stressor intersections, as well as species range.  Here we will clip species ranges to just the coastal portion of their range (i.e., shelf only, < 200 m), to compare coastal impacted range to extinction risk.
+
+For individual stressors, for 2013:
+
+* Range impacted (km^2^) 
+* Total range impacted (km^2^) by count of stressors
+
+# Methods
+
+## Create list of species for mapping cumulative impacts
+
+Here we will identify all species with sensitivity to one or more stressor, and a range map.
+
+```{r setup file names and species ids for processing}
+spp_incl <- get_incl_spp()
+
+spp_ids <- spp_incl$iucn_sid %>%
+  unique() %>% sort()
+
+ocean_area_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+cell_area_km2 <- (res(ocean_area_rast)[1]^2) / 1e6
+neritic_rast <- raster('_spatial/bathy_mol_neritic.tif')
+coastal_area_df <- data.frame(ocean_prop = values(ocean_area_rast),
+                            neritic = values(neritic_rast),
+                            cell_id = 1:ncell(ocean_area_rast)) %>%
+  filter(!is.na(ocean_prop) & !is.na(neritic)) %>%
+  mutate(ocean_area_km2 = ocean_prop * cell_area_km2)
+
+str_cats  <- get_str_cats()
+stressors <- str_cats$stressor
+```
+
+## loop over species by ID
+
+For each species, create a dataframe summarizing cumulative impacts:
+
+* calculate individual stressor impacts range for global and eez
+* calculate cumulative impact for global and eez
+* bind 'em together, join with ranges, and save .csv to annex, `spp_impacts_coastal` folder.
+
+### set up functions
+
+```{r cumulative impact functions}
+
+get_intsx_files <- function(spp_id, impact_cat) {
+  ### To calc across all stressors, set impact_cat = 'all'
+  ### NOTE: this uses global variables to avoid relisting all the intersection
+  ### files each time...
+  
+  # impact_cat <- 'fishing'
+  # spp_id <- spp_ids[1]
+  
+  ### get all the intersection files for this spp in the intsx directory
+  intsx_files <- intsx_files_all[intsx_id_vec == spp_id]
+  
+  if(impact_cat != 'all') {
+    ### subset stressors by impact category
+    intsx_dirs <- basename(dirname(intsx_files))
+    strs <- str_cats %>% 
+      filter(category == impact_cat) %>%
+      .$stressor
+    intsx_files <- intsx_files[intsx_dirs %in% strs]
+  }
+  
+  return(intsx_files)
+}
+
+get_spp_range_coastal <- function(id) { # id <- spp_id
+  map_f <- sprintf('iucn_sid_%s.csv', id)
+  spp_map <- read_csv(file.path(dir_spp_maps, map_f)) 
+  
+  if(nrow(spp_map) == 0) return(0)
+  
+  spp_map <- spp_map %>%
+    left_join(coastal_area_df, by = 'cell_id') %>%
+    filter(presence != 5) %>%
+    distinct()
+  spp_coastal_km2 <- sum(spp_map$ocean_area_km2, na.rm = TRUE) %>%
+    round(3)
+  return(spp_coastal_km2)
+}
+
+summarize_impacts <- function(spp_intsx_df, range_df) {
+  df <- spp_intsx_df %>%
+    group_by(stressor, year) %>%
+    summarize(impact_km2 = sum(ocean_area_km2) %>% round(3)) %>%
+    ungroup()
+  
+  df <- df %>% filter(!is.na(stressor))
+  return(df)
+}
+
+summarize_cum_impacts <- function(spp_intsx_df, range_df) {
+  ### take the dataframe and summarize 
+  df <- spp_intsx_df %>%
+    # select(cell_id, year, ocean_area_km2, stressor) %>%
+    distinct() %>%
+    group_by(cell_id, year, ocean_area_km2) %>%
+    summarize(n_impact = n()) %>%
+    group_by(year) %>%
+    summarize(impact_km2 = sum(ocean_area_km2) %>% round(3),
+              # impact_2plus_km2 = sum((n_impact > 1) * ocean_area_km2),
+              # impact_3plus_km2 = sum((n_impact > 2) * ocean_area_km2),
+              stressor = 'cumulative') %>%
+    ungroup()
+  
+  if(nrow(df) == 0) {
+    df <- data.frame(
+      stressor = 'cumulative',
+      year = NA,
+      impact_km2 = 0)
+  }
+
+  return(df)
+}
+
+calc_cum_impact <- function(spp_id, impact_cat) {
+  ### dir_spp_maps to point to location of range files;
+  ### dir_spp_intsx to point to location of intersection files
+  ### coastal_area_df to calc range including coastal (i.e. not 100% ocean) cells
+  ### impact_cat allows to select subsets of impacts
+
+  spp_range_coastal <- get_spp_range_coastal(id = spp_id)
+  
+  intsx_files <- get_intsx_files(spp_id, impact_cat)
+  
+  spp_intsx_df <- lapply(intsx_files,
+      FUN = function(x) { # x <- intsx_files[1]
+        str_name <- basename(x) %>%
+          str_replace_all('spp_intsx_|_[0-9].*', '')
+        
+        tmp <- read_csv(x, col_types = cols('cell_id' = 'i',
+                                     'year' = 'i')) %>%
+          mutate(stressor = str_name)
+        return(tmp)
+      }) %>%
+    bind_rows() %>%
+    filter(!is.na(cell_id)) %>%
+    left_join(coastal_area_df, by = 'cell_id') %>%
+    filter(!is.na(neritic))
+  
+  spp_impact_by_stressor <- summarize_impacts(spp_intsx_df, 
+                                              range_df = spp_range_df) %>%
+    group_by(stressor) %>%
+    complete(year = 2003:2013, fill = list(impact_km2 = 0))
+
+  spp_cum_impact <- summarize_cum_impacts(spp_intsx_df, 
+                                          range_df = spp_range_df) %>%
+    group_by(stressor) %>%
+    complete(year = 2003:2013, fill = list(impact_km2 = 0))
+  
+  impact_df <- bind_rows(spp_impact_by_stressor, 
+                         spp_cum_impact) %>%
+    filter(!is.na(year)) %>%
+    mutate(coastal_km2 = spp_range_coastal)
+  
+  return(impact_df)
+}
+```
+
+### calculate species cumulative impacts by stressor category
+
+NOTE: This chunk runs into problems and craps out.  Check that the resulting files total 6355 (1271 species * 5 stressors).
+
+``` {r calc species cumulative impacts by category}
+
+### set up list of all intersection files and an ID for indexing
+intsx_files_all <- list.files(dir_spp_intsx, recursive = TRUE, full.names = TRUE)
+intsx_id_vec    <- as.integer(str_extract(basename(intsx_files_all), '[0-9]{3,}'))
+
+### set up categories to loop over
+categories <- c(str_cats$category %>% unique(), 'all')
+
+x <- list.files(file.path(dir_bd_anx, 'spp_impacts_coastal'), full.names = TRUE)
+### to clear old versions:
+# # unlink(x)
+
+### to check whether any are missing, look for ids with fewer than 
+### five stressors
+y <- data.frame(x) %>%
+  mutate(id = str_extract(basename(x), '[0-9]+') %>% as.integer(),
+         str = str_replace_all(basename(x), '.+[0-9]+_|.csv', '')) %>%
+  group_by(id) %>%
+  summarize(n_str = n(), str = paste0(str, collapse = ', '))
+
+
+for(impact_cat in categories) {
+  # impact_cat <- categories[5]
+  
+  ### only consider those that aren't already complete
+  spp_ids_incomplete <- y %>%
+    filter(n_str < 5) %>%
+    filter(!str_detect(str, impact_cat)) %>%
+    .$id
+  
+  spp_ids_to_process <- spp_ids[!spp_ids %in% y$id | spp_ids %in% spp_ids_incomplete]
+  
+  message('Processing ', length(spp_ids_to_process), ' species for ', impact_cat)
+
+  tmp <- parallel::mclapply(spp_ids_to_process, mc.cores = 20,
+    FUN = function(spp_id) {
+      ### spp_id <- spp_ids_to_process[1]
+      spp_impact_fstem <- file.path(dir_bd_anx, 'spp_impacts_coastal/spp_impacts_coastal_%s_%s.csv')
+      spp_impact_file <- file.path(sprintf(spp_impact_fstem, spp_id, impact_cat))
+      
+      if(!file.exists(spp_impact_file)) {
+        message('Processing spp ', spp_id, '; ', impact_cat)
+        ### Calculate total species range, accounting for partial ocean cells
+        impact_df <- calc_cum_impact(spp_id, 
+                                     impact_cat = impact_cat)
+        write_csv(impact_df, spp_impact_file)
+      } else {
+        # message('Impact df file exists: ', basename(spp_impact_file), '... skipping!')
+      }
+      return(paste('success:', spp_id))
+    }
+  )
+}
+
+z <- list.files(file.path(dir_bd_anx, 'spp_impacts_coastal'), full.names = TRUE)
+if(length(z) < length(spp_ids) * length(categories)) {
+  stop('Not all species impacts were calculated: ', length(z),
+       ' out of ', length(spp_ids) * length(categories))
+}
+```

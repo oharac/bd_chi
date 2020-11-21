@@ -108,9 +108,9 @@ if(!file.exists(spp_expansion_trend_file)) {
   trend_df <- read_csv(imp_range_file) %>%
     group_by(stressor, iucn_sid) %>%
     filter(n_distinct(pct_impact, na.rm = TRUE) > 1) %>%
+    mutate(year = year - 2003) %>%
     do(mdl = lm(pct_impact ~ year, data = .)) %>%
-    broom::tidy(mdl) %>%
-    filter(term == 'year')
+    broom::tidy(mdl)
   
   write_csv(trend_df, spp_expansion_trend_file)
 }
@@ -120,7 +120,8 @@ Use trends to predict species impacted range in 2030.
 
 ```{r}
 
-trend_df <- read_csv(spp_expansion_trend_file)
+trend_df <- read_csv(spp_expansion_trend_file) %>%
+  filter(term == 'year')
 
 imp_range_df <- read_csv(imp_range_file) %>%
   select(stressor, year, impact_km2, impact_2plus_km2, range_km2, iucn_sid, pct_impact) %>%
@@ -350,6 +351,7 @@ plot_tax_sum_df <- tax_sum_df %>%
 
 fig2a <- ggplot(cum_impact_df) +
   ggtheme_plot(base_size = 7) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   geom_point(aes(y = mean_pct_imp, x = desc, 
                  color = year, group = year), 
              size = .8,
@@ -361,7 +363,6 @@ fig2a <- ggplot(cum_impact_df) +
              size = .25) +
   geom_rect(xmin = 2, xmax = 4, ymin = .75, ymax = 1, 
             fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
-  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
   scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
   # geom_text(data = ttest_expansion, aes(x = desc, label = lbl), 
@@ -416,6 +417,7 @@ boxplot_summary_df <- boxplot_df %>%
 fig2a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
   ggtheme_plot(base_size = 7) +
   ### suppress gridlines behind legend:
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   geom_rect(xmin = 1, xmax = 3, ymin = 0.50, ymax = 1,
             fill = 'white', color = 'grey90', size = .1, alpha = .5) +
   geom_boxplot(aes(fill = year, color = year), 
@@ -430,7 +432,6 @@ fig2a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
              size = .8, position = position_dodge(width = -.6)) +
   geom_point(data = boxplot_summary_df, aes(y = mean, group = year), color = 'white',
              size = .3, position = position_dodge(width = -.6)) +
-  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   scale_fill_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
   scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
   scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
@@ -474,6 +475,7 @@ n_labels <- get_incl_spp() %>%
 
 fig2b <- ggplot(plot_tax_sum_df) +
   ggtheme_plot(base_size = 7) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   geom_rect(xmin = 1, xmax = 12, ymin = 1.02, ymax = 1.22, 
             fill = 'white', color = 'white') + ### suppress gridlines behind n = XXX
   geom_rect(xmin = 2, xmax = 7, ymin = .50, ymax = 1, 
@@ -483,7 +485,6 @@ fig2b <- ggplot(plot_tax_sum_df) +
   geom_text(data = n_labels,
             aes(x = desc, label = n_lbl), y = 1.03,
             size = 1.9, hjust = 0) +
-  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   labs(y = 'Percent of range impacted') +
   scale_y_continuous(expand = c(0, 0), 
                      limits = c(0, 1.22),

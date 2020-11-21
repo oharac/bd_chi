@@ -42,7 +42,7 @@ Load rasters of intensifying spp and species count for 2013; generate intensifyi
 
 ``` {r figure si impact by stressor, results = 'asis'}
 
-figfile <- here('ms_figs/si_intens_pct_four_stressors.png')
+figfile <- here('ms_figs/figS4_intens_pct_four_stressors.png')
 
 # if(!file.exists(figfile)) {
 

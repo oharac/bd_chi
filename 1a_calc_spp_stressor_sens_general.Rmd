@@ -94,7 +94,7 @@ threats_to_marine <- spp_marine %>%
   filter(!is.na(code)) %>% ### drop code mismatches
   filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
   select(iucn_sid, cat_score,
-         sens, stressor, code) %>%
+         sens, stressor, code, score_num) %>%
   distinct()
 
 ### sensitivity categories:

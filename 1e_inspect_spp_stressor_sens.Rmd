@@ -47,26 +47,40 @@ sens_all_df <- read_csv(sens_all_file, col_types = cols('iucn_sid' = 'i')) %>%
 spp_incl <- get_incl_spp() %>%
   filter(!is.na(stressor))
 
-plot_df <- sens_all_df %>%
+sens_df <- sens_all_df %>%
   filter(sens) %>%
   select(-code, -sens) %>%
   distinct() %>%
   filter(iucn_sid %in% spp_incl$iucn_sid) %>%
+  mutate(category = tools::toTitleCase(category))
+
+cat_sum_df <- sens_df %>%
+  select(iucn_sid, category) %>%
+  group_by(category) %>%
+  summarize(n_spp = n_distinct(iucn_sid)) %>%
+  arrange(desc(n_spp)) %>%
+  mutate(str_desc = category)
+  
+plot_df <- sens_df %>%
   group_by(str_desc, category) %>%
   summarize(n_spp = n()) %>%
   ungroup() %>%
-  arrange(n_spp) %>%
-  mutate(category = factor(category, levels = c("climate", "fishing", "land-based", "ocean")),
-         stressor = fct_inorder(str_desc))
+  bind_rows(cat_sum_df) %>%
+  filter(str_desc != 'Ocean') %>%
+  mutate(str_desc = ifelse(str_desc == category, paste0('(Total ', str_desc, ')'), str_desc)) %>%
+  mutate(category = factor(category, levels = cat_sum_df$category)) %>%
+  arrange(desc(category), n_spp) %>%
+  mutate(stressor = fct_inorder(str_desc))
 
 n_spp_str <- ggplot(plot_df, aes(x = stressor, y = n_spp, fill = category)) +
   ggtheme_plot(base_size = 7) +
-  geom_col() +
+  geom_col(show.legend = FALSE) +
   scale_fill_viridis_d() +
   coord_flip() +
   labs(x = 'Stressor',
        y = 'Number of impacted species')
 
+n_spp_str
 ```
 
 ## Number of stressor sensitivities per species
@@ -94,7 +108,7 @@ plot_df <- str_count_df %>%
          ct = fct_inorder(ct))
 
 n_str_spp <- ggplot(plot_df, aes(x = ct)) +
-  ggtheme_plot(base_size = 9) +
+  ggtheme_plot(base_size = 7) +
   geom_bar(position = 'dodge', fill = 'grey20') +
   theme(axis.title.x = element_blank()) +
   labs(y = 'Number of species') +
@@ -104,10 +118,10 @@ z <- cowplot::plot_grid(n_spp_str, n_str_spp,
                         nrow = 2,
                         labels = c('A', 'B'), label_size = 9, label_colour = 'grey20')
 
-ggsave(plot = z, filename = here('ms_figs/si_n_sensitivity.png'), 
+ggsave(plot = z, filename = here('ms_figs/figS1_n_sensitivity.png'), 
        width = 6.5, height = 4.3, units = 'in', dpi = 300)
 
-knitr::include_graphics(here('ms_figs/si_n_sensitivity.png'))
+knitr::include_graphics(here('ms_figs/figS1_n_sensitivity.png'))
 ```
 
 <!-- ## Try a pairwise table to examine # of spp with pairwise combos of stressors -->

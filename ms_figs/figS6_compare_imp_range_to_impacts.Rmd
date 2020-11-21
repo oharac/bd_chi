@@ -1,0 +1,511 @@
+---
+title: 'Fig SI: compare impacted ranges to impacts'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+source(here('common_fxns.R'))
+reload <- FALSE
+```
+
+
+# Summary
+
+Create figures for SI:
+
+* impacted range (cumulative) to IUCN risk category
+* impacted range (by stressor) to impact score by stressor
+
+# Methods
+
+## SI: impacted range (cumulative) to IUCN risk category
+
+```{r gather data}
+imp_range_summary_f <- here('_output/imp_range_by_spp_2013.csv')
+if(!file.exists(imp_range_summary_f)) {
+  imp_range_files <- list.files(file.path(dir_bd_anx, 'spp_impacts'), 
+                                # pattern = '_all.csv',
+                                full.names = TRUE)
+  
+  imp_ranges <- parallel::mclapply(imp_range_files, 
+                                   FUN = function(f) { # f <- imp_range_files[1]
+                                     type <- str_replace_all(f, '.+_|.csv', '')
+                                     x <- read_csv(f) %>%
+                                       mutate(stressor = str_replace(stressor, 'ulative', paste0('_', type)))
+                                     return(x)
+                                   }, 
+                                   mc.cores = 16) %>%
+    bind_rows() %>%
+    filter(year == 2013 & eez == 0)
+  
+  imp_ranges <- imp_ranges %>%
+    select(stressor, impact_km2, 
+           incr2_km2, incr3_km2, decr2_km2, decr3_km2,
+           impact_2plus_km2, impact_3plus_km2,
+           range_km2, iucn_sid)
+  
+  write_csv(imp_ranges, imp_range_summary_f)
+}
+imp_range_all <- read_csv(imp_range_summary_f)
+
+```
+
+```{r gather data coastal}
+imp_range_coastal_f <- here('_output/imp_range_by_spp_coastal_2013.csv')
+if(!file.exists(imp_range_coastal_f)) {
+  imp_range_files <- list.files(file.path(dir_bd_anx, 'spp_impacts_coastal'), 
+                                # pattern = '_all.csv',
+                                full.names = TRUE)
+  
+  imp_range_coastal <- parallel::mclapply(imp_range_files, 
+                 FUN = function(f) { # f <- imp_range_files[1]
+                   type <- str_replace_all(f, '.+_|.csv', '')
+                   id <- str_extract(basename(f), '[0-9]+') %>% as.integer
+                   x <- read_csv(f) %>%
+                     mutate(stressor = str_replace(stressor, 'ulative', paste0('_', type)),
+                            iucn_sid = id)
+                   return(x)
+                 }, mc.cores = 16) %>%
+    bind_rows() %>%
+    filter(year == 2013) %>%
+    select(stressor, impact_km2, coastal_km2, iucn_sid)
+
+  write_csv(imp_range_coastal, imp_range_coastal_f)
+}
+imp_range_coastal <- read_csv(imp_range_coastal_f)
+
+```
+
+``` {r}
+cat_vals <- data.frame(code = c('NT', 'VU', 'EN', 'CR'),
+                       cat_score = c(.2, .4, .6, .8))
+spp_risk <- get_incl_spp() %>%
+  select(iucn_sid, sciname, desc, taxon, cat_score) %>%
+  distinct() %>%
+  left_join(cat_vals, by = 'cat_score')
+
+
+spp_ranges <- get_spp_range() %>%
+  filter(eez == 0) %>%
+  filter(iucn_sid %in% spp_risk$iucn_sid) %>%
+  mutate(range_gp = ntile(range_km2, n = 4)) %>%
+  select(iucn_sid, range_km2, range_gp) 
+
+range_lbls <- spp_ranges %>%
+  arrange(range_km2) %>%
+  group_by(range_gp) %>%
+  summarize(r_min = min(range_km2), 
+            r_max = max(range_km2)) %>%
+  mutate(r_min = ifelse(r_min > 0, formatC(r_min, digits = 2, format = 'e'), '0'),
+         r_max = formatC(r_max, digits = 1, format = 'e')) %>%
+  mutate(lbl = case_when(range_gp == 1 ~ sprintf('[0, %s) km²', lead(r_min)),
+                         range_gp == 4 ~ sprintf('[%s, %s] km²', r_min, r_max),
+                         TRUE          ~ sprintf('[%s, %s) km²', r_min, lead(r_min))),
+         lbl = str_replace_all(lbl, 'e\\+0', 'e+'),
+         lbl = fct_inorder(lbl)) %>%
+  select(range_gp, range_lbl = lbl)
+            
+spp_ranges <- spp_ranges %>%
+  left_join(range_lbls, by = 'range_gp') %>%
+  mutate()
+# table(spp_ranges$range_gp)
+hist(log(spp_ranges$range_km2))
+```
+
+
+### just look at cumulative impacted range...
+
+No weight given to multiple stressors overlapping
+
+#### Full range
+
+```{r calc impacts for all range}
+
+cum_range <- imp_range_all %>%
+  filter(str_detect(stressor, '^cum_all')) %>%
+  # filter(impact_km2 > 0) %>%
+  mutate(imp_range_pct = impact_km2 / range_km2,
+         imp_range_pct = ifelse(is.na(imp_range_pct), 0, imp_range_pct)) %>%
+  select(imp_range_pct, range_km2, iucn_sid, stressor) %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  left_join(spp_ranges, by = 'iucn_sid') %>%
+  arrange(cat_score) %>%
+  mutate(code = fct_inorder(code))
+
+x <- read_csv(here('_data/spp_marine_from_api_2020-1.csv'))
+y <- cum_range %>%
+  left_join(x, by = 'iucn_sid')
+z <- y %>% filter(range_gp == 1)
+mdl1 <- lm(cat_score ~ imp_range_pct,
+           data = cum_range %>% filter(range_gp == 4))
+summary(mdl1)
+
+
+cum_range_sum <- cum_range %>%
+  group_by(code, range_gp, range_lbl, stressor) %>%
+  summarize(mean_range_imp = mean(imp_range_pct),
+            med_range_imp  = median(imp_range_pct),
+            sd_range_imp   = sd(imp_range_pct),
+            se_range_imp   = sd_range_imp / sqrt(n()),
+            n_spp = paste0('n=', n_distinct(iucn_sid))) %>%
+  ungroup()
+
+```
+
+```{r plot for full range}
+
+barwidth = .8
+
+imp_full_range_plot <- ggplot(cum_range, aes(x = code)) +
+  ggtheme_plot() +
+  # geom_violin(aes(y = imp_range_pct), fill = 'grey40') +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank()) +
+  geom_boxplot(aes(y = imp_range_pct), width = barwidth,
+               fill = 'grey80', size = .25, outlier.size = .5) +
+  geom_point(data = cum_range_sum, aes(y = mean_range_imp), 
+             size = 1, color = 'red') +
+  geom_errorbar(data = cum_range_sum,
+                aes(ymin = mean_range_imp - se_range_imp,
+                    ymax = mean_range_imp + se_range_imp),
+                color = 'red', width = .25, size = .6) +
+  labs(y = '% range impacted') +
+  scale_y_continuous(breaks = seq(0, 1, .25), labels = paste0(seq(0, 100, 25), '%')) +
+  # geom_smooth(aes(y = imp_range_pct), method = 'lm', color = 'yellow') +
+  # geom_text(data = cum_range_sum,
+  #           aes(label = n_spp), y = .9, size = 2.5, color = 'white') +
+  facet_wrap(~  range_lbl, nrow = 1)
+  
+imp_full_range_plot
+```
+
+#### coastal range only
+
+```{r calc impacts for coastal range}
+cum_range_coastal <- imp_range_coastal %>%
+  filter(str_detect(stressor, '^cum_all')) %>%
+  # filter(impact_km2 > 0) %>%
+  mutate(imp_range_pct = impact_km2 / coastal_km2,
+         imp_range_pct = ifelse(is.na(imp_range_pct), 0, imp_range_pct)) %>%
+  select(imp_range_pct, iucn_sid, stressor) %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  left_join(spp_ranges, by = 'iucn_sid') %>%
+  arrange(cat_score) %>%
+  mutate(code = fct_inorder(code))
+
+mdl2 <- lm(cat_score ~ imp_range_pct, 
+           data = cum_range_coastal %>% filter(range_gp == 4))
+summary(mdl2)
+
+cum_range_coastal_sum <- cum_range_coastal %>%
+  group_by(code, range_gp, range_lbl, stressor) %>%
+  summarize(mean_range_imp = mean(imp_range_pct),
+            med_range_imp  = median(imp_range_pct),
+            sd_range_imp   = sd(imp_range_pct),
+            se_range_imp   = sd_range_imp / sqrt(n()),
+            n_spp = paste0('n=', n_distinct(iucn_sid))) %>%
+  ungroup()
+
+```
+
+```{r plot for coastal range}
+
+imp_coastal_range_plot <- ggplot(cum_range_coastal, aes(x = code)) +
+  ggtheme_plot() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        strip.text = element_blank(),
+        strip.background = element_blank()) +
+  # geom_violin(aes(y = imp_range_pct), fill = 'grey40') +
+  geom_boxplot(aes(y = imp_range_pct), width = barwidth,
+               fill = 'grey80', size = .25, outlier.size = .5) +
+  geom_point(data = cum_range_coastal_sum, aes(y = mean_range_imp), 
+             size = 1, color = 'red') +
+  geom_errorbar(data = cum_range_coastal_sum,
+                aes(ymin = mean_range_imp - se_range_imp,
+                    ymax = mean_range_imp + se_range_imp),
+                color = 'red', width = .25, size = .6) +
+  labs(y = '% range impacted') +
+  scale_y_continuous(breaks = seq(0, 1, .25), labels = paste0(seq(0, 100, 25), '%')) +
+  # geom_smooth(aes(y = imp_range_pct), method = 'lm', color = 'yellow') +
+  # geom_text(data = cum_range_coastal_sum,
+  #           aes(label = n_spp), y = .9, size = 2.5, color = 'white') +
+  facet_wrap(~ range_lbl, nrow = 1)
+  
+imp_coastal_range_plot
+```
+
+### by taxon
+
+Examine proportion of spp in each range class/risk category by taxonomic group
+
+```{r, fig.height = 3}
+taxon_colors <- read_csv(here('ms_figs/taxon_colors.csv'))
+# xx <- hcl.colors(n = 8, palette = 'Zissou1') %>%
+#   colorspace::darken(.25) %>%
+#   colorspace::desaturate(.5)
+# taxon_colors[4:11,3] <- sample(xx, 8, replace = FALSE)
+# # [1] "Pastel 1" "Dark 2"   "Dark 3"   "Set 2"    "Set 3"    "Warm"     "Cold"
+# # [8] "Harmonic" "Dynamic"
+# write_csv(taxon_colors, here('ms_figs/taxon_colors.csv'))
+
+taxon_range_risk <- imp_range_all %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  left_join(spp_ranges, by = 'iucn_sid') %>%
+  group_by(desc, code, range_gp, range_lbl) %>%
+  summarize(n_spp = n_distinct(iucn_sid)) %>%
+  ungroup() %>%
+  mutate(code = factor(code, levels = c('NT', 'VU', 'EN', 'CR')),
+         desc = factor(desc, levels = taxon_colors$desc))
+
+taxon_pct_range_risk <- taxon_range_risk %>%
+  group_by(range_gp, range_lbl, code) %>%
+  mutate(n_tot = sum(n_spp),
+         pct = n_spp / n_tot) %>%
+  ungroup()
+taxon_n_labels <- taxon_pct_range_risk %>%
+  select(n_tot, range_gp, range_lbl, code) %>%
+  distinct() %>%
+  mutate(n_lbl = paste0('n=', n_tot))
+
+taxon_incl_plot <- ggplot(taxon_pct_range_risk, aes(x = code, y = pct)) +
+  ggtheme_plot() +
+  geom_col(aes(fill = desc), color = 'black', size = .25, width = barwidth) +
+  scale_fill_manual(values = taxon_colors$fill) +
+  theme(legend.position = 'bottom',
+        strip.text = element_blank(),
+        strip.background = element_blank(),
+        legend.key.size = unit(.3, 'cm')) +
+  geom_text(data = taxon_n_labels, y = .07, aes(label = n_lbl),
+            size = 2.5, color = 'white') +
+  labs(fill = 'taxon:', 
+       x = 'IUCN Red List extinction risk category',
+       y = '% of spp in class') +
+  scale_y_continuous(breaks = seq(0, 1, .25), labels = paste0(seq(0, 100, 25), '%')) +
+  facet_wrap(~range_lbl, nrow = 1)
+taxon_incl_plot
+```
+
+```{r}
+# a <- get_panel(imp_full_range_plot)
+# b <- get_panel(imp_coastal_range_plot)
+# c <- get_panel(taxon_incl_plot)
+# 
+x <- ggdraw() +
+  draw_plot(imp_full_range_plot, x = 0, y = .64, width = 1, height = .35) +
+  draw_plot(imp_coastal_range_plot, x = 0, y = .35, width = 1, height = .31) +
+  draw_plot(get_legend(taxon_incl_plot), x = 0, y = 0, height = .07, width = 1) +
+  draw_plot(taxon_incl_plot + theme(legend.position = 'none'), 
+            x = 0, y = .06, width = 1, height = .31) +
+  draw_label('Range quartiles', 
+             x = .5, y = .99, hjust = .5, vjust = 1,
+             fontface = 'bold', size = 9) +
+  draw_label('A', x = 0.01, y = .946, hjust = 0, fontface = 'bold', size = 14) +
+  draw_label('B', x = 0.01, y = .645, hjust = 0, fontface = 'bold', size = 14) +
+  draw_label('C', x = 0.01, y = .355, hjust = 0, fontface = 'bold', size = 14)
+# x <- plot_grid(range_label, imp_full_range_plot, 
+#                imp_coastal_range_plot, 
+#                taxon_incl_plot, 
+#                # labels = 'AUTO',
+#                rel_heights = c(.05, 1, .9, 1.4),
+#                ncol = 1)
+
+ggsave(plot = x, filename = 'figS6_compare_imp_range_to_risk.png', 
+       height = 6.5, width = 6.5)
+knitr::include_graphics('figS6_compare_imp_range_to_risk.png')
+```
+
+
+#### Full range multiple strs
+
+```{r calc impacts for multi stressor range}
+
+cum_range_multi <- imp_range_all %>%
+  filter(str_detect(stressor, '^cum_all')) %>%
+  # filter(impact_km2 > 0) %>%
+  mutate(imp_2p_range_pct = impact_2plus_km2 / range_km2,
+         imp_2p_range_pct = ifelse(is.na(imp_2p_range_pct), 0, imp_2p_range_pct)) %>%
+  select(imp_2p_range_pct, range_km2, iucn_sid, stressor) %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  left_join(spp_ranges, by = 'iucn_sid') %>%
+  arrange(cat_score) %>%
+  mutate(code = fct_inorder(code))
+
+cum_range_multi_sum <- cum_range_multi %>%
+  group_by(code, range_gp, stressor) %>%
+  summarize(mean_range_imp = mean(imp_2p_range_pct),
+            med_range_imp  = median(imp_2p_range_pct),
+            sd_range_imp   = sd(imp_2p_range_pct),
+            se_range_imp   = sd_range_imp / sqrt(n()),
+            n_spp = paste0('n=', n_distinct(iucn_sid))) %>%
+  ungroup()
+
+```
+
+```{r plot for full range multi, eval = FALSE}
+
+x <- ggplot(cum_range_multi_sum, aes(x = code, y = mean_range_imp)) +
+  geom_col(color = 'yellow', size = .1) +
+  geom_errorbar(aes(ymin = mean_range_imp - se_range_imp,
+                    ymax = mean_range_imp + se_range_imp),
+                color = 'red', width = .2) +
+  geom_text(aes(label = n_spp), y = .9, size = 2.5, color = 'white') +
+  facet_grid(stressor ~ range_gp)
+  
+ggsave('figSI_compare_2p_range_to_risk.png', width = 6, height = 3)
+knitr::include_graphics('figSI_compare_2p_range_to_risk.png')
+
+```
+
+
+#### Full range intensification
+
+```{r calc impacts for intensifying stressor range}
+
+cum_range_intens <- imp_range_all %>%
+  filter(str_detect(stressor, '^cum_all')) %>%
+  # filter(impact_km2 > 0) %>%
+  mutate(imp_int_range_pct = incr2_km2 / range_km2,
+         imp_int_range_pct = ifelse(is.na(imp_int_range_pct), 0, imp_int_range_pct)) %>%
+  select(imp_int_range_pct, range_km2, iucn_sid, stressor) %>%
+  left_join(spp_risk, by = 'iucn_sid') %>%
+  left_join(spp_ranges, by = 'iucn_sid') %>%
+  arrange(cat_score) %>%
+  mutate(code = fct_inorder(code))
+
+cum_range_intens_sum <- cum_range_intens %>%
+  group_by(code, range_gp, stressor) %>%
+  summarize(mean_range_imp = mean(imp_int_range_pct),
+            med_range_imp  = median(imp_int_range_pct),
+            sd_range_imp   = sd(imp_int_range_pct),
+            se_range_imp   = sd_range_imp / sqrt(n()),
+            n_spp = paste0('n=', n_distinct(iucn_sid))) %>%
+  ungroup()
+
+```
+
+```{r plot for intensifying, eval = FALSE}
+
+x <- ggplot(cum_range_intens_sum, aes(x = code, y = mean_range_imp)) +
+  geom_col(color = 'yellow', size = .1) +
+  geom_errorbar(aes(ymin = mean_range_imp - sd_range_imp,
+                    ymax = mean_range_imp + sd_range_imp),
+                color = 'yellow', width = .2, size = 2) +
+  geom_errorbar(aes(ymin = mean_range_imp - se_range_imp,
+                    ymax = mean_range_imp + se_range_imp),
+                color = 'red', width = .2) +
+  geom_text(aes(label = n_spp), y = .9, size = 2.5, color = 'white') +
+  facet_grid(stressor ~ range_gp)
+  
+ggsave('figSI_compare_intens_range_to_risk.png', width = 6, height = 3)
+knitr::include_graphics('figSI_compare_intens_range_to_risk.png')
+
+```
+
+
+## Examine spp at various range sizes
+
+Are large-ranged CR species more vulnerable to other stressors incl invasives?
+
+```{r}
+chi_lookup <- read_csv(here('_raw/iucn_threat_to_stressor_lookup.csv')) %>%
+  mutate(stressor = str_split(stressor, ';')) %>%
+  unnest(stressor) %>%
+  filter(str_detect(stressor, '[a-z]'))
+
+x <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
+                               sprintf('iucn_spp_threats_%s.csv', api_version))) %>%
+  select(code, title) %>%
+  distinct() %>%
+  mutate(main = str_extract(code, '[0-9]+\\.[0-9]+'),
+         sub  = str_extract(code, '[0-9]+\\.[0-9]+\\.[0-9]+'))
+
+y <- x %>% filter(code == main) %>% select(main, title)
+z <- x %>% filter(code == sub) %>% select(main, sub, desc = title)
+zz <- y %>% left_join(z, by = 'main') %>%
+  mutate(code = ifelse(is.na(sub), main, sub),
+         title = ifelse(is.na(sub), title, paste0(title, ': ', desc))) %>%
+  select(code, title) %>%
+  bind_rows(y %>% rename(code = main)) %>%
+  mutate(title = str_replace(title, 'Named species \\(.+', 'Named species')) %>%
+  distinct()
+
+spp_threats <- read_csv(file.path(dir_bd_anx, 'iucn/threats',
+                               sprintf('iucn_spp_threats_%s.csv', api_version))) %>%
+  select(iucn_sid, code, score, invasive, score_num) %>%
+  left_join(zz, by = 'code') %>%
+  filter(!is.na(score_num)) %>%
+  left_join(chi_lookup, by = 'code') %>%
+  select(-desc) %>%
+  inner_join(spp_risk %>% rename(cat_code = code), by = 'iucn_sid') %>%
+  left_join(spp_ranges, by = 'iucn_sid') %>%
+  mutate(category = ifelse(is.na(category), 'other', category)) %>%
+  distinct()
+
+### examine large-ranged species with "other" threats
+spp_big <- spp_threats %>%
+  filter(range_gp == 4) %>%
+  select(iucn_sid, sciname, taxon, cat_score, code, title, category) %>%
+  distinct()
+
+DT::datatable(spp_big %>% filter(cat_score == 0.2))
+DT::datatable(spp_big %>% filter(cat_score == 0.4))
+DT::datatable(spp_big %>% filter(cat_score == 0.6))
+DT::datatable(spp_big %>% filter(cat_score == 0.8))
+```
+
+#### birds
+
+``` {r}
+aves <- spp_big %>% filter(taxon == 'aves')
+```
+ 
+number of spp:
+`r table(aves %>% select(sciname, cat_score) %>% distinct() %>% select(cat_score))`
+
+number of stressors:
+`r table(aves %>% select(cat_score, str_cat = category))`
+
+#### reptiles
+
+``` {r}
+rept <- spp_big %>% filter(taxon == 'reptilia')
+```
+ 
+number of spp:
+`r table(rept %>% select(sciname, cat_score) %>% distinct() %>% select(cat_score))`
+
+number of stressors:
+`r table(rept %>% select(cat_score, str_cat = category))`
+
+## Which taxa are represented in the various range classes?
+
+```{r}
+taxa_threats <- spp_threats %>%
+  select(taxon, cat_score, range_gp, iucn_sid) %>%
+  distinct()
+
+table(taxa_threats %>% select(-iucn_sid))
+```
+

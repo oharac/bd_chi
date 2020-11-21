@@ -7,11 +7,11 @@
 
 ### setup common directories
 dir_git     <- here()
-dir_setup   <- file.path(dir_git, '_setup')
-dir_data    <- file.path(dir_git, '_data')
-dir_spatial <- file.path(dir_git, '_spatial')
-dir_output  <- file.path(dir_git, '_output')
-dir_bd_anx   <- file.path('~/git-annex/bd_chi')
+dir_setup   <- here('_setup')
+dir_data    <- here('_data')
+dir_spatial <- here('_spatial')
+dir_output  <- here('_output')
+dir_bd_anx   <- '~/git-annex/bd_chi'
 
 ### rewrite message: cat if not knitting; message if knitting
 
@@ -26,7 +26,7 @@ message <- function(x, ...) {
   return(invisible(NULL))
 }
 
-### Get API key
+### Get API version
 api_key <- Sys.getenv('IUCN_KEY')
 
 # api_version_current <- jsonlite::fromJSON('http://apiv3.iucnredlist.org/api/v3/version') %>%
