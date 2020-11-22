@@ -1,5 +1,5 @@
 ---
-title: "Combine stressor sensitivities"
+title: "Create table of stressors"
 author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
 output:
   word_document:

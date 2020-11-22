@@ -1,7 +1,7 @@
 Threat category,Threat subcategory,Stressor,n spp
-1. Residential & commercial development,1.1. Housing & urban areas,Direct human*,501
-1. Residential & commercial development,1.2. Commercial & industrial areas,Direct human*,468
-1. Residential & commercial development,1.3. Tourism & recreation areas,Direct human*,451
+1. Residential & commercial development,1.1. Housing & urban areas,Human population,501
+1. Residential & commercial development,1.2. Commercial & industrial areas,Human population,468
+1. Residential & commercial development,1.3. Tourism & recreation areas,Human population,451
 2. Agriculture & aquaculture,2.4. Marine & freshwater aquaculture,Nutrient pollution*,36
 4. Transportation & service corridors,4.3. Shipping lanes,Shipping,438
 5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Artisanal fishing,747
@@ -10,8 +10,8 @@ Threat category,Threat subcategory,Stressor,n spp
 5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Demersal non-destructive low bycatch fishing,67
 5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Pelagic high bycatch fishing,206
 5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Pelagic low bycatch fishing,69
-6. Human intrusions & disturbance,6.1. Recreational activities,Direct human*,460
-6. Human intrusions & disturbance,6.3. Work & other activities,Direct human*,20
+6. Human intrusions & disturbance,6.1. Recreational activities,Human population,460
+6. Human intrusions & disturbance,6.3. Work & other activities,Human population,20
 9. Pollution,9.6. Excess energy,Light pollution,20
 9. Pollution,9.1. Domestic & urban waste water,Nutrient pollution*,19
 9. Pollution,9.3. Agricultural & forestry effluents,Nutrient pollution*,9
