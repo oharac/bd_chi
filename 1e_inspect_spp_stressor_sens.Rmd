@@ -68,6 +68,7 @@ plot_df <- sens_df %>%
   bind_rows(cat_sum_df) %>%
   filter(str_desc != 'Ocean') %>%
   mutate(str_desc = ifelse(str_desc == category, paste0('(Total ', str_desc, ')'), str_desc)) %>%
+  mutate(str_desc = ifelse(str_desc == 'Shipping', 'Shipping (Total Ocean-Based)', str_desc)) %>%
   mutate(category = factor(category, levels = cat_sum_df$category)) %>%
   arrange(desc(category), n_spp) %>%
   mutate(stressor = fct_inorder(str_desc))
