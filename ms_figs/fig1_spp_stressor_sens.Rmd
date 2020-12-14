@@ -1,0 +1,192 @@
+---
+title: 'Examine stressor sensitivities'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+```
+
+
+# Summary
+
+Examine the results of the stressor sensitivity scripts.
+
+# Methods
+
+## Species impacted by each stressor
+
+Plotting the number of species impacted by each stressor.  This plot includes species that:
+
+* have an IUCN range map
+* are in a comprehensively assessed taxon (and birds are seabirds)
+* are threatened or near threatened (i.e. not LC or EX)
+* are sensitive to at least one stressor in our study
+
+```{r}
+sens_all_file <- here('_output', sprintf('spp_sensitivity_%s.csv', api_version))
+
+sens_all_df <- read_csv(sens_all_file, col_types = cols('iucn_sid' = 'i')) %>%
+  left_join(read_csv(here('_raw/stressor_names.csv')), by = 'stressor')
+
+spp_incl <- get_incl_spp() %>%
+  filter(!is.na(stressor))
+
+sens_df <- sens_all_df %>%
+  filter(sens) %>%
+  select(-code, -sens) %>%
+  distinct() %>%
+  filter(iucn_sid %in% spp_incl$iucn_sid) %>%
+  mutate(category = tools::toTitleCase(category))
+
+cat_sum_df <- sens_df %>%
+  select(iucn_sid, category) %>%
+  group_by(category) %>%
+  summarize(n_spp = n_distinct(iucn_sid)) %>%
+  arrange(desc(n_spp)) %>%
+  mutate(str_desc = category)
+  
+plot1_df <- sens_df %>%
+  group_by(str_desc, category) %>%
+  summarize(n_spp = n()) %>%
+  ungroup() %>%
+  bind_rows(cat_sum_df) %>%
+  filter(str_desc != 'Ocean') %>%
+  mutate(str_desc = ifelse(!str_detect(str_desc, '^Art'), 
+                           str_replace(str_desc, ' fishing$', ''), str_desc)) %>%
+  mutate(str_desc = str_replace(str_desc, 'destructive ', 'destr. ')) %>%
+  mutate(str_desc = ifelse(str_desc == category, paste0('(Total ', str_desc, ')'), str_desc)) %>%
+  mutate(str_desc = ifelse(str_desc == 'Shipping', 'Shipping (Total Ocean-Based)', str_desc)) %>%
+  mutate(category = factor(category, levels = cat_sum_df$category)) %>%
+  arrange(desc(category), n_spp) %>%
+  mutate(stressor = fct_inorder(str_desc))
+
+n_spp_str <- ggplot(plot1_df, aes(x = stressor, y = n_spp, fill = category)) +
+  ggtheme_plot(base_size = 9) +
+  geom_col() +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
+  geom_rect(xmin = 1, xmax = 12, ymin = 750, ymax = 1000, 
+            fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
+  scale_fill_viridis_d() +
+  labs(y = '# of sensitive at-risk species (out of 1,271)',
+       fill = 'Stressor\ncategory') +
+  scale_y_continuous(expand = c(0.02, 0.02), limits = c(0, 1000)) +
+  coord_flip() +
+  guides(fill = guide_legend(title.position = "top", 
+                             # hjust = 1 # centres the title horizontally
+                              title.hjust = 1,
+                              label.position = "left")) +
+  theme(axis.title.y = element_blank(),
+        axis.text.y  = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        legend.position = c(.97, .05),
+        legend.key.size = unit(.35, 'cm'),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        legend.justification = c(1, 0))
+
+n_spp_str
+```
+
+## Number of stressor sensitivities per species
+
+This does not indicate spatial co-occurrence of stressors, just whether a species is sensitive to one, two, or more stressors.
+
+```{r}
+
+spp_incl <- get_incl_spp() %>%
+  filter(!is.na(stressor))
+
+str_count_df <- spp_incl %>%
+  group_by(iucn_sid) %>%
+  summarize(n_str = n_distinct(stressor),
+            n_cat = n_distinct(category),
+            strs = paste(unique(stressor), collapse = ', ')) %>%
+  ungroup()
+
+plot2_df <- str_count_df %>%
+  gather(key = type, value = ct, n_str, n_cat) %>%
+  arrange(ct) %>%
+  mutate(ct = as.character(ct),
+         ct = ifelse(as.integer(ct) > 5, '> 5', ct),
+         ct = fct_inorder(ct),
+         type = ifelse(type == 'n_str', '# of stressors (out of 14)', '# of categories (out of 4)'))
+
+n_str_spp <- ggplot(plot2_df, aes(x = ct)) +
+  ggtheme_plot(base_size = 9) +
+  geom_bar(position = 'dodge', fill = 'grey20') +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 8),
+        strip.switch.pad.grid	= unit(-.1, 'cm'),
+        strip.text = element_text(size = 8, face = 'plain'),
+        strip.placement = 'outside') +
+  labs(y = '# of species') +
+  facet_grid(~ type, scales = 'free_x', space = 'free_x', switch = 'x')
+```
+
+
+``` {r combine}
+z <- cowplot::plot_grid(n_spp_str, n_str_spp, 
+                        nrow = 2, rel_heights = c(2, 1.3),
+                        labels = c('A', 'B'), label_size = 9, label_colour = 'grey20')
+
+fname <- here('ms_figs/fig1_spp_stressor_sens.png')
+
+ggsave(plot = z, filename = fname, 
+       width = 6.5, height = 3.6, units = 'in', dpi = 300)
+
+knitr::include_graphics(fname)
+```
+
+<!-- ## Try a pairwise table to examine # of spp with pairwise combos of stressors -->
+
+```{r, eval = FALSE}
+library(widyr)
+
+spp_str_incidence <- get_incl_spp() %>%
+  filter(!is.na(stressor)) %>%
+  select(iucn_sid, stressor) %>%
+  distinct()
+
+result_df <- pairwise_count(spp_str_incidence,
+                            item = stressor, feature = iucn_sid, 
+                            sort = TRUE, diag = TRUE) %>%
+  rename(str1 = item1, str2 = item2)
+
+result_mtx <- result_df %>%
+  spread(key = str2, value = n) %>%
+  select(-str1) %>%
+  as.matrix()
+
+### rename rows and columns to match EEZs
+rownames(result_mtx) <- colnames(result_mtx)
+
+### set NAs to zero
+result_mtx[is.na(result_mtx)] <- 0
+
+# result_mtx
+
+mtxplot_df <- result_df %>%
+  mutate(n = ifelse(str2 > str1, NA, n),
+         str1 = fct_rev(str1))
+ggplot(mtxplot_df, aes(x = str1, y = str2)) +
+  ggtheme_plot() +
+  geom_point(aes(size = n)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        axis.title = element_blank())
+```

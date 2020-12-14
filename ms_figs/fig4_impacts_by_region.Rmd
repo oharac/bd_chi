@@ -129,7 +129,9 @@ if(!file.exists(imp_by_eez_file)) {
 ### Bar chart by EEZ
 
 ```{r heatmap impacts by eez}
-rgn_names <- read_csv(here('_spatial/rgn_names/rgn_names_fixed.csv'))
+rgn_names <- read_csv(here('_spatial/rgn_names/rgn_names_fixed.csv')) %>%
+  select(rgn_id, rgn_label, georgn, geosubrgn) %>%
+  distinct()
 
 eez_summary_df <- read_csv(here('_output/impacts_by_eez.csv')) %>%
   left_join(rgn_names, by = c('eez' = 'rgn_id')) %>%
@@ -145,7 +147,7 @@ eez_score_order <- eez_summary_df %>%
   filter(stressor == 'cumulative') %>%
   .$eez
 
-n_select <- 10
+n_select <- 8
 eez_top <- eez_summary_df %>%
   filter(eez %in% eez_score_order[1:n_select]) %>%
   .$eez %>% unique()
@@ -161,12 +163,13 @@ large_eez <- read_sf(here('_spatial/rgns_mol_1k.gpkg')) %>%
   filter(rgn_id < 255 & rgn_id != 213) %>%
   filter(!rgn_id %in% c(eez_top, eez_btm)) %>%
   arrange(desc(area_km2)) %>%
-  head(10) %>% .$rgn_id
+  head(n_select) %>% .$rgn_id
 
 eez_plot_df <- eez_summary_df %>%
   filter(eez < 255 & eez != 213 & eez > 0) %>%
   arrange(georgn, desc(cum_imp)) %>%
-  mutate(rgn_label = str_replace_all(rgn_label, 'Islands?', 'Is.'),
+  mutate(rgn_label = str_replace_all(rgn_label, 'Howland Island', 'Howland'),
+         rgn_label = str_replace_all(rgn_label, 'Islands?', 'Is.'),
          rgn_label = str_replace_all(rgn_label, ' and ', '/'),
          rgn_label = str_replace(rgn_label, 'United States of America', 'United States'),
          rgn_label = str_replace(rgn_label, 'Russian Federation', 'Russia'),
@@ -187,6 +190,7 @@ eez_lbls <- eez_plot_df %>%
 
 eez_plot_df <- eez_plot_df %>%
   left_join(eez_lbls, by = 'eez')
+  
 
 georgn_lbls_df <- eez_plot_df %>%
   filter(stressor == 'cumulative') %>%
@@ -204,7 +208,7 @@ make_barplot <- function(df, str) {
   fig4_barplot <- ggplot(df_str,
                          aes(x = pos, y = a_wt_mean_imp_pct, 
                              fill = rank, width = .9*w)) +
-    ggtheme_plot(base_size = 7) +
+    ggtheme_plot(base_size = 8) +
     geom_hline(yintercept = 1, color = 'grey90', size = .25) +
     geom_hline(yintercept = 0, color = 'grey20', size = .1) +
     geom_vline(aes(xintercept = pos), color = 'grey90', size = .1) +
@@ -235,9 +239,9 @@ fig4_land       <- make_barplot(eez_plot_df, 'land-based')
 
 fig4_eez_labels <- ggplot(eez_plot_df %>% filter(stressor == 'cumulative'),
                           aes(x = pos)) +
-  ggtheme_plot(base_size = 7) +
+  ggtheme_plot(base_size = 8) +
   geom_text(aes(label = lbl), y = 0, color = 'grey20',
-            hjust = 1, vjust = .9, size = 1.7) +
+            hjust = 1, vjust = .9, size = 1.9) +
   scale_y_continuous(expand = c(0, 0), limits = c(-1, 0.02)) +
   scale_x_continuous(expand = c(0, 0), limits = lims) +
   coord_flip() +
@@ -247,10 +251,10 @@ fig4_eez_labels <- ggplot(eez_plot_df %>% filter(stressor == 'cumulative'),
   
 fig4_rgn_labels <- ggplot(georgn_lbls_df,
                           aes(y = pos)) +
-  ggtheme_plot(base_size = 7) +
+  ggtheme_plot(base_size = 8) +
   geom_linerange(x = 0, aes(ymin = min_pos + .05, ymax = max_pos - .05), color = 'grey20') +
   geom_text(aes(label = georgn), x = -.05, color = 'grey20', face = 'italics',
-            hjust = 1, vjust = .5, size = 1.7) +
+            hjust = 1, vjust = .5, size = 1.9) +
   scale_x_continuous(expand = c(0, 0), limits = c(-1, 0.01)) +
   scale_y_continuous(expand = c(0, 0), limits = lims) +
   theme(axis.title = element_blank(),
@@ -276,17 +280,17 @@ fig4_done <- ggdraw() +
   draw_plot(get_panel(fig4_rgn_labels),
             x = .90, y = 0.02, width = .085, height = .955) +
   draw_label(x = l_w, y = .98,         label = 'cumulative', 
-             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
   draw_label(x = l_w + c_w, y = .98,   label = 'fishing',
-             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
   draw_label(x = l_w + 2*c_w, y = .98, label = 'climate', 
-             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
   draw_label(x = l_w + 3*c_w, y = .98, label = 'ocean', 
-             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
   draw_label(x = l_w + 4*c_w, y = .98, label = 'land-based', 
-             color = 'grey20', size = 5, hjust = 0, vjust = 0, fontface = 'bold') +
+             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
   draw_label(x = 0.50, y = 0.005, label = 'Mean proportion of species range impacted within EEZ', 
-             color = 'grey20', size = 5, hjust = .5, vjust = 0, fontface = 'bold')
+             color = 'grey20', size = 6, hjust = .5, vjust = 0, fontface = 'bold')
 
   # draw_plot(get_legend(fig4_barplot), x = .9, y = .2, width = .1, height = .3)
 
@@ -330,7 +334,7 @@ figSI_land_abnj       <- make_barplot(abnj_cum_impacts, 'land-based')
 
 figSI_abnj_labels <- ggplot(abnj_cum_impacts %>% filter(stressor == 'cumulative'),
                           aes(x = pos)) +
-  ggtheme_plot(base_size = 7) +
+  ggtheme_plot(base_size = 8) +
   geom_text(aes(label = lbl), y = 0, color = 'grey20',
             hjust = 1, vjust = .9, size = 2.1) +
   scale_y_continuous(expand = c(0, 0), limits = c(-1, 0.02)) +

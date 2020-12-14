@@ -1,0 +1,297 @@
+---
+title: 'Examine co-occurrence of impacted taxonomic groups'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+library(widyr) ### for function: pairwise_count()
+library(ggforce) ### for geom_arc_bar()
+library(cowplot)
+
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+
+# Summary
+
+Examine co-occurrence of impacts on taxonomic groups for each stressor category.  For each group, identify cells with significant impacts (e.g. greater than 25% of spp in the group are impacted), convert to a presence/absence of significant impacts, and then create a pairwise plot to show which taxonomic groups co-occur (in pairs).
+
+Do the same for intensification maps (don't worry about abatement?)
+
+# Methods
+
+For each stressor category:
+
+* pull in impact rasters for all taxonomic groups for 2013.
+* flatten to "significantly impacted" by taxon.
+* combine into a dataframe; join with ocean area.
+* calculate pairwise impacted area for each taxon pair.
+
+## Helper functions
+
+* Function `get_taxon_impacts()` to read in a taxon map and convert to a data.frame with impacted spp, total spp, and pct impacted.
+* Function `flatten_impacts()` to get taxon impacts (using the function above) and return only those cell IDs that meet or exceed a given threshold.
+
+```{r}
+dir_tx_imp  <- file.path(dir_bd_anx, 'taxon_impact_rasts')
+dir_tx_nspp <- here('_output/rasters/taxon_richness_maps')
+
+get_taxon_impacts <- function(tx, str_cat) {
+  ### tx <- taxa_gps[1]; str_cat <- 'all'
+  tx_short <- str_replace_all(tx, ' ', '')
+  imp_f  <- file.path(dir_tx_imp,  sprintf('taxon_impact_%s_2013_%s.tif', tx_short, str_cat))
+  nspp_f <- file.path(dir_tx_nspp, sprintf('taxon_nspp_%s.tif', tx_short))
+  
+  imp_r  <- raster(imp_f)
+  nspp_r <- raster(nspp_f)
+  imp_df <- data.frame(cell_id = 1:ncell(imp_r),
+                       imp  = values(imp_r),
+                       nspp = values(nspp_r)) %>%
+    filter(!is.na(imp) & !is.na(nspp)) %>%
+    mutate(desc = tx)
+}
+
+flatten_impacts <- function(tx, str_cat, thresh) {
+  sig_imp_df <- get_taxon_impacts(tx, str_cat) %>%
+    filter((imp / nspp) >= thresh) %>%
+    select(cell_id, desc) %>%
+    mutate(stressor = str_cat)
+}
+```
+
+```{r pairwise plot for stressor categories}
+
+ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+ocean_a_df <- data.frame(cell_id = 1:ncell(ocean_a_rast),
+                         a_prop = values(ocean_a_rast)) %>%
+  filter(!is.na(a_prop)) %>%
+  mutate(a_km2 = a_prop * res(ocean_a_rast)[1]^2 / 1e6)
+
+spp_sens <- get_incl_spp() %>%
+  filter(!is.na(stressor))
+
+taxa_gps <- spp_sens$desc %>% unique() %>% sort()
+str_cats <- c('all', 'climate', 'ocean', 'fishing', 'land-based')
+
+### first assemble df for full-ocean impacts using 25% threshold
+pairwise_results_file <- here('_output/taxa_pairwise_results.csv')
+
+if(!file.exists(pairwise_results_file)) {
+  results_df <- data.frame()
+  for(str_cat in str_cats) {
+    ### str_cat <- 'climate'
+    
+    tx_str_df <- parallel::mclapply( # tx <- taxa_gps[1]
+      taxa_gps, FUN = function(tx) {
+        df <- flatten_impacts(tx, str_cat, thresh = .25)
+      }, mc.cores = 10) %>%
+      bind_rows() %>%
+      dt_join(ocean_a_df, by = 'cell_id', type = 'left')
+    
+    tmp_df <- pairwise_count(tx_str_df,
+                                item = desc, feature = cell_id, wt = a_km2,
+                                sort = TRUE, diag = TRUE) %>%
+      rename(tx1 = item1, tx2 = item2, area_km2 = n) %>%
+      mutate(str = str_cat)
+    
+    results_df <- bind_rows(results_df, tmp_df)
+  }
+  
+  write_csv(results_df, pairwise_results_file)
+}
+
+```
+
+``` {r}
+
+results_df <- read_csv(pairwise_results_file)
+
+### function to transform area into a radius - for consistency
+r_xfm <- function(area_km2) {
+  # r <- (area_km2 / max(area_km2, na.rm = TRUE))^(1/2) / 2 + .08
+  r <- log(area_km2 + 100) / log(max(area_km2, na.rm = TRUE)) / 1.8 - .05
+}
+
+### Note: geom_arc_bar doesn't seem to like factors on axes
+mtxplot_df <- results_df %>%
+  filter(tx1 >= tx2) %>%
+  mutate(tx1 = fct_rev(tx1),
+         tx2 = factor(tx2)) %>%
+  mutate(tx1_n = as.integer(tx1),
+         tx2_n = as.integer(tx2),
+         str = factor(str),
+         r = r_xfm(area_km2),
+         start = (as.integer(str) - 1) * pi/2,
+         end   = (as.integer(str)) * pi/2)
+
+fcol_mtxplot_df <- mtxplot_df %>%
+  filter(str != 'all')
+all_mtxplot_df <- mtxplot_df %>%
+  filter(str == 'all')
+
+bkgd_tri <- data.frame(group = c(1, 1, 1), 
+                       x = c(.5, 10.5, 10.5), 
+                       y = c(10.5, 10.5, .5))
+
+fig3a_pairwise_plot <- ggplot() +
+  ggtheme_plot() +
+  geom_polygon(data = bkgd_tri, aes(x = x, y = y, group = group),
+               fill = 'white', color = 'white') +
+  geom_abline(intercept = 11, slope = -1, color = 'darkred', alpha = .5) +
+  geom_circle(data = all_mtxplot_df, aes(x0 = tx1_n, y0 = tx2_n, r = r),
+              size = .1, color = 'grey30', fill = 'white') +
+  geom_arc_bar(data = fcol_mtxplot_df, 
+               aes(x0 = tx1_n, y0 = tx2_n, r = r, 
+                   r0 = 0, start = start, end = end, fill = str),
+               color = 'grey30', size = .1) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1),
+        axis.title = element_blank()) +
+  scale_x_continuous(breaks = 1:length(taxa_gps),
+                     labels = levels(mtxplot_df$tx1),
+                     expand = c(0, 0)) +
+  scale_y_continuous(breaks = 1:length(taxa_gps),
+                     labels = levels(mtxplot_df$tx2),
+                     expand = c(0, 0)) +
+  coord_fixed() +
+  scale_fill_viridis_d()
+
+a_max <- results_df$area_km2 %>% max()
+legend_df <- data.frame(
+    x = 0, y = 0, 
+    area_km2 = c(10^(c(2, 4, 6, 8)), a_max),
+    str = c('land-based', 'ocean', 'climate', 'fishing', 'all')
+  ) %>%
+  mutate(str = factor(str, levels = levels(mtxplot_df$str)),
+         r = r_xfm(area_km2),
+         start = (as.integer(str) - 1) * pi/2,
+         end   = (as.integer(str)) * pi/2)
+  
+
+fig3a_legend1 <- ggplot() +
+  theme_void() +
+  geom_circle(data = legend_df %>% filter(str == 'all'), 
+              aes(x0 = x, y0 = y, r = r),
+              size = .1, color = 'grey30', fill = 'white') +
+  geom_arc_bar(data = legend_df %>% filter(str != 'all'), 
+               aes(x0 = x, y0 = y, r = r, 
+                   r0 = 0, start = start, end = end, fill = str),
+               color = 'grey30', size = .1, show.legend = FALSE) +
+  coord_fixed() +
+  scale_fill_viridis_d()
+
+fig3a_legend2 <- ggplot() +
+  theme_void() +
+  geom_circle(data = legend_df %>% filter(str == 'all'), 
+              aes(x0 = x, y0 = y, r = r),
+              size = .1, color = 'grey30', fill = NA) +
+  geom_arc_bar(data = legend_df %>% filter(str != 'all'), 
+               aes(x0 = x, y0 = y, r = r, 
+                   r0 = 0, start = start, end = end),
+               color = 'grey30', fill = 'grey80', size = .1, show.legend = FALSE) +
+  coord_fixed() +
+  scale_fill_viridis_d()
+
+# fig3a_pairwise_plot
+# fig3a_legend
+```
+
+## Combine Fig 3a pieces
+
+```{r}
+
+lgd1_ctr <- c(.75, .85)
+lgd2_ctr <- c(.75, .72)
+lgd_size <- .085 ### This matches the mammal largest circle pretty well
+
+fig3a <- ggdraw() +
+  ### main plot
+  draw_plot(fig3a_pairwise_plot + theme(legend.position = 'none')) +
+  ### line from legend outline to "cumulative" label
+  draw_line(x = c(lgd1_ctr[1], lgd1_ctr[1] - .1 * lgd_size),
+            y = c(lgd1_ctr[2], lgd1_ctr[2] + .65 * lgd_size),
+            size = .1, color = 'grey30') +
+  ### draw legend 1 figure
+  draw_plot(fig3a_legend1, 
+            x = lgd1_ctr[1] - .5 * lgd_size, 
+            y = lgd1_ctr[2] - .5 * lgd_size, 
+            width = lgd_size, height = lgd_size) +
+  ### draw labels for legend 1
+  draw_label('climate',  color = 'grey20',
+             x = lgd1_ctr[1] + .3*lgd_size, y = lgd1_ctr[2] - .25*lgd_size,
+             hjust = 0, size = 6) +
+  draw_label('fishing',  color = 'grey20',
+             x = lgd1_ctr[1] - .4*lgd_size, y = lgd1_ctr[2] - .25*lgd_size,
+             hjust = 1, size = 6) +
+  draw_label('land-based',  color = 'grey20',
+             x = lgd1_ctr[1] - .2*lgd_size, y = lgd1_ctr[2] + .25*lgd_size,
+             hjust = 1, size = 6) +
+  draw_label('ocean',  color = 'grey20',
+             x = lgd1_ctr[1] + .2*lgd_size, y = lgd1_ctr[2] + .25*lgd_size,
+             hjust = 0, size = 6) +
+  draw_label('cumulative',  color = 'grey20',
+             x = lgd1_ctr[1], y = lgd1_ctr[2] + .67 * lgd_size,
+             hjust = .5, vjust = 0, size = 6) +
+  ### line from legend2 center to quadrants for area label
+  draw_line(x = c(lgd2_ctr[1], lgd2_ctr[1] - .5*lgd_size),
+            y = c(lgd2_ctr[2], lgd2_ctr[2] + .3*lgd_size),
+            size = .2, color = 'grey30') +
+  draw_line(x = c(lgd2_ctr[1], lgd2_ctr[1] + .5*lgd_size),
+            y = c(lgd2_ctr[2], lgd2_ctr[2] + .3*lgd_size),
+            size = .2, color = 'grey30') +
+  draw_line(x = c(lgd2_ctr[1], lgd2_ctr[1] + .5*lgd_size),
+            y = c(lgd2_ctr[2], lgd2_ctr[2] - .3*lgd_size),
+            size = .2, color = 'grey30') +
+  draw_line(x = c(lgd2_ctr[1], lgd2_ctr[1] - .5*lgd_size),
+            y = c(lgd2_ctr[2], lgd2_ctr[2] - .3*lgd_size),
+            size = .2, color = 'grey30') +
+  draw_label('100,000,000 km²', 
+             x = lgd2_ctr[1] - .55*lgd_size, y = lgd2_ctr[2] - .3*lgd_size,
+            hjust = 1, size = 6, color = 'grey20') +
+  draw_label('10,000 km²', 
+             x = lgd2_ctr[1] + .55*lgd_size, y = lgd2_ctr[2] + .3*lgd_size,
+            hjust = 0, size = 6, color = 'grey20') +
+  draw_label('100 km²',
+             x = lgd2_ctr[1] - .55*lgd_size, y = lgd2_ctr[2] + .3*lgd_size,
+            hjust = 1, size = 6, color = 'grey20') +
+  draw_label('1,000,000 km²', 
+             x = lgd2_ctr[1] + .55*lgd_size, y = lgd2_ctr[2] - .3*lgd_size,
+            hjust = 0, size = 6, color = 'grey20') +
+  ### draw legend 2 figure
+  draw_plot(fig3a_legend2, 
+            x = lgd2_ctr[1] - .5 * lgd_size, 
+            y = lgd2_ctr[2] - .5 * lgd_size, 
+            width = lgd_size, height = lgd_size)
+
+ 
+fig3_file <- here('ms_figs/fig3_taxa_cooccurrence.png')
+
+ggsave(plot = fig3a, filename = fig3_file,
+       width = 12, height = 12, units = 'cm', dpi = 300)
+
+knitr::include_graphics(fig3_file)
+```
+
+

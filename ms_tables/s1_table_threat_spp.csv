@@ -1,23 +1,23 @@
 Threat category,Threat subcategory,Stressor,n spp
-1. Residential & commercial development,1.1. Housing & urban areas,Direct human disturbance,501
-1. Residential & commercial development,1.2. Commercial & industrial areas,Direct human disturbance,468
-1. Residential & commercial development,1.3. Tourism & recreation areas,Direct human disturbance,451
+1. Residential & commercial development,1.1. Housing & urban areas,Direct human disturbance*,501
+1. Residential & commercial development,1.2. Commercial & industrial areas,Direct human disturbance*,468
+1. Residential & commercial development,1.3. Tourism & recreation areas,Direct human disturbance*,451
 2. Agriculture & aquaculture,2.4. Marine & freshwater aquaculture,Nutrient pollution*,36
 4. Transportation & service corridors,4.3. Shipping lanes,Shipping,438
-5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Artisanal fishing,747
-5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Demersal destructive fishing,313
-5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Demersal non-destructive high bycatch fishing,246
-5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Demersal non-destructive low bycatch fishing,67
-5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Pelagic high bycatch fishing,206
-5. Biological resource use,5.4. Fishing & harvesting aquatic resources,Pelagic low bycatch fishing,69
-6. Human intrusions & disturbance,6.1. Recreational activities,Direct human disturbance,460
-6. Human intrusions & disturbance,6.3. Work & other activities,Direct human disturbance,20
-9. Pollution,9.6. Excess energy,Light pollution,20
-9. Pollution,9.1. Domestic & urban waste water,Nutrient pollution*,19
-9. Pollution,9.3. Agricultural & forestry effluents,Nutrient pollution*,9
+5. Biological resource use,5.4. Fishing & harvesting aquatic resources• 5.4.1 Intentional use: subsistence/small scale• 5.4.2 Intentional use: large scale• 5.4.3 Unintentional effects: subsistence/small scale• 5.4.4 Unintentional effects: large scale,Artisanal fishing,747
+5. Biological resource use,5.4. Fishing & harvesting aquatic resources• 5.4.1 Intentional use: subsistence/small scale• 5.4.2 Intentional use: large scale• 5.4.3 Unintentional effects: subsistence/small scale• 5.4.4 Unintentional effects: large scale,Demersal destructive fishing,313
+5. Biological resource use,5.4. Fishing & harvesting aquatic resources• 5.4.1 Intentional use: subsistence/small scale• 5.4.2 Intentional use: large scale• 5.4.3 Unintentional effects: subsistence/small scale• 5.4.4 Unintentional effects: large scale,Demersal non-destructive high bycatch fishing,246
+5. Biological resource use,5.4. Fishing & harvesting aquatic resources• 5.4.1 Intentional use: subsistence/small scale• 5.4.2 Intentional use: large scale• 5.4.3 Unintentional effects: subsistence/small scale• 5.4.4 Unintentional effects: large scale,Demersal non-destructive low bycatch fishing,67
+5. Biological resource use,5.4. Fishing & harvesting aquatic resources• 5.4.1 Intentional use: subsistence/small scale• 5.4.2 Intentional use: large scale• 5.4.3 Unintentional effects: subsistence/small scale• 5.4.4 Unintentional effects: large scale,Pelagic high bycatch fishing,206
+5. Biological resource use,5.4. Fishing & harvesting aquatic resources• 5.4.1 Intentional use: subsistence/small scale• 5.4.2 Intentional use: large scale• 5.4.3 Unintentional effects: subsistence/small scale• 5.4.4 Unintentional effects: large scale,Pelagic low bycatch fishing,69
+6. Human intrusions & disturbance,6.1. Recreational activities,Direct human disturbance*,460
+6. Human intrusions & disturbance,6.3. Work & other activities,Direct human disturbance*,20
 9. Pollution,9.1. Domestic & urban waste water,Organic chemical pollution,7
 9. Pollution,9.2. Industrial & military effluents,Organic chemical pollution,74
 9. Pollution,9.3. Agricultural & forestry effluents,Organic chemical pollution,7
+9. Pollution,9.1. Domestic & urban waste water,Nutrient pollution*,19
+9. Pollution,9.3. Agricultural & forestry effluents,Nutrient pollution*,9
+9. Pollution,9.6. Excess energy,Light pollution,20
 11. Climate change & severe weather,11.1. Habitat shifting & alteration,Ocean acidification,2
 11. Climate change & severe weather,11.3. Temperature extremes,Ocean acidification,406
 11. Climate change & severe weather,11.5. Other impacts,Ocean acidification,2
