@@ -194,7 +194,7 @@ ttest_2003_2013_taxa <- imp_2030_df %>%
   do(t = t.test(.$`2013`, .$`2003`, paired = TRUE)) %>%
   broom::tidy(t)
 write_csv(bind_rows(ttest_2003_2013_all, ttest_2003_2013_taxa),
-          here('ms_figs/fig2a_ttest_by_stressor.csv'))
+          here('ms_figs/fig3a_ttest_by_stressor.csv'))
 
 ```
 
@@ -211,7 +211,7 @@ cum_impact_df <- range_summary_all %>%
          ymax = min(1, mean_pct_imp + sd_pct_imp)) %>%
   ungroup()
 
-write_csv(cum_impact_df, here('ms_figs/fig2a_cum_impact_03_13_30.csv'))
+write_csv(cum_impact_df, here('ms_figs/fig3a_cum_impact_03_13_30.csv'))
 
 ```
 
@@ -220,7 +220,7 @@ write_csv(cum_impact_df, here('ms_figs/fig2a_cum_impact_03_13_30.csv'))
 Here we are looking only at 2013, and global (eez = 0).
 ```{r}
 
-spp_intens_sum_file <- here('ms_figs/fig2b_spp_intens_sum.csv')
+spp_intens_sum_file <- here('ms_figs/fig3b_spp_intens_sum.csv')
 
 if(!file.exists(spp_intens_sum_file)) {
   spp_incl <- get_incl_spp()
@@ -308,7 +308,7 @@ all_sum_df <- spp_sum_df %>%
   ungroup()
 
 write_csv(bind_rows(all_sum_df, tax_sum_df), 
-          here('ms_figs/fig2b_impact_intens_abate.csv'))
+          here('ms_figs/fig3b_impact_intens_abate.csv'))
 
 intens_lvls <- c('> 1.0%/yr', '> 0.1%/yr', '> 0.0%/yr', 
                  'no change', 
@@ -340,7 +340,7 @@ plot_tax_sum_df <- tax_sum_df %>%
 
 ```{r fig 2a mean sd}
 
-# ttest_expansion <- read_csv(here('ms_figs/fig2a_ttest_by_stressor.csv')) %>%
+# ttest_expansion <- read_csv(here('ms_figs/fig3a_ttest_by_stressor.csv')) %>%
 #   filter(stressor == 'cum_all') %>%
 #   mutate(stars = case_when(p.value > .05 ~ '',
 #                            p.value > .01 ~ '*',
@@ -349,7 +349,7 @@ plot_tax_sum_df <- tax_sum_df %>%
 #          lbl   = ifelse(p.value > .001 , 
 #                         sprintf('p = %s', round(p.value, 3)), 'p < 0.001'))
 
-fig2a <- ggplot(cum_impact_df) +
+fig3a <- ggplot(cum_impact_df) +
   ggtheme_plot(base_size = 7) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   geom_point(aes(y = mean_pct_imp, x = desc, 
@@ -383,10 +383,10 @@ fig2a <- ggplot(cum_impact_df) +
         legend.background = element_blank(),
         legend.title = element_blank())
 
-# fig2a
+# fig3a
 ```
 
-```{r fig 2a boxplot}
+```{r fig 3a boxplot}
 spp_impact_df <- imp_2030_df %>%
   left_join(taxon_df, by = 'iucn_sid') %>%
   filter(stressor == 'cum_all')
@@ -414,7 +414,7 @@ boxplot_summary_df <- boxplot_df %>%
             mean = mean(pct_impact),
             sd  = sd(pct_impact))
 
-fig2a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
+fig3a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
   ggtheme_plot(base_size = 7) +
   ### suppress gridlines behind legend:
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
@@ -453,11 +453,11 @@ fig2a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
         legend.background = element_blank(),
         legend.title = element_blank())
 
-fig2a_box
+fig3a_box
 
 ```
 
-```{r fig 2b}
+```{r fig 3b}
 
 n_labels <- get_incl_spp() %>%
   select(iucn_sid, desc) %>%
@@ -473,7 +473,7 @@ n_labels <- get_incl_spp() %>%
          desc = factor(desc, levels = levels(plot_tax_sum_df$desc))) %>%
   arrange(desc)
 
-fig2b <- ggplot(plot_tax_sum_df) +
+fig3b <- ggplot(plot_tax_sum_df) +
   ggtheme_plot(base_size = 7) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   geom_rect(xmin = 1, xmax = 12, ymin = 1.02, ymax = 1.22, 
@@ -500,31 +500,31 @@ fig2b <- ggplot(plot_tax_sum_df) +
         legend.title = element_text(size = 5, face = 'bold', color = 'grey20'),
         axis.text.y = element_blank()) ### align with 2a
 
-# fig2b
+# fig3b
 ```
 
 ## Combine
 
 ```{r}
-legend_2a <- get_legend(fig2a_box)
-legend_2b <- get_legend(fig2b)
-fig2 <- plot_grid(fig2a_box + theme(legend.position = 'none'), 
+legend_3a <- get_legend(fig3a_box)
+legend_3b <- get_legend(fig3b)
+fig3 <- plot_grid(fig3a_box + theme(legend.position = 'none'), 
                     ### drop legend for manual placement
-                  fig2b + theme(legend.position = 'none'), 
+                  fig3b + theme(legend.position = 'none'), 
                   rel_widths = c(1.2, 1),
                   align = 'h', nrow = 1)  +
-  draw_plot(legend_2a, x = .34, y = .15, width = .2, height = .2) +
-  draw_plot(legend_2b, x = .73, y = .215, width = .2, height = .4) +
+  draw_plot(legend_3a, x = .34, y = .15, width = .2, height = .2) +
+  draw_plot(legend_3b, x = .73, y = .215, width = .2, height = .4) +
   draw_label('A', x = .05, y = .99, vjust = 1, 
              fontface = 'bold', size = 9, colour = 'grey20') +
   draw_label('B', x = .55, y = .99, vjust = 1,
              fontface = 'bold', size = 9, colour = 'grey20')
   
   
-ggsave(plot = fig2, filename = here('ms_figs/fig2_expand_intens.png'),
+ggsave(plot = fig3, filename = here('ms_figs/fig3_expand_intens.png'),
          height = 6, width = 12, units = 'cm', dpi = 300)
 
-knitr::include_graphics(here('ms_figs/fig2_expand_intens.png'))
+knitr::include_graphics(here('ms_figs/fig3_expand_intens.png'))
 ```
 
 # Check sharks and rays - why seeming to decline in impacts?
