@@ -315,9 +315,9 @@ taxon_incl_plot
 x <- ggdraw() +
   draw_plot(imp_full_range_plot, x = 0, y = .64, width = 1, height = .35) +
   draw_plot(imp_coastal_range_plot, x = 0, y = .35, width = 1, height = .31) +
-  draw_plot(get_legend(taxon_incl_plot), x = 0, y = 0, height = .07, width = 1) +
   draw_plot(taxon_incl_plot + theme(legend.position = 'none'), 
             x = 0, y = .06, width = 1, height = .31) +
+  draw_plot(get_legend(taxon_incl_plot), x = 0, y = 0, height = .07, width = 1) +
   draw_label('Range quartiles', 
              x = .5, y = .99, hjust = .5, vjust = 1,
              fontface = 'bold', size = 9) +
