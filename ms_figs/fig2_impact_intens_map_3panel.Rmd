@@ -169,8 +169,9 @@ fig2c_intens_pct_map <- ggplot() +
 
 ```{r}
 fig2_file <- here('ms_figs/fig2_impact_intens_3panel.png')
+fig2_tiff <- here('ms_figs/fig2_impact_intens_3panel.tiff')
 
-if(!file.exists(fig2_file)) {
+if(any(!file.exists(fig2_file, fig2_tiff))) {
   # unlink(fig2_file)
   fig2a_panel  <- get_panel(fig2a_impact_ct_map)
   fig2b_panel  <- get_panel(fig2b_impact_pct_map)
@@ -197,6 +198,8 @@ if(!file.exists(fig2_file)) {
                size = 7, color = 'grey20', fontface = 'bold')
     
   ggsave(plot = fig2, filename = fig2_file,
+         height = 15, width = 12, units = 'cm', dpi = 300)
+  ggsave(plot = fig2, filename = fig2_tiff,
          height = 15, width = 12, units = 'cm', dpi = 300)
 }
 

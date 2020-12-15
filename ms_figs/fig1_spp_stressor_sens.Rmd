@@ -80,24 +80,25 @@ n_spp_str <- ggplot(plot1_df, aes(x = stressor, y = n_spp, fill = category)) +
   ggtheme_plot(base_size = 9) +
   geom_col() +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
-  geom_rect(xmin = 1, xmax = 12, ymin = 750, ymax = 1000, 
+  geom_rect(xmin = 1, xmax = 8, ymin = 600, ymax = 1000, 
             fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
   scale_fill_viridis_d() +
   labs(y = '# of sensitive at-risk species (out of 1,271)',
-       fill = 'Stressor\ncategory') +
-  scale_y_continuous(expand = c(0.02, 0.02), limits = c(0, 1000)) +
+       fill = 'Stressor category') +
+  scale_y_continuous(expand = c(0.02, 0.02), limits = c(0, 1000), breaks = seq(0, 1000, 200)) +
   coord_flip() +
   guides(fill = guide_legend(title.position = "top", 
                              # hjust = 1 # centres the title horizontally
                               title.hjust = 1,
                               label.position = "left")) +
   theme(axis.title.y = element_blank(),
-        axis.text.y  = element_text(size = 8),
-        axis.title.x = element_text(size = 8),
-        legend.position = c(.97, .05),
-        legend.key.size = unit(.35, 'cm'),
-        legend.title = element_text(size = 8),
-        legend.text = element_text(size = 8),
+        axis.text.y  = element_text(size = 7),
+        axis.title.x = element_text(size = 7),
+        legend.position = c(.96, .01),
+        legend.background = element_blank(),
+        legend.key.size = unit(.30, 'cm'),
+        legend.title = element_text(size = 7, face = 'bold'),
+        legend.text = element_text(size = 7),
         legend.justification = c(1, 0))
 
 n_spp_str
@@ -131,9 +132,9 @@ n_str_spp <- ggplot(plot2_df, aes(x = ct)) +
   ggtheme_plot(base_size = 9) +
   geom_bar(position = 'dodge', fill = 'grey20') +
   theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 8),
+        axis.title.y = element_text(size = 7),
         strip.switch.pad.grid	= unit(-.1, 'cm'),
-        strip.text = element_text(size = 8, face = 'plain'),
+        strip.text = element_text(size = 7, face = 'plain', color = 'grey20'),
         strip.placement = 'outside') +
   labs(y = '# of species') +
   facet_grid(~ type, scales = 'free_x', space = 'free_x', switch = 'x')
@@ -148,7 +149,9 @@ z <- cowplot::plot_grid(n_spp_str, n_str_spp,
 fname <- here('ms_figs/fig1_spp_stressor_sens.png')
 
 ggsave(plot = z, filename = fname, 
-       width = 6.5, height = 3.6, units = 'in', dpi = 300)
+       width = 12, height = 9, units = 'cm', dpi = 300)
+ggsave(plot = z, filename = str_replace(fname, '.png', '.tiff'), 
+       width = 12, height = 9, units = 'cm', dpi = 300)
 
 knitr::include_graphics(fname)
 ```
