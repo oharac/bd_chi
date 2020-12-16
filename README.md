@@ -21,14 +21,14 @@ Finally, if you wish to generate the figures, run the appropriate scripts in the
 
 Overview of file structure:
 
-* _setup: scripts for pre-processing of data on threats, species range distributions, and stressor distributions.
-* _raw: lookup tables created by the project team to facilitate the analysis.
-* _data: data drawn from the IUCN API; note that the setup scripts also place larger IUCN files on the external data directory.
-* _spatial: spatial data and maps generated in the setup scripts.  Again, note that the setup scripts place larger spatial files on the external data directory.
-* _output: all finalized datasets are stored here, including rasters of impacts, intensification, stressor footprints, and taxonomic species richness maps.
-* figs: temporary figure storage
-* ms_figs: code to generate figures for manuscript
-* ms_tables: code to generate tables for manuscript
+* `_setup`: scripts for pre-processing of data on threats, species range distributions, and stressor distributions.
+* `_raw`: lookup tables created by the project team to facilitate the analysis.
+* `_data`: data drawn from the IUCN API; note that the setup scripts also place larger IUCN files on the external data directory.
+* `_spatial`: spatial data and maps generated in the setup scripts.  Again, note that the setup scripts place larger spatial files on the external data directory.
+* `_output`: all finalized datasets are stored here, including rasters of impacts, intensification, stressor footprints, and taxonomic species richness maps.
+* `figs`: temporary figure storage
+* `ms_figs`: code to generate figures for manuscript
+* `ms_tables`: code to generate tables for manuscript
 
 
 
