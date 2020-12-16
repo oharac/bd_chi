@@ -114,11 +114,25 @@ spp_incl <- get_incl_spp() %>%
   filter(!is.na(stressor))
 
 str_count_df <- spp_incl %>%
-  group_by(iucn_sid) %>%
+  group_by(iucn_sid, desc) %>%
   summarize(n_str = n_distinct(stressor),
             n_cat = n_distinct(category),
             strs = paste(unique(stressor), collapse = ', ')) %>%
-  ungroup()
+  group_by(desc) %>%
+  mutate(desc = ifelse(n_distinct(iucn_sid) < 50, 'other', desc)) %>%
+  ungroup() # %>%
+  # mutate(desc = str_replace(desc, 'mangrove plants', 'mangroves'),
+  #        desc = str_replace(desc, 'reef-building ', ''),
+  #        desc = str_replace(desc, 'marine reptiles', 'reptiles'),
+  #        desc = str_replace(desc, 'sharks and rays', 'sharks/rays'))
+
+taxon_order <- str_count_df %>%
+  filter(desc != 'other') %>%
+  group_by(desc) %>%
+  summarize(n = n_distinct(iucn_sid)) %>%
+  arrange(desc(n)) %>%
+  .$desc %>%
+  c(., 'other')
 
 plot2_df <- str_count_df %>%
   gather(key = type, value = ct, n_str, n_cat) %>%
@@ -126,18 +140,39 @@ plot2_df <- str_count_df %>%
   mutate(ct = as.character(ct),
          ct = ifelse(as.integer(ct) > 5, '> 5', ct),
          ct = fct_inorder(ct),
-         type = ifelse(type == 'n_str', '# of stressors (out of 14)', '# of categories (out of 4)'))
+         type = ifelse(type == 'n_str', '# of stressors (out of 14)', '# of categories (out of 4)')) %>%
+  mutate(desc = factor(desc, levels = taxon_order))
+
+
+
+bar_pal <- c(viridisLite::viridis(n = 5, option = 'D')[c(1,3,5,2,4)], 'grey90')
 
 n_str_spp <- ggplot(plot2_df, aes(x = ct)) +
   ggtheme_plot(base_size = 9) +
-  geom_bar(position = 'dodge', fill = 'grey20') +
+  # geom_bar(position = 'stack', aes(fill = desc), color = 'black', size = .25) +
+  geom_bar(position = 'stack', aes(fill = desc)) +
+  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   theme(axis.title.x = element_blank(),
         axis.title.y = element_text(size = 7),
+        legend.title = element_text(size = 7, face = 'bold'),
+        legend.text =  element_text(size = 7, face = 'plain'),
+        legend.key.size = unit(.30, 'cm'),
+        legend.margin =     margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, -5, -10, -10),
         strip.switch.pad.grid	= unit(-.1, 'cm'),
         strip.text = element_text(size = 7, face = 'plain', color = 'grey20'),
         strip.placement = 'outside') +
-  labs(y = '# of species') +
+  guides(fill = guide_legend(title.position = "top", 
+                             # hjust = 1 # centres the title horizontally
+                             title.hjust = .5,
+                             ncol = 1,
+                             label.position = "left")) +
+  scale_fill_manual(values = bar_pal) +
+  labs(y = '# of species',
+       fill = 'Taxon') +
   facet_grid(~ type, scales = 'free_x', space = 'free_x', switch = 'x')
+
+n_str_spp
 ```
 
 
