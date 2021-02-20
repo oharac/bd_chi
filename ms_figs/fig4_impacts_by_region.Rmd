@@ -148,6 +148,7 @@ eez_score_order <- eez_summary_df %>%
   .$eez
 
 n_select <- 8
+
 eez_top <- eez_summary_df %>%
   filter(eez %in% eez_score_order[1:n_select]) %>%
   .$eez %>% unique()
@@ -296,89 +297,9 @@ fig4_done <- ggdraw() +
 
 ggsave(plot = fig4_done, filename = here('ms_figs/fig4_impact_by_eez.png'), 
        width = 12, height = 12, units = 'cm', dpi = 300)
+ggsave(plot = fig4_done, filename = here('ms_figs/fig4_impact_by_eez.tiff'), 
+       width = 12, height = 12, units = 'cm', dpi = 300)
 
 knitr::include_graphics(here('ms_figs/fig4_impact_by_eez.png'))
-```
-
-``` {r plot abnj for si}
-
-abnj_cum_impacts <- eez_summary_df %>%
-  filter(eez > 255 | eez == 213) %>%
-  filter(eez != 260) %>%
-  arrange(desc(cum_imp)) %>%
-  mutate(rank = 'big',
-         rgn_label = str_replace(rgn_label, 'ific|antic', '.'),
-         rgn_label = str_replace(rgn_label, ' Ocean', '')) %>%
-  mutate(rgn_label = fct_inorder(rgn_label) %>% fct_rev(),
-         stressor = factor(stressor, 
-                           levels = c('cumulative', 'fishing', 'ocean', 'climate', 'land-based')))
-  
-abnj_lbls <- abnj_cum_impacts %>%
-  filter(stressor == 'cumulative') %>%
-  mutate(lbl = rgn_label) %>%
-  mutate(w   = 1,
-         pos = sum(w) - (cumsum(w) - 0.5 * w)) %>%
-  select(eez, lbl, w, pos)
-
-abnj_cum_impacts <- abnj_cum_impacts %>%
-  left_join(abnj_lbls, by = 'eez')
-
-lims <- c(-.5, max(abnj_lbls$pos) + .5)
-
-figSI_cumulative_abnj <- make_barplot(abnj_cum_impacts, 'cumulative')
-figSI_fishing_abnj    <- make_barplot(abnj_cum_impacts, 'fishing')
-figSI_climate_abnj    <- make_barplot(abnj_cum_impacts, 'climate')
-figSI_ocean_abnj      <- make_barplot(abnj_cum_impacts, 'ocean')
-figSI_land_abnj       <- make_barplot(abnj_cum_impacts, 'land-based')
-
-
-figSI_abnj_labels <- ggplot(abnj_cum_impacts %>% filter(stressor == 'cumulative'),
-                          aes(x = pos)) +
-  ggtheme_plot(base_size = 8) +
-  geom_text(aes(label = lbl), y = 0, color = 'grey20',
-            hjust = 1, vjust = .9, size = 2.1) +
-  scale_y_continuous(expand = c(0, 0), limits = c(-1, 0.02)) +
-  scale_x_continuous(expand = c(0, 0), limits = lims) +
-  coord_flip() +
-  theme(axis.title = element_blank(),
-        panel.grid.major = element_blank(),
-        axis.text = element_blank())
-
-l_w <- .15
-c_w <- .168
-
-figSI_done <- ggdraw() +
-  draw_plot(get_panel(figSI_abnj_labels),
-            x = 0, y = .1, width = l_w, height = .86) + 
-  draw_plot(get_panel(figSI_cumulative_abnj),
-            x = l_w,         y = .08, width = c_w - .005, height = .86) + 
-  draw_plot(get_panel(figSI_fishing_abnj),
-            x = l_w + c_w,   y = .08, width = c_w - .005, height = .86) + 
-  draw_plot(get_panel(figSI_climate_abnj),
-            x = l_w + 2*c_w, y = .08, width = c_w - .005, height = .86) + 
-  draw_plot(get_panel(figSI_ocean_abnj),
-            x = l_w + 3*c_w, y = .08, width = c_w - .005, height = .86) + 
-  draw_plot(get_panel(figSI_land_abnj),
-            x = l_w + 4*c_w, y = .08, width = c_w - .005, height = .86) +
-  draw_label(x = l_w, y = .99,         label = 'cumulative', 
-             color = 'grey20', size = 7, hjust = 0, vjust = 1, fontface = 'bold') +
-  draw_label(x = l_w + c_w, y = .99,   label = 'fishing',
-             color = 'grey20', size = 7, hjust = 0, vjust = 1, fontface = 'bold') +
-  draw_label(x = l_w + 2*c_w, y = .99, label = 'climate', 
-             color = 'grey20', size = 7, hjust = 0, vjust = 1, fontface = 'bold') +
-  draw_label(x = l_w + 3*c_w, y = .99, label = 'ocean', 
-             color = 'grey20', size = 7, hjust = 0, vjust = 1, fontface = 'bold') +
-  draw_label(x = l_w + 4*c_w, y = .99, label = 'land-based', 
-             color = 'grey20', size = 7, hjust = 0, vjust = 1, fontface = 'bold') +
-  draw_label(x = 0.50, y = 0.01, label = 'Mean proportion of species range impacted within ABNJ', 
-             color = 'grey20', size = 7, hjust = .5, vjust = 0, fontface = 'bold')
-
-  # draw_plot(get_legend(fig4_barplot), x = .9, y = .2, width = .1, height = .3)
-
-ggsave(plot = figSI_done, filename = here('ms_figs/si_impact_by_abnj.png'), 
-       width = 6.5, height = 1.9, units = 'in', dpi = 300)
-
-knitr::include_graphics(here('ms_figs/si_impact_by_abnj.png'))
-
 ```
 

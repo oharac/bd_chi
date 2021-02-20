@@ -338,7 +338,7 @@ plot_tax_sum_df <- tax_sum_df %>%
 
 # Assemble plot
 
-```{r fig 2a mean sd}
+```{r fig 3a mean sd}
 
 # ttest_expansion <- read_csv(here('ms_figs/fig3a_ttest_by_stressor.csv')) %>%
 #   filter(stressor == 'cum_all') %>%
@@ -423,7 +423,7 @@ fig3a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
   ggtheme_plot(base_size = 7) +
   ### suppress gridlines behind legend:
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
-  geom_rect(xmin = 1, xmax = 3, ymin = 0.50, ymax = 1,
+  geom_rect(xmin = 1, xmax = 4, ymin = 0.50, ymax = 1,
             fill = 'white', color = 'grey90', size = .1, alpha = .5) +
   geom_boxplot(aes(fill = year, color = year), 
                width = .25, size = .25,
@@ -446,14 +446,16 @@ fig3a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
   #           y = .79, size = 1.9, color = 'grey20', 
   #           vjust = 0, hjust = 1, nudge_x = .06) +
   scale_y_continuous(expand = c(0, 0), 
-                     limits = c(-.02, 1.02),
+                     limits = c(-.02, 1.03),
                      breaks = seq(0, 1, .25),
                      labels = paste0(seq(0, 100, 25), '%')) +
   scale_x_discrete(expand = c(0.02, 0.02)) +
   labs(y = 'Percent of range impacted') +
   coord_flip() +
   theme(axis.title.y = element_blank(),
-        legend.key.size = unit(.25, 'cm'),
+        axis.text = element_text(size = 7),
+        legend.key.size = unit(.3, 'cm'),
+        legend.text = element_text(size = 7),
         legend.background = element_blank(),
         legend.title = element_blank())
 
@@ -482,13 +484,13 @@ fig3b <- ggplot(plot_tax_sum_df) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   geom_rect(xmin = 1, xmax = 12, ymin = 1.02, ymax = 1.22, 
             fill = 'white', color = 'white') + ### suppress gridlines behind n = XXX
-  geom_rect(xmin = 2, xmax = 7, ymin = .50, ymax = 1, 
+  geom_rect(xmin = 1, xmax = 7, ymin = .50, ymax = 1, 
             fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
   geom_col(aes(x = desc, y = val, fill = var), color = 'grey40', size = .1,
            width = .5) +
   geom_text(data = n_labels,
             aes(x = desc, label = n_lbl), y = 1.03,
-            size = 1.9, hjust = 0) +
+            size = 1.9, color = 'grey20', hjust = 0) +
   labs(y = 'Percent of range impacted') +
   scale_y_continuous(expand = c(0, 0), 
                      limits = c(0, 1.22),
@@ -499,9 +501,11 @@ fig3b <- ggplot(plot_tax_sum_df) +
   coord_flip() +
   labs(fill = 'Rate of\nintensification') +
   theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
         legend.key.size = unit(.2, 'cm'),
         legend.background = element_blank(),
-        legend.title = element_text(size = 5, face = 'bold', color = 'grey20'),
+        legend.title = element_text(size = 7, face = 'bold', color = 'grey20'),
+        legend.text = element_text(size = 7, face = 'plain', color = 'grey20'),
         axis.text.y = element_blank()) ### align with 2a
 
 # fig3b
@@ -517,15 +521,16 @@ fig3 <- plot_grid(fig3a_box + theme(legend.position = 'none'),
                   fig3b + theme(legend.position = 'none'), 
                   rel_widths = c(1.2, 1),
                   align = 'h', nrow = 1)  +
-  draw_plot(legend_3a, x = .34, y = .15, width = .2, height = .2) +
-  draw_plot(legend_3b, x = .73, y = .215, width = .2, height = .4) +
+  draw_plot(legend_3a, x = .34, y = .18, width = .2, height = .2) +
+  draw_plot(legend_3b, x = .73, y = .19, width = .2, height = .4) +
   draw_label('A', x = .05, y = .99, vjust = 1, 
              fontface = 'bold', size = 9, colour = 'grey20') +
   draw_label('B', x = .55, y = .99, vjust = 1,
              fontface = 'bold', size = 9, colour = 'grey20')
   
-  
 ggsave(plot = fig3, filename = here('ms_figs/fig3_expand_intens.png'),
+         height = 6, width = 12, units = 'cm', dpi = 300)
+ggsave(plot = fig3, filename = here('ms_figs/fig3_expand_intens.tiff'),
          height = 6, width = 12, units = 'cm', dpi = 300)
 
 knitr::include_graphics(here('ms_figs/fig3_expand_intens.png'))
@@ -558,31 +563,3 @@ ggplot(zz, aes(x = range_km2, y = diff_2003_2013)) +
   facet_wrap(~ stressor)
 ```
 
-``` {r, eval = FALSE}
-qwer <- zz %>%
-  mutate(quartile = ntile(range_km2, 4)) %>%
-  group_by(quartile) %>%
-  summarize(mean_range = mean(range_km2),
-            mean_diff = mean(diff_2003_2013))
-
-### Note that from 2013 to 2030, many expanding species expand very little 
-### while many contracting species contract by a lot
-
-### these look suspicious - small increase to 1 from 2003 to 2013, then
-### very large drop.  Check trends between 03 and 13.
-# iucn_sid      2003         2013         2030
-# 161541  0.96531341	1.000000000	 0.330297285
-# 161394  0.95878065	1.000000000	 0.371924815
-check_df <- read_csv(imp_range_file) %>%
-  filter(iucn_sid %in% c(161541, 161394)) %>%
-  select(iucn_sid, year, stressor, pct_impact) %>%
-  filter(!is.na(year))
-tr_df <- check_df %>%
-  group_by(iucn_sid, stressor) %>%
-  do(mdl = lm(pct_impact ~ year, data = .)) %>%
-  broom::tidy(mdl) %>%
-  filter(term == 'year')
-### big drops in cumulative footprint from 2010-2012 (then back to 1) would make for a
-### sizable negative trend, close to 4% per year
-
-```
