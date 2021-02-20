@@ -349,7 +349,8 @@ plot_tax_sum_df <- tax_sum_df %>%
 #          lbl   = ifelse(p.value > .001 , 
 #                         sprintf('p = %s', round(p.value, 3)), 'p < 0.001'))
 
-fig3a <- ggplot(cum_impact_df) +
+fig3a <- ggplot(cum_impact_df %>%
+                  filter(year != 2030)) +
   ggtheme_plot(base_size = 7) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
   geom_point(aes(y = mean_pct_imp, x = desc, 
@@ -357,14 +358,16 @@ fig3a <- ggplot(cum_impact_df) +
              size = .8,
              position = position_dodge(width = -.6)) +
   geom_linerange(aes(x = desc, ymin = ymin, ymax = ymax,
-                     color = year, linetype = year, group = year), 
+                     color = year, 
+                     # linetype = year, 
+                     group = year), 
              position = position_dodge(width = -.6),
              show.legend = FALSE,
              size = .25) +
   geom_rect(xmin = 2, xmax = 4, ymin = .75, ymax = 1, 
             fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
-  scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
-  scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
+  scale_color_manual(values = c(hcl.colors(n = 3)[1:2])) +
+  # scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
   # geom_text(data = ttest_expansion, aes(x = desc, label = lbl), 
   #           y = .80, size = 1.9, color = 'grey20', 
   #           vjust = 0, hjust = 0, nudge_x = .06) +
@@ -405,7 +408,9 @@ boxplot_all_df <- spp_impact_df %>%
   mutate(desc = 'all spp')
 
 boxplot_df <- bind_rows(boxplot_all_df, spp_impact_df) %>%
-  mutate(year = factor(year, levels = c('2030', '2013', '2003')),
+  filter(year != 2030) %>%
+  mutate(year = factor(year, levels = c('2013', '2003')),
+  # mutate(year = factor(year, levels = c('2030', '2013', '2003')),
          desc = factor(desc, levels = c(taxon_levels, 'all spp')))
 
 boxplot_summary_df <- boxplot_df %>%
@@ -421,20 +426,19 @@ fig3a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
   geom_rect(xmin = 1, xmax = 3, ymin = 0.50, ymax = 1,
             fill = 'white', color = 'grey90', size = .1, alpha = .5) +
   geom_boxplot(aes(fill = year, color = year), 
-               width = .2, size = .2,
+               width = .25, size = .25,
                outlier.size = .02, outlier.color = 'grey80',
                position = position_dodge(width = -.6)) +
   ### median point is solid
   geom_point(data = boxplot_summary_df, aes(y = med, color = year),
-             size = .8, position = position_dodge(width = -.6)) +
+             size = 1.2, position = position_dodge(width = -.6)) +
   ### mean point is hollow
   geom_point(data = boxplot_summary_df, aes(y = mean, color = year), 
-             size = .8, position = position_dodge(width = -.6)) +
+             size = 1.2, position = position_dodge(width = -.6)) +
   geom_point(data = boxplot_summary_df, aes(y = mean, group = year), color = 'white',
-             size = .3, position = position_dodge(width = -.6)) +
-  scale_fill_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
-  scale_color_manual(values = c('grey60', hcl.colors(n = 3)[1:2])) +
-  scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
+             size = .6, position = position_dodge(width = -.6)) +
+  scale_fill_manual(values = c(hcl.colors(n = 3)[1:2])) +
+  scale_color_manual(values = c(hcl.colors(n = 3)[1:2])) +
   # geom_text(data = ttest_expansion, aes(x = desc, label = lbl), 
   #           y = .80, size = 1.9, color = 'grey20', 
   #           vjust = 0, hjust = 0, nudge_x = .06) +
