@@ -32,65 +32,36 @@ reload <- FALSE
 
 # Summary
 
-Create figure S2 for manuscript.  2A: map of impacted spp by count; 2B: map of impacted species by pct; 2C: map of intensification by pct.
+Create figure S2 for manuscript - inset maps with a locator map
 
 # Methods
 
-## Fig. 2A
+## Locator map
 
-Load rasters of impacted spp for 2013; make a cool map.
+Load rasters of impacted spp for 2013; draw rectangles of regions of interest
 
-``` {r figure 2a}
-
-imp_count  <- raster(here('_output/rasters/impact_maps/impact_all_2013.tif'))
-
-xfm <- function(x) log10(x) ### how are we transforming count?
-
-imp_ct_df <- rasterToPoints(imp_count) %>%
-  as.data.frame() %>%
-  setNames(c('x', 'y', 'imp_ct')) %>%
-  mutate(xfm_imp_ct = xfm(imp_ct),
-         xfm_imp_ct = ifelse(is.infinite(xfm_imp_ct), NA, xfm_imp_ct))
-
-max_ct <- max(imp_ct_df$imp_ct, na.rm = TRUE)
-ct_labels <- c(1, 10, 100, max_ct)
-ct_breaks <- xfm(ct_labels)
-
-land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
-  st_transform(crs(imp_count))
-
-fig2a_impact_ct_map <- ggplot() +
-  ggtheme_map(base_size = 7) +
-  geom_raster(data = imp_ct_df, aes(x, y, fill = xfm_imp_ct)) +
-  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
-  scale_fill_viridis_c(breaks = ct_breaks,
-                       labels = ct_labels,
-                       na.value = 'grey80') +
-  theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
-        legend.background = element_blank(),
-        legend.key.width = unit(.25, 'cm'),
-        legend.title = element_blank()) +
-  coord_sf(datum = NA) + ### ditch graticules
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0))
-
-# fig2a_impact_ct_map
-# zeros <- imp_ct_df %>%
-#   filter(imp_ct == 0)
-# 
-# ggplot() +
-#   ggtheme_map(base_size = 7) +
-#   geom_raster(data = zeros, aes(x, y), fill = 'orange') +
-#   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10)
-# 
+```{r}
+x_wd <- 1200000
+y_ht <- 1000000
+  
+rgn_df <- tribble(
+  ~rgn_name, ~x, ~y, ~type,
+  'coral triangle', 10600000, 100000, 'high chi incr',
+  'baja', -10400000, 3200000, 'high chi incr',
+  'venezuela', -6500000, 1300000, 'high chi decr',
+  'chile', -6400000, -4400000, 'high chi decr',
+  'korea', 11600000, 4000000, 'high chi decr',
+  'med', 1200000, 4600000, 'high chi decr',
+  'aus', 13600000, -1800000, 'low chi incr',
+  's afr', 3300000, -5000000, 'low chi decr'  
+) %>%
+  mutate(xmin = x - x_wd/2, xmax = x + x_wd/2, ymin = y - y_ht/2, ymax = y + y_ht/2) %>%
+  arrange(type)
 
 ```
 
-## Fig. 2B
 
-Load rasters of impacted spp and species count for 2013; generate impacted spp by pct; make a cool map.
-
-``` {r figure 2b}
+``` {r locator map}
 imp_count  <- raster(here('_output/rasters/impact_maps/impact_all_2013.tif'))
 nspp <- raster(here('_output/rasters/n_spp_map.tif')) 
 
@@ -103,11 +74,15 @@ imp_pct_df <- rasterToPoints(imp_pct) %>%
 land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
   st_transform(crs(imp_pct))
 
-fig2b_impact_pct_map <- ggplot() +
+locator_map <- ggplot() +
   ggtheme_map(base_size = 7) +
-  geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
+  geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct), show.legend = FALSE) +
   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  geom_rect(data = rgn_df, aes(xmin = xmin, xmax = xmax, 
+                               ymin = ymin, ymax = ymax), 
+            fill = NA, color = 'red2') +
   scale_fill_viridis_c(breaks = seq(0, 1, .25), 
+                       limits = c(0, 1),
                        labels = paste0(seq(0, 100, 25), '%'),
                        na.value = 'grey80') +
   theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
@@ -118,15 +93,70 @@ fig2b_impact_pct_map <- ggplot() +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0))
 
-# print(fig2b_impact_pct_map)
+locator_map
 
 ```
 
-## Fig. 2C
+## insets: impact
+
+```{r}
+map_impacts <- function(df) {
+  xlims <- c(min(df$x, na.rm = TRUE), max(df$x, na.rm = TRUE))
+  ylims <- c(min(df$y, na.rm = TRUE), max(df$y, na.rm = TRUE))
+  imp_map <- ggplot() +
+    ggtheme_map(base_size = 7) +
+    geom_raster(data = df, aes(x, y, fill = imp_pct)) +
+    geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .3) +
+    scale_fill_viridis_c(breaks = seq(0, 1, .25), 
+                         limits = c(0, 1),
+                         labels = paste0(seq(0, 100, 25), '%'),
+                         na.value = 'grey80') +
+    coord_sf(datum = NA,  ### ditch graticules
+             xlim = xlims, ylim = ylims, expand = c(0, 0))
+}
+
+map_intens <- function(df) {
+  ### diverging color palette from ColorBrewer
+  div_pal <- c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
+               '#f7f7f7', ### mid color
+               '#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419') %>% rev()
+
+  xlims <- c(min(df$x, na.rm = TRUE), max(df$x, na.rm = TRUE))
+  ylims <- c(min(df$y, na.rm = TRUE), max(df$y, na.rm = TRUE))
+  int_map <- ggplot() +
+    ggtheme_map(base_size = 7) +
+    geom_raster(data = df, aes(x, y, fill = int_pct)) +
+    geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .3) +
+    scale_fill_gradientn(colors = div_pal,
+                         limits = c(-1, 1),
+                         breaks = seq(-1, 1, .5), 
+                         labels = paste0(seq(-100, 100, 50), '%'),
+                         na.value = 'grey80') +
+    coord_sf(datum = NA,  ### ditch graticules
+             xlim = xlims, ylim = ylims, expand = c(0, 0))
+}
+```
+
+```{r}
+rgns <- rgn_df$rgn_name
+imp_map_list <- vector('list', length = length(rgns)) %>%
+  setNames(rgns)
+for (rgn in rgns) { ### rgn <- rgns[1]
+  lims <- rgn_df %>%
+    filter(rgn_name == rgn)
+  rgn_imp_df <- imp_pct_df %>%
+    filter(between(x, lims$xmin, lims$xmax) & between(y, lims$ymin, lims$ymax))
+  rgn_imp_map <- map_impacts(rgn_imp_df) +
+    labs(title = paste(rgn, lims$type))
+  imp_map_list[[rgn]] <- rgn_imp_map
+}
+
+```
+
 
 Load rasters of intensification by count and species count for 2013; generate intensifying spp by pct; make a cool map.
 
-``` {r figure 2c}
+``` {r insets}
 incr <- raster(here('_output/rasters/intens_maps/intens_all_incr2.tif'))
 decr <- raster(here('_output/rasters/intens_maps/intens_all_decr2.tif'))
 nspp <- raster(here('_output/rasters/n_spp_map.tif')) 
@@ -137,37 +167,35 @@ int_pct_df <- rasterToPoints(int_pct) %>%
   as.data.frame() %>%
   rename(int_pct = layer)
 
-land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
-  st_transform(crs(int_pct))
-
-### diverging color palette from ColorBrewer
-div_pal <- c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
-             '#f7f7f7', ### mid color
-             '#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419') %>% rev()
-
-fig2c_intens_pct_map <- ggplot() +
-  ggtheme_map(base_size = 7) +
-  geom_raster(data = int_pct_df, aes(x, y, fill = int_pct), size = .1) +
-  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
-  scale_fill_gradientn(colors = div_pal,
-                       breaks = seq(-1, 1, .5), 
-                       labels = paste0(seq(-100, 100, 50), '%'),
-                       na.value = 'grey80') +
-  theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
-        legend.background = element_blank(),
-        legend.key.width = unit(.25, 'cm'),
-        legend.title = element_blank()) +
-  coord_sf(datum = NA) + ### ditch graticules
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0))
-
-# fig2c_intens_pct_map
+rgns <- rgn_df$rgn_name
+int_map_list <- vector('list', length = length(rgns)) %>%
+  setNames(rgns)
+for (rgn in rgns) { ### rgn <- rgns[1]
+  lims <- rgn_df %>%
+    filter(rgn_name == rgn)
+  rgn_int_df <- int_pct_df %>%
+    filter(between(x, lims$xmin, lims$xmax) & between(y, lims$ymin, lims$ymax))
+  rgn_int_map <- map_intens(rgn_int_df) +
+    labs(title = paste(rgn, lims$type))
+  int_map_list[[rgn]] <- rgn_int_map
+}
 
 ```
 
-## Combine into one figure
+## Loop over regions and plot maps
 
 ```{r}
+rgns <- rgn_df$rgn_name
+for(rgn in rgns) { 
+  x <- cowplot::plot_grid(imp_map_list[[rgn]], int_map_list[[rgn]], nrow = 1)
+  print(x)
+}
+```
+
+
+## generate fig
+
+```{r, eval = FALSE}
 fig2_file <- here('ms_figs/fig2_impact_intens_3panel.png')
 fig2_tiff <- here('ms_figs/fig2_impact_intens_3panel.tiff')
 
