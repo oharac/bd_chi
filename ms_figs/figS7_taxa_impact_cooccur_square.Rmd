@@ -254,7 +254,7 @@ fig <- ggdraw() +
             width = lgd_size, height = lgd_size)
 
  
-fig_file <- here('ms_figs/figS6_taxa_cooccur_square.png')
+fig_file <- here('ms_figs/figS7_taxa_cooccur_square.png')
 
 ggsave(plot = fig, filename = fig_file,
        width = 6.5, height = 6.5, units = 'in', dpi = 300)

@@ -331,7 +331,7 @@ x <- ggdraw() +
 #                rel_heights = c(.05, 1, .9, 1.4),
 #                ncol = 1)
 
-fname <- here('ms_figs', 'figS5_compare_imp_range_to_risk.png')
+fname <- here('ms_figs', 'figS6_compare_imp_range_to_risk.png')
 
 ggsave(plot = x, filename = fname, 
        height = 6.5, width = 6.5)
