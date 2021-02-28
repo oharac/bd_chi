@@ -41,21 +41,22 @@ Create figure S2 for manuscript - inset maps with a locator map
 Load rasters of impacted spp for 2013; draw rectangles of regions of interest
 
 ```{r}
-x_wd <- 1200000
+x_wd <- 1000000
 y_ht <- 1000000
   
 rgn_df <- tribble(
-  ~rgn_name, ~x, ~y, ~type,
-  'coral triangle', 10600000, 100000, 'high chi incr',
-  'baja', -10400000, 3200000, 'high chi incr',
-  'venezuela', -6500000, 1300000, 'high chi decr',
-  'chile', -6400000, -4400000, 'high chi decr',
-  'korea', 11600000, 4000000, 'high chi decr',
-  'med', 1200000, 4600000, 'high chi decr',
-  'aus', 13600000, -1800000, 'low chi incr',
-  's afr', 3300000, -5000000, 'low chi decr'  
+  ~rgn_name, ~x, ~y, ~type, ~sc,
+  # 'chile', -6400000, -4400000, 'high chi decr', 1,
+  # 'korea', 11200000, 4200000, 'high chi decr', 2,
+  # 'med', 1200000, 4600000, 'high chi decr', 1.5,
+  # 'aus', 13600000, -1800000, 'low chi incr', 1.5,
+  # 's afr', 3200000, -4200000, 'low chi decr', 2
+  'coral triangle', 10000000, 1000000, 'high chi incr', 2,
+  'baja', -10500000, 3200000, 'high chi incr', 1.5, 
+  'venezuela', -6500000, 1300000, 'high chi decr', 1.5,
 ) %>%
-  mutate(xmin = x - x_wd/2, xmax = x + x_wd/2, ymin = y - y_ht/2, ymax = y + y_ht/2) %>%
+  mutate(xmin = x - sc*x_wd/2, xmax = x + sc*x_wd/2, 
+         ymin = y - sc*y_ht/2, ymax = y + sc*y_ht/2) %>%
   arrange(type)
 
 ```
@@ -76,11 +77,14 @@ land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
 
 locator_map <- ggplot() +
   ggtheme_map(base_size = 7) +
-  geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct), show.legend = FALSE) +
-  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
+  geom_sf(data = land_sf, fill = 'grey80', color = 'grey20', size = .10) +
+  # geom_rect(data = rgn_df, aes(xmin = xmin, xmax = xmax, 
+  #                              ymin = ymin, ymax = ymax), 
+  #           fill = NA, color = 'yellow', size = 1) +
   geom_rect(data = rgn_df, aes(xmin = xmin, xmax = xmax, 
                                ymin = ymin, ymax = ymax), 
-            fill = NA, color = 'red2') +
+            fill = NA, color = 'red2', size = 1) +
   scale_fill_viridis_c(breaks = seq(0, 1, .25), 
                        limits = c(0, 1),
                        labels = paste0(seq(0, 100, 25), '%'),
@@ -100,40 +104,56 @@ locator_map
 ## insets: impact
 
 ```{r}
-map_impacts <- function(df) {
-  xlims <- c(min(df$x, na.rm = TRUE), max(df$x, na.rm = TRUE))
-  ylims <- c(min(df$y, na.rm = TRUE), max(df$y, na.rm = TRUE))
-  imp_map <- ggplot() +
+map_impacts <- function(lims, rast) {
+  xlims <- c(lims$xmin, lims$xmax)
+  ylims <- c(lims$ymin, lims$ymax)
+  bbx <- extent(c(xlims, ylims))
+  crop_rast <- rast %>%
+    crop(bbx)
+  df <- crop_rast %>%
+    rasterToPoints() %>%
+    as.data.frame()
+  crop_map <- ggplot() +
     ggtheme_map(base_size = 7) +
-    geom_raster(data = df, aes(x, y, fill = imp_pct)) +
-    geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .3) +
+    geom_raster(data = df, aes(x, y, fill = layer)) +
+    geom_sf(data = land_sf, fill = 'grey80', color = 'grey20', size = .5) +
     scale_fill_viridis_c(breaks = seq(0, 1, .25), 
                          limits = c(0, 1),
                          labels = paste0(seq(0, 100, 25), '%'),
                          na.value = 'grey80') +
     coord_sf(datum = NA,  ### ditch graticules
-             xlim = xlims, ylim = ylims, expand = c(0, 0))
+             xlim = xlims, ylim = ylims, expand = c(0, 0)) +
+    theme(plot.margin = unit(c(0, 0, 0, 0), 'cm')) +
+    labs(fill = '% impacted')
 }
 
-map_intens <- function(df) {
+map_intens <- function(lims, rast) {
   ### diverging color palette from ColorBrewer
   div_pal <- c('#8e0152','#c51b7d','#de77ae','#f1b6da','#fde0ef',
                '#f7f7f7', ### mid color
                '#e6f5d0','#b8e186','#7fbc41','#4d9221','#276419') %>% rev()
 
-  xlims <- c(min(df$x, na.rm = TRUE), max(df$x, na.rm = TRUE))
-  ylims <- c(min(df$y, na.rm = TRUE), max(df$y, na.rm = TRUE))
-  int_map <- ggplot() +
+  xlims <- c(lims$xmin, lims$xmax)
+  ylims <- c(lims$ymin, lims$ymax)
+  bbx <- extent(c(xlims, ylims))
+  crop_rast <- rast %>%
+    crop(bbx)
+  df <- crop_rast %>%
+    rasterToPoints() %>%
+    as.data.frame()
+  crop_map <- ggplot() +
     ggtheme_map(base_size = 7) +
-    geom_raster(data = df, aes(x, y, fill = int_pct)) +
-    geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .3) +
+    geom_raster(data = df, aes(x, y, fill = layer)) +
+    geom_sf(data = land_sf, fill = 'grey80', color = 'grey20', size = .5) +
     scale_fill_gradientn(colors = div_pal,
                          limits = c(-1, 1),
                          breaks = seq(-1, 1, .5), 
                          labels = paste0(seq(-100, 100, 50), '%'),
                          na.value = 'grey80') +
     coord_sf(datum = NA,  ### ditch graticules
-             xlim = xlims, ylim = ylims, expand = c(0, 0))
+             xlim = xlims, ylim = ylims, expand = c(0, 0)) +
+    theme(plot.margin = unit(c(0, 0, 0, 0), 'cm')) +
+    labs(fill = '% inten-\nsifying')
 }
 ```
 
@@ -144,10 +164,7 @@ imp_map_list <- vector('list', length = length(rgns)) %>%
 for (rgn in rgns) { ### rgn <- rgns[1]
   lims <- rgn_df %>%
     filter(rgn_name == rgn)
-  rgn_imp_df <- imp_pct_df %>%
-    filter(between(x, lims$xmin, lims$xmax) & between(y, lims$ymin, lims$ymax))
-  rgn_imp_map <- map_impacts(rgn_imp_df) +
-    labs(title = paste(rgn, lims$type))
+  rgn_imp_map <- map_impacts(lims, imp_pct)
   imp_map_list[[rgn]] <- rgn_imp_map
 }
 
@@ -173,10 +190,7 @@ int_map_list <- vector('list', length = length(rgns)) %>%
 for (rgn in rgns) { ### rgn <- rgns[1]
   lims <- rgn_df %>%
     filter(rgn_name == rgn)
-  rgn_int_df <- int_pct_df %>%
-    filter(between(x, lims$xmin, lims$xmax) & between(y, lims$ymin, lims$ymax))
-  rgn_int_map <- map_intens(rgn_int_df) +
-    labs(title = paste(rgn, lims$type))
+  rgn_int_map <- map_intens(lims, int_pct)
   int_map_list[[rgn]] <- rgn_int_map
 }
 
@@ -195,43 +209,68 @@ for(rgn in rgns) {
 
 ## generate fig
 
-```{r, eval = FALSE}
-fig2_file <- here('ms_figs/fig2_impact_intens_3panel.png')
-fig2_tiff <- here('ms_figs/fig2_impact_intens_3panel.tiff')
+```{r}
+fig_file <- here('ms_figs/figS2_impact_intens_insets.png')
+# fig_tiff <- here('ms_figs/figS2_impact_intens_insets.tiff')
 
-if(any(!file.exists(fig2_file, fig2_tiff))) {
-  # unlink(fig2_file)
-  fig2a_panel  <- get_panel(fig2a_impact_ct_map)
-  fig2b_panel  <- get_panel(fig2b_impact_pct_map)
-  fig2c_panel  <- get_panel(fig2c_intens_pct_map)
-  fig2a_legend <- get_legend(fig2a_impact_ct_map)
-  fig2b_legend <- get_legend(fig2b_impact_pct_map)
-  fig2c_legend <- get_legend(fig2c_intens_pct_map)
+if(!file.exists(fig_file)) {
+  # unlink(fig_file)
+  loc <- locator_map + theme(legend.position = 'none')
+  panel_a1  <- imp_map_list[['baja']] + theme(legend.position = 'none')
+  panel_a2  <- int_map_list[['baja']] + theme(legend.position = 'none')
+  panel_b1  <- imp_map_list[['venezuela']] + theme(legend.position = 'none')
+  panel_b2  <- int_map_list[['venezuela']] + theme(legend.position = 'none')
+  # panel_c1  <- imp_map_list[['s afr']] + theme(legend.position = 'none')
+  # panel_c2  <- int_map_list[['s afr']] + theme(legend.position = 'none')
+  panel_c1  <- imp_map_list[['coral triangle']] + theme(legend.position = 'none')
+  panel_c2  <- int_map_list[['coral triangle']] + theme(legend.position = 'none')
+  imp_legend <- get_legend(imp_map_list[['baja']])
+  int_legend <- get_legend(int_map_list[['baja']])
   
-  fig2 <- ggdraw() +
-    draw_plot(fig2a_panel,  x = .01, y = 0.67, width = .88, height = .32) +
-    draw_plot(fig2b_panel,  x = .01, y = 0.34, width = .88, height = .32) +
-    draw_plot(fig2c_panel,  x = .01, y = 0.01, width = .88, height = .32) +
-    draw_plot(fig2a_legend, x = .89, y = 0.67, width = .1, height = .32) +
-    draw_plot(fig2b_legend, x = .895, y = 0.34, width = .1, height = .32) +
-    draw_plot(fig2c_legend, x = .9, y = 0.00, width = .1, height = .32) +
-    draw_label('A', x = .05, y = .95, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
-    draw_label('B', x = .05, y = .62, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
-    draw_label('C', x = .05, y = .30, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
-    draw_label('Species impacted\n(count)', x = .93, y = .97, hjust = 1, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
-    draw_label('Species impacted\n(percent)', x = .93, y = .64, hjust = 1, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
-    draw_label('Intensification\n(percent)', x = .93, y = .30, hjust = 1, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold')
+  n_insets <- length(imp_map_list)
+  legend_w <- .10
+  row_title_w <- .10
+  inset_gap <- 0.02
+  inset_w <- (1 - legend_w - row_title_w - n_insets * inset_gap) / n_insets
+  inset_h <- inset_w
+  inset_corner_x <- row_title_w + (inset_gap + inset_w) * 0:(n_insets-1)
+  inset_corner_y <- inset_gap + (inset_gap + inset_h) * 1:0
+  name_pos_y <- 2.5 * inset_gap + 2 * inset_h
+  name_pos_x <- inset_corner_x + .5*inset_w
+  loc_y <- name_pos_y + .05
+  loc_h <- .99 - loc_y
+  loc_w <- 2*loc_h
+  map_w_insets <- 
+    ggdraw() +
+    draw_plot(loc, x = .5 * (1 - loc_w), y  = loc_y, width = loc_w, height = loc_h) +
+    draw_plot(panel_a1,  x = inset_corner_x[1], y = inset_corner_y[1], width = inset_w, height = inset_h) +
+    draw_plot(panel_a2,  x = inset_corner_x[1], y = inset_corner_y[2], width = inset_w, height = inset_h) +
+    draw_plot(panel_b1,  x = inset_corner_x[2], y = inset_corner_y[1], width = inset_w, height = inset_h) +
+    draw_plot(panel_b2,  x = inset_corner_x[2], y = inset_corner_y[2], width = inset_w, height = inset_h) +
+    draw_plot(panel_c1,  x = inset_corner_x[3], y = inset_corner_y[1], width = inset_w, height = inset_h) +
+    draw_plot(panel_c2,  x = inset_corner_x[3], y = inset_corner_y[2], width = inset_w, height = inset_h) +
+    draw_plot(imp_legend, x = .89, y = inset_corner_y[1], width = .1, height = inset_h) +
+    draw_plot(int_legend, x = .89, y = inset_corner_y[2], width = .1, height = inset_h) +
+    draw_label('Western Mexico', x = name_pos_x[1], y = name_pos_y, 
+               vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold') +
+    draw_label('Northern Venezuela', x = name_pos_x[2], y = name_pos_y, 
+               vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold') +
+    draw_label('Southeast Asia', x = name_pos_x[3], y = name_pos_y, 
+               vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold')
+    # draw_label('Species impacted\n(count)', x = .93, y = .97, hjust = 1, vjust = 1, 
+    #            size = 7, color = 'grey20', fontface = 'bold') +
+    # draw_label('Species impacted\n(percent)', x = .93, y = .64, hjust = 1, vjust = 1, 
+    #            size = 7, color = 'grey20', fontface = 'bold') +
+    # draw_label('Intensification\n(percent)', x = .93, y = .30, hjust = 1, vjust = 1, 
+    #            size = 7, color = 'grey20', fontface = 'bold')
     
-  ggsave(plot = fig2, filename = fig2_file,
-         height = 15, width = 12, units = 'cm', dpi = 300)
-  ggsave(plot = fig2, filename = fig2_tiff,
-         height = 15, width = 12, units = 'cm', dpi = 300)
+  ggsave(plot = map_w_insets, filename = fig_file,
+         height = 6.5, width = 6.5, units = 'in', dpi = 300)
+  # ggsave(plot = map_w_insets, filename = fig_tiff,
+  #        height = 12, width = 12, units = 'cm', dpi = 300)
 }
 
-knitr::include_graphics(fig2_file)
+knitr::include_graphics(fig_file)
 # unlink(fig2_file)
 ```
 
