@@ -124,7 +124,7 @@ map_impacts <- function(lims, rast) {
     coord_sf(datum = NA,  ### ditch graticules
              xlim = xlims, ylim = ylims, expand = c(0, 0)) +
     theme(plot.margin = unit(c(0, 0, 0, 0), 'cm')) +
-    labs(fill = '% impacted')
+    labs(fill = 'Percent\nimpacted')
 }
 
 map_intens <- function(lims, rast) {
@@ -153,7 +153,7 @@ map_intens <- function(lims, rast) {
     coord_sf(datum = NA,  ### ditch graticules
              xlim = xlims, ylim = ylims, expand = c(0, 0)) +
     theme(plot.margin = unit(c(0, 0, 0, 0), 'cm')) +
-    labs(fill = '% inten-\nsifying')
+    labs(fill = 'Percent\nintensifying')
 }
 ```
 
@@ -213,64 +213,74 @@ for(rgn in rgns) {
 fig_file <- here('ms_figs/figS2_impact_intens_insets.png')
 # fig_tiff <- here('ms_figs/figS2_impact_intens_insets.tiff')
 
-if(!file.exists(fig_file)) {
-  # unlink(fig_file)
-  loc <- locator_map + theme(legend.position = 'none')
-  panel_a1  <- imp_map_list[['baja']] + theme(legend.position = 'none')
-  panel_a2  <- int_map_list[['baja']] + theme(legend.position = 'none')
-  panel_b1  <- imp_map_list[['venezuela']] + theme(legend.position = 'none')
-  panel_b2  <- int_map_list[['venezuela']] + theme(legend.position = 'none')
-  # panel_c1  <- imp_map_list[['s afr']] + theme(legend.position = 'none')
-  # panel_c2  <- int_map_list[['s afr']] + theme(legend.position = 'none')
-  panel_c1  <- imp_map_list[['coral triangle']] + theme(legend.position = 'none')
-  panel_c2  <- int_map_list[['coral triangle']] + theme(legend.position = 'none')
-  imp_legend <- get_legend(imp_map_list[['baja']])
-  int_legend <- get_legend(int_map_list[['baja']])
+loc <- locator_map + theme(legend.position = 'none')
+panel_a1  <- imp_map_list[['baja']] + theme(legend.position = 'none')
+panel_a2  <- int_map_list[['baja']] + theme(legend.position = 'none')
+panel_b1  <- imp_map_list[['venezuela']] + theme(legend.position = 'none')
+panel_b2  <- int_map_list[['venezuela']] + theme(legend.position = 'none')
+# panel_c1  <- imp_map_list[['s afr']] + theme(legend.position = 'none')
+# panel_c2  <- int_map_list[['s afr']] + theme(legend.position = 'none')
+panel_c1  <- imp_map_list[['coral triangle']] + theme(legend.position = 'none')
+panel_c2  <- int_map_list[['coral triangle']] + theme(legend.position = 'none')
+imp_legend <- get_legend(imp_map_list[['baja']])
+int_legend <- get_legend(int_map_list[['baja']])
+
+n_insets <- length(imp_map_list)
+legend_w <- .10
+row_title_w <- .05
+inset_gap_x <- 0.04
+inset_gap_y <- 0.02
+inset_w <- (1 - legend_w - row_title_w - n_insets * inset_gap_x) / n_insets
+inset_h <- inset_w
+inset_corner_x <- row_title_w + (inset_gap_x + inset_w) * 0:(n_insets-1)
+inset_corner_y <- inset_gap_y + (inset_gap_y + inset_h) * 1:0
+name_pos_y <- 2.5 * inset_gap_y + 2 * inset_h
+name_pos_x <- inset_corner_x + .5*inset_w
+loc_y <- name_pos_y + .05
+loc_h <- .99 - loc_y
+loc_w <- 2*loc_h
+map_w_insets <- 
+  ggdraw() +
+  draw_plot(loc, x = .5 * (1 - loc_w), y  = loc_y, width = loc_w, height = loc_h) +
+  draw_plot(panel_a1,  x = inset_corner_x[1], y = inset_corner_y[1], width = inset_w, height = inset_h) +
+  draw_plot(panel_a2,  x = inset_corner_x[1], y = inset_corner_y[2], width = inset_w, height = inset_h) +
+  draw_plot(panel_b1,  x = inset_corner_x[2], y = inset_corner_y[1], width = inset_w, height = inset_h) +
+  draw_plot(panel_b2,  x = inset_corner_x[2], y = inset_corner_y[2], width = inset_w, height = inset_h) +
+  draw_plot(panel_c1,  x = inset_corner_x[3], y = inset_corner_y[1], width = inset_w, height = inset_h) +
+  draw_plot(panel_c2,  x = inset_corner_x[3], y = inset_corner_y[2], width = inset_w, height = inset_h) +
+  draw_plot(imp_legend, x = .87, y = inset_corner_y[1], width = .1, height = inset_h) +
+  draw_plot(int_legend, x = .87, y = inset_corner_y[2], width = .1, height = inset_h) +
+  draw_label('Baja California Mexico', x = name_pos_x[1], y = name_pos_y, 
+             vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('Venezuela', x = name_pos_x[2], y = name_pos_y, 
+             vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('Southeast Asia', x = name_pos_x[3], y = name_pos_y, 
+             vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('A', x = inset_corner_x[1]-.01, y = inset_corner_y[1] + inset_h, 
+             vjust = 1, hjust = 1, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('B', x = inset_corner_x[1]-.01, y = inset_corner_y[2] + inset_h, 
+             vjust = 1, hjust = 1, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('C', x = inset_corner_x[2]-.01, y = inset_corner_y[1] + inset_h, 
+             vjust = 1, hjust = 1, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('D', x = inset_corner_x[2]-.01, y = inset_corner_y[2] + inset_h, 
+             vjust = 1, hjust = 1, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('E', x = inset_corner_x[3]-.01, y = inset_corner_y[1] + inset_h, 
+             vjust = 1, hjust = 1, size = 8, color = 'grey20', fontface = 'bold') +
+  draw_label('F', x = inset_corner_x[3]-.01, y = inset_corner_y[2] + inset_h, 
+             vjust = 1, hjust = 1, size = 8, color = 'grey20', fontface = 'bold')
+  # draw_label('Species impacted\n(count)', x = .93, y = .97, hjust = 1, vjust = 1, 
+  #            size = 7, color = 'grey20', fontface = 'bold') +
+  # draw_label('Species impacted\n(percent)', x = .93, y = .64, hjust = 1, vjust = 1, 
+  #            size = 7, color = 'grey20', fontface = 'bold') +
+  # draw_label('Intensification\n(percent)', x = .93, y = .30, hjust = 1, vjust = 1, 
+  #            size = 7, color = 'grey20', fontface = 'bold')
   
-  n_insets <- length(imp_map_list)
-  legend_w <- .10
-  row_title_w <- .10
-  inset_gap <- 0.02
-  inset_w <- (1 - legend_w - row_title_w - n_insets * inset_gap) / n_insets
-  inset_h <- inset_w
-  inset_corner_x <- row_title_w + (inset_gap + inset_w) * 0:(n_insets-1)
-  inset_corner_y <- inset_gap + (inset_gap + inset_h) * 1:0
-  name_pos_y <- 2.5 * inset_gap + 2 * inset_h
-  name_pos_x <- inset_corner_x + .5*inset_w
-  loc_y <- name_pos_y + .05
-  loc_h <- .99 - loc_y
-  loc_w <- 2*loc_h
-  map_w_insets <- 
-    ggdraw() +
-    draw_plot(loc, x = .5 * (1 - loc_w), y  = loc_y, width = loc_w, height = loc_h) +
-    draw_plot(panel_a1,  x = inset_corner_x[1], y = inset_corner_y[1], width = inset_w, height = inset_h) +
-    draw_plot(panel_a2,  x = inset_corner_x[1], y = inset_corner_y[2], width = inset_w, height = inset_h) +
-    draw_plot(panel_b1,  x = inset_corner_x[2], y = inset_corner_y[1], width = inset_w, height = inset_h) +
-    draw_plot(panel_b2,  x = inset_corner_x[2], y = inset_corner_y[2], width = inset_w, height = inset_h) +
-    draw_plot(panel_c1,  x = inset_corner_x[3], y = inset_corner_y[1], width = inset_w, height = inset_h) +
-    draw_plot(panel_c2,  x = inset_corner_x[3], y = inset_corner_y[2], width = inset_w, height = inset_h) +
-    draw_plot(imp_legend, x = .89, y = inset_corner_y[1], width = .1, height = inset_h) +
-    draw_plot(int_legend, x = .89, y = inset_corner_y[2], width = .1, height = inset_h) +
-    draw_label('Western Mexico', x = name_pos_x[1], y = name_pos_y, 
-               vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold') +
-    draw_label('Northern Venezuela', x = name_pos_x[2], y = name_pos_y, 
-               vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold') +
-    draw_label('Southeast Asia', x = name_pos_x[3], y = name_pos_y, 
-               vjust = 0, hjust = .5, size = 8, color = 'grey20', fontface = 'bold')
-    # draw_label('Species impacted\n(count)', x = .93, y = .97, hjust = 1, vjust = 1, 
-    #            size = 7, color = 'grey20', fontface = 'bold') +
-    # draw_label('Species impacted\n(percent)', x = .93, y = .64, hjust = 1, vjust = 1, 
-    #            size = 7, color = 'grey20', fontface = 'bold') +
-    # draw_label('Intensification\n(percent)', x = .93, y = .30, hjust = 1, vjust = 1, 
-    #            size = 7, color = 'grey20', fontface = 'bold')
-    
-  ggsave(plot = map_w_insets, filename = fig_file,
-         height = 6.5, width = 6.5, units = 'in', dpi = 300)
-  # ggsave(plot = map_w_insets, filename = fig_tiff,
-  #        height = 12, width = 12, units = 'cm', dpi = 300)
-}
+ggsave(plot = map_w_insets, filename = fig_file,
+       height = 6.5, width = 6.5, units = 'in', dpi = 300)
+# ggsave(plot = map_w_insets, filename = fig_tiff,
+#        height = 12, width = 12, units = 'cm', dpi = 300)
 
 knitr::include_graphics(fig_file)
-# unlink(fig2_file)
+# unlink(fig_file)
 ```
 
