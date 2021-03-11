@@ -24,7 +24,17 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
-reload <- FALSE
+library(showtext)
+font_add(family = 'bentonbold', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Bold', 
+                             'BentonSans Condensed Bold.otf'))
+font_add(family = 'benton', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Book', 
+                             'BentonSans Condensed Book.otf'))
+showtext_auto()
+
 ```
 
 
@@ -224,7 +234,8 @@ make_barplot <- function(df, str) {
     annotate(geom = 'text', x = -.1, y = 0.99, hjust = 1, vjust = 1, 
              label = '100%', size = 1.6, color = 'grey20') +
     coord_flip() +
-    theme(axis.title = element_blank(),
+    theme(text = element_text(family = 'benton'),
+          axis.title = element_blank(),
           panel.grid.major = element_blank(),
           legend.key.width = unit(.28, 'cm'),
           legend.text = element_text(angle = 90, hjust = .5),
@@ -241,12 +252,13 @@ fig4_land       <- make_barplot(eez_plot_df, 'land-based')
 fig4_eez_labels <- ggplot(eez_plot_df %>% filter(stressor == 'cumulative'),
                           aes(x = pos)) +
   ggtheme_plot(base_size = 8) +
-  geom_text(aes(label = lbl), y = 0, color = 'grey20',
+  geom_text(aes(label = lbl), y = 0, color = 'grey20', family = 'benton',
             hjust = 1, vjust = .9, size = 1.9) +
   scale_y_continuous(expand = c(0, 0), limits = c(-1, 0.02)) +
   scale_x_continuous(expand = c(0, 0), limits = lims) +
   coord_flip() +
-  theme(axis.title = element_blank(),
+  theme(text = element_text(family = 'benton'),
+        axis.title = element_blank(),
         panel.grid.major = element_blank(),
         axis.text = element_blank())
   
@@ -254,11 +266,12 @@ fig4_rgn_labels <- ggplot(georgn_lbls_df,
                           aes(y = pos)) +
   ggtheme_plot(base_size = 8) +
   geom_linerange(x = 0, aes(ymin = min_pos + .05, ymax = max_pos - .05), color = 'grey20') +
-  geom_text(aes(label = georgn), x = -.05, color = 'grey20', face = 'italics',
+  geom_text(aes(label = georgn), x = -.05, color = 'grey20', family = 'benton',
             hjust = 1, vjust = .5, size = 1.9) +
   scale_x_continuous(expand = c(0, 0), limits = c(-1, 0.01)) +
   scale_y_continuous(expand = c(0, 0), limits = lims) +
-  theme(axis.title = element_blank(),
+  theme(text = element_text(family = 'benton'),
+        axis.title = element_blank(),
         panel.grid.major = element_blank(),
         axis.text = element_blank())
 
@@ -280,18 +293,19 @@ fig4_done <- ggdraw() +
             x = l_w + 4*c_w, y = 0.02, width = c_w - .005, height = .955) +
   draw_plot(get_panel(fig4_rgn_labels),
             x = .90, y = 0.02, width = .085, height = .955) +
-  draw_label(x = l_w, y = .98,         label = 'cumulative', 
-             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
-  draw_label(x = l_w + c_w, y = .98,   label = 'fishing',
-             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
-  draw_label(x = l_w + 2*c_w, y = .98, label = 'climate', 
-             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
-  draw_label(x = l_w + 3*c_w, y = .98, label = 'ocean', 
-             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
-  draw_label(x = l_w + 4*c_w, y = .98, label = 'land-based', 
-             color = 'grey20', size = 6, hjust = 0, vjust = 0, fontface = 'bold') +
-  draw_label(x = 0.50, y = 0.005, label = 'Mean proportion of species range impacted within EEZ', 
-             color = 'grey20', size = 6, hjust = .5, vjust = 0, fontface = 'bold')
+  draw_label(x = l_w, y = .98,         label = 'Cumulative', 
+             color = 'grey20', size = 7, hjust = 0, vjust = 0, fontfamily = 'bentonbold') +
+  draw_label(x = l_w + c_w, y = .98,   label = 'Fishing',
+             color = 'grey20', size = 7, hjust = 0, vjust = 0, fontfamily = 'bentonbold') +
+  draw_label(x = l_w + 2*c_w, y = .98, label = 'Climate', 
+             color = 'grey20', size = 7, hjust = 0, vjust = 0, fontfamily = 'bentonbold') +
+  draw_label(x = l_w + 3*c_w, y = .98, label = 'Ocean', 
+             color = 'grey20', size = 7, hjust = 0, vjust = 0, fontfamily = 'bentonbold') +
+  draw_label(x = l_w + 4*c_w, y = .98, label = 'Land-based', 
+             color = 'grey20', size = 7, hjust = 0, vjust = 0, fontfamily = 'bentonbold') +
+  draw_label(x = 0.50, y = 0.005, 
+             label = 'Mean proportion of species range impacted within EEZ', 
+             color = 'grey20', size = 7, hjust = .5, vjust = 0, fontfamily = 'bentonbold')
 
   # draw_plot(get_legend(fig4_barplot), x = .9, y = .2, width = .1, height = .3)
 

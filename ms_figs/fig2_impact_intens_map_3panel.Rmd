@@ -26,7 +26,18 @@ library(sf)
 library(cowplot)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
-reload <- FALSE
+library(showtext)
+font_add(family = 'bentonbold', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Bold', 
+                             'BentonSans Condensed Bold.otf'))
+font_add(family = 'benton', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Book', 
+                             'BentonSans Condensed Book.otf'))
+showtext_auto()
+
+reload <- TRUE
 ```
 
 
@@ -66,7 +77,8 @@ fig2a_impact_ct_map <- ggplot() +
   scale_fill_viridis_c(breaks = ct_breaks,
                        labels = ct_labels,
                        na.value = 'grey80') +
-  theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+  theme(text = element_text(family = 'benton'),
+        plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
         legend.background = element_blank(),
         legend.key.width = unit(.25, 'cm'),
         legend.title = element_blank()) +
@@ -110,7 +122,8 @@ fig2b_impact_pct_map <- ggplot() +
   scale_fill_viridis_c(breaks = seq(0, 1, .25), 
                        labels = paste0(seq(0, 100, 25), '%'),
                        na.value = 'grey80') +
-  theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+  theme(text = element_text(family = 'benton'),
+        plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
         legend.background = element_blank(),
         legend.key.width = unit(.25, 'cm'),
         legend.title = element_blank()) +
@@ -153,7 +166,8 @@ fig2c_intens_pct_map <- ggplot() +
                        breaks = seq(-1, 1, .5), 
                        labels = paste0(seq(-100, 100, 50), '%'),
                        na.value = 'grey80') +
-  theme(plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+  theme(text = element_text(family = 'benton'),
+        plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
         legend.background = element_blank(),
         legend.key.width = unit(.25, 'cm'),
         legend.title = element_blank()) +
@@ -167,11 +181,11 @@ fig2c_intens_pct_map <- ggplot() +
 
 ## Combine into one figure
 
-```{r}
+```{r assemble plot}
 fig2_file <- here('ms_figs/fig2_impact_intens_3panel.png')
 fig2_tiff <- here('ms_figs/fig2_impact_intens_3panel.tiff')
 
-if(any(!file.exists(fig2_file, fig2_tiff))) {
+if(any(!file.exists(fig2_file, fig2_tiff)) | reload) {
   # unlink(fig2_file)
   fig2a_panel  <- get_panel(fig2a_impact_ct_map)
   fig2b_panel  <- get_panel(fig2b_impact_pct_map)
@@ -187,15 +201,21 @@ if(any(!file.exists(fig2_file, fig2_tiff))) {
     draw_plot(fig2a_legend, x = .89, y = 0.67, width = .1, height = .32) +
     draw_plot(fig2b_legend, x = .895, y = 0.34, width = .1, height = .32) +
     draw_plot(fig2c_legend, x = .9, y = 0.00, width = .1, height = .32) +
-    draw_label('A', x = .05, y = .95, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
-    draw_label('B', x = .05, y = .62, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
-    draw_label('C', x = .05, y = .30, vjust = 1, size = 9, color = 'grey20', fontface = 'bold') +
-    draw_label('Species impacted\n(count)', x = .93, y = .97, hjust = 1, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
-    draw_label('Species impacted\n(percent)', x = .93, y = .64, hjust = 1, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold') +
+    draw_label('A', x = .005, y = .97, vjust = 1, hjust = 0, 
+               size = 10, color = 'grey20',
+               fontfamily = 'bentonbold') +
+    draw_label('B', x = .005, y = .65, vjust = 1, hjust = 0, 
+               size = 10, color = 'grey20',
+               fontfamily = 'bentonbold') +
+    draw_label('C', x = .005, y = .32, vjust = 1, hjust = 0, 
+               size = 10, color = 'grey20',
+               fontfamily = 'bentonbold') +
+    draw_label('Species affected\n(count)', x = .93, y = .97, hjust = 1, vjust = 1, 
+               size = 8, color = 'grey20', fontfamily = 'bentonbold') +
+    draw_label('Species affected\n(percent)', x = .93, y = .64, hjust = 1, vjust = 1, 
+               size = 8, color = 'grey20', fontfamily = 'bentonbold') +
     draw_label('Intensification\n(percent)', x = .93, y = .30, hjust = 1, vjust = 1, 
-               size = 7, color = 'grey20', fontface = 'bold')
+               size = 8, color = 'grey20', fontfamily = 'bentonbold')
     
   ggsave(plot = fig2, filename = fig2_file,
          height = 15, width = 12, units = 'cm', dpi = 300)

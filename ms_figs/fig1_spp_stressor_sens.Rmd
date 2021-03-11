@@ -20,6 +20,18 @@ output:
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
+library(cowplot)
+
+library(showtext)
+font_add(family = 'bentonbold', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Bold', 
+                             'BentonSans Condensed Bold.otf'))
+font_add(family = 'benton', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Book', 
+                             'BentonSans Condensed Book.otf'))
+showtext_auto()
 ```
 
 
@@ -95,13 +107,15 @@ n_spp_str <- ggplot(plot1_df, aes(x = stressor, y = n_spp, fill = category)) +
                              # hjust = 1 # centres the title horizontally
                               title.hjust = 1,
                               label.position = "left")) +
-  theme(axis.title.y = element_blank(),
+  theme(text = element_text(family = 'benton'),
+        axis.title.y = element_blank(),
         axis.text.y  = element_text(size = 7),
-        axis.title.x = element_text(size = 7),
+        axis.title.x = element_text(size = 7, family = 'bentonbold'),
+        plot.margin = unit(c(0.12, 0.22, 0.5, 0.05), 'cm'),
         legend.position = c(.96, .01),
         legend.background = element_blank(),
         legend.key.size = unit(.30, 'cm'),
-        legend.title = element_text(size = 7, face = 'bold'),
+        legend.title = element_text(size = 7, family = 'bentonbold'),
         legend.text = element_text(size = 7),
         legend.justification = c(1, 0))
 
@@ -158,19 +172,23 @@ n_str_spp <- ggplot(plot2_df, aes(x = ct)) +
   # geom_bar(position = 'stack', aes(fill = desc), color = 'black', size = .25) +
   geom_bar(position = 'stack', aes(fill = desc)) +
   geom_hline(yintercept = 0, color = 'grey30', size = .25) +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 7),
-        legend.title = element_text(size = 7, face = 'bold'),
-        legend.text =  element_text(size = 7, face = 'plain'),
+  theme(text = element_text(family = 'benton'),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 7, family = 'bentonbold'),
+        legend.title = element_text(size = 7, family = 'bentonbold'),
+        legend.text =  element_text(size = 7),
+        legend.background = element_blank(),
         legend.key.size = unit(.30, 'cm'),
         legend.margin =     margin(0, 0, 0, 0),
-        legend.box.margin = margin(-10, -5, -10, -10),
+        legend.box.margin = margin(-10, -5, -10, -25),
+        plot.margin = unit(c(0, 0.22, 0, 0.05), 'cm'),
         strip.switch.pad.grid	= unit(-.1, 'cm'),
-        strip.text = element_text(size = 7, face = 'plain', color = 'grey20'),
+        strip.text = element_text(size = 7, family = 'bentonbold', 
+                                  color = 'grey20'),
         strip.placement = 'outside') +
   guides(fill = guide_legend(title.position = "top", 
                              # hjust = 1 # centres the title horizontally
-                             title.hjust = .5,
+                             title.hjust = .6,
                              ncol = 1,
                              label.position = "left")) +
   scale_fill_manual(values = bar_pal) +
@@ -183,9 +201,18 @@ n_str_spp
 
 
 ``` {r combine}
-z <- cowplot::plot_grid(n_spp_str, n_str_spp, 
-                        nrow = 2, rel_heights = c(2, 1.3),
-                        labels = c('A', 'B'), label_size = 9, label_colour = 'grey20')
+
+z <- ggdraw() +
+  draw_plot(n_spp_str, x = 0, y = .40, height = .60, width = 1) +
+  draw_plot(n_str_spp, x = 0, y = 0, height = .40, width = 1) +
+  draw_label('A', x = 0.002, y = .99, hjust = 0, vjust = 1, 
+             size = 10, fontfamily = 'bentonbold') +
+  draw_label('B', x = 0.002, y = .42, hjust = 0, vjust = 1, 
+             size = 10, fontfamily = 'bentonbold')
+
+# z <- cowplot::plot_grid(n_spp_str, n_str_spp, 
+#                         nrow = 2, rel_heights = c(2, 1.3),
+#                         labels = c('A', 'B'), label_size = 9, label_colour = 'grey20')
 
 fname <- here('ms_figs/fig1_spp_stressor_sens.png')
 

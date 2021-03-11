@@ -29,6 +29,20 @@ source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here('common_fxns.R'))
 
+library(showtext)
+font_add(family = 'bentonbold', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Bold', 
+                             'BentonSans Condensed Bold.otf'))
+font_add(family = 'bentonmed', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Medium', 
+                             'BentonSans Condensed Medium.otf'))
+font_add(family = 'benton', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Book', 
+                             'BentonSans Condensed Book.otf'))
+showtext_auto()
 ```
 
 
@@ -338,57 +352,6 @@ plot_tax_sum_df <- tax_sum_df %>%
 
 # Assemble plot
 
-```{r fig 3a mean sd}
-
-# ttest_expansion <- read_csv(here('ms_figs/fig3a_ttest_by_stressor.csv')) %>%
-#   filter(stressor == 'cum_all') %>%
-#   mutate(stars = case_when(p.value > .05 ~ '',
-#                            p.value > .01 ~ '*',
-#                            p.value > .001 ~ '**',
-#                            TRUE ~ '***'),
-#          lbl   = ifelse(p.value > .001 , 
-#                         sprintf('p = %s', round(p.value, 3)), 'p < 0.001'))
-
-fig3a <- ggplot(cum_impact_df %>%
-                  filter(year != 2030)) +
-  ggtheme_plot(base_size = 7) +
-  geom_hline(yintercept = 0, color = 'grey30', size = .25) +
-  geom_point(aes(y = mean_pct_imp, x = desc, 
-                 color = year, group = year), 
-             size = .8,
-             position = position_dodge(width = -.6)) +
-  geom_linerange(aes(x = desc, ymin = ymin, ymax = ymax,
-                     color = year, 
-                     # linetype = year, 
-                     group = year), 
-             position = position_dodge(width = -.6),
-             show.legend = FALSE,
-             size = .25) +
-  geom_rect(xmin = 2, xmax = 4, ymin = .75, ymax = 1, 
-            fill = 'white', color = 'grey90', size = .1) + ### suppress gridlines behind legend
-  scale_color_manual(values = c(hcl.colors(n = 3)[1:2])) +
-  # scale_linetype_manual(values = c('dashed', 'solid', 'solid')) +
-  # geom_text(data = ttest_expansion, aes(x = desc, label = lbl), 
-  #           y = .80, size = 1.9, color = 'grey20', 
-  #           vjust = 0, hjust = 0, nudge_x = .06) +
-  # geom_text(data = ttest_expansion, aes(x = desc, label = stars), 
-  #           y = .79, size = 1.9, color = 'grey20', 
-  #           vjust = 0, hjust = 1, nudge_x = .06) +
-  scale_y_continuous(expand = c(0, 0), 
-                     limits = c(-.02, 1.02),
-                     breaks = seq(0, 1, .25),
-                     labels = paste0(seq(0, 100, 25), '%')) +
-  scale_x_discrete(expand = c(0.02, 0.02)) +
-  labs(y = 'Percent of range impacted') +
-  coord_flip() +
-  theme(axis.title.y = element_blank(),
-        legend.key.size = unit(.25, 'cm'),
-        legend.background = element_blank(),
-        legend.title = element_blank())
-
-# fig3a
-```
-
 ```{r fig 3a boxplot}
 spp_impact_df <- imp_2030_df %>%
   left_join(taxon_df, by = 'iucn_sid') %>%
@@ -450,9 +413,11 @@ fig3a_box <- ggplot(boxplot_df, aes(y = pct_impact, x = desc)) +
                      breaks = seq(0, 1, .25),
                      labels = paste0(seq(0, 100, 25), '%')) +
   scale_x_discrete(expand = c(0.02, 0.02)) +
-  labs(y = 'Percent of range impacted') +
+  labs(y = 'Percent of range affected') +
   coord_flip() +
-  theme(axis.title.y = element_blank(),
+  theme(text = element_text(family = 'benton'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_text(family = 'bentonbold'),
         axis.text = element_text(size = 7),
         legend.key.size = unit(.3, 'cm'),
         legend.text = element_text(size = 7),
@@ -490,8 +455,9 @@ fig3b <- ggplot(plot_tax_sum_df) +
            width = .5) +
   geom_text(data = n_labels,
             aes(x = desc, label = n_lbl), y = 1.03,
+            family = 'benton',
             size = 1.9, color = 'grey20', hjust = 0) +
-  labs(y = 'Percent of range impacted') +
+  labs(y = 'Percent of range affected') +
   scale_y_continuous(expand = c(0, 0), 
                      limits = c(0, 1.22),
                      breaks = seq(0, 1, .25),
@@ -500,11 +466,13 @@ fig3b <- ggplot(plot_tax_sum_df) +
   scale_fill_manual(values = hcl.colors(n = 7, palette = 'Red-Green')) +
   coord_flip() +
   labs(fill = 'Rate of\nintensification') +
-  theme(axis.title.y = element_blank(),
+  theme(text = element_text(family = 'benton'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_text(family = 'bentonbold'),
         axis.text = element_text(size = 7),
-        legend.key.size = unit(.2, 'cm'),
+        legend.key.size = unit(.25, 'cm'),
         legend.background = element_blank(),
-        legend.title = element_text(size = 7, face = 'bold', color = 'grey20'),
+        legend.title = element_text(size = 7, family = 'bentonbold', color = 'grey20'),
         legend.text = element_text(size = 7, face = 'plain', color = 'grey20'),
         axis.text.y = element_blank()) ### align with 2a
 
@@ -522,11 +490,11 @@ fig3 <- plot_grid(fig3a_box + theme(legend.position = 'none'),
                   rel_widths = c(1.2, 1),
                   align = 'h', nrow = 1)  +
   draw_plot(legend_3a, x = .34, y = .18, width = .2, height = .2) +
-  draw_plot(legend_3b, x = .73, y = .19, width = .2, height = .4) +
-  draw_label('A', x = .05, y = .99, vjust = 1, 
-             fontface = 'bold', size = 9, colour = 'grey20') +
-  draw_label('B', x = .55, y = .99, vjust = 1,
-             fontface = 'bold', size = 9, colour = 'grey20')
+  draw_plot(legend_3b, x = .73, y = .18, width = .2, height = .4) +
+  draw_label('A', x = .005, y = .99, vjust = 1, hjust = 0, 
+             fontfamily = 'bentonbold', size = 10, colour = 'grey20') +
+  draw_label('B', x = .545, y = .99, vjust = 1, hjust = 0, 
+             fontfamily = 'bentonbold', size = 10, colour = 'grey20')
   
 ggsave(plot = fig3, filename = here('ms_figs/fig3_expand_intens.png'),
          height = 6, width = 12, units = 'cm', dpi = 300)
