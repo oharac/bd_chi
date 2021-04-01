@@ -1,0 +1,162 @@
+---
+title: 'Fig 2: impacts and intensification maps'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+library(showtext)
+font_add(family = 'bentonbold', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Bold', 
+                             'BentonSans Condensed Bold.otf'))
+font_add(family = 'benton', 
+         regular = file.path('/Library/Fonts', 
+                             'BentonSans Condensed Book', 
+                             'BentonSans Condensed Book.otf'))
+showtext_auto()
+
+reload <- TRUE
+```
+
+
+# Summary
+
+Create figure 2 for manuscript.  2A: map of impacted spp by count; 2B: map of impacted species by pct; 2C: map of intensification by pct.
+
+# Methods
+
+## Fig. 2A
+
+Load rasters of impacted spp for 2013; make a cool map.
+
+``` {r figure 2a}
+
+imp_count  <- raster(here('_output/rasters/impact_maps/impact_all_2013.tif'))
+
+xfm <- function(x) log10(x) ### how are we transforming count?
+
+imp_ct_df <- rasterToPoints(imp_count) %>%
+  as.data.frame() %>%
+  setNames(c('x', 'y', 'imp_ct')) %>%
+  mutate(xfm_imp_ct = xfm(imp_ct),
+         xfm_imp_ct = ifelse(is.infinite(xfm_imp_ct), NA, xfm_imp_ct))
+
+max_ct <- max(imp_ct_df$imp_ct, na.rm = TRUE)
+ct_labels <- c(1, 10, 100, max_ct)
+ct_breaks <- xfm(ct_labels)
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(imp_count))
+
+fig2a_impact_ct_map <- ggplot() +
+  ggtheme_map(base_size = 7) +
+  geom_raster(data = imp_ct_df, aes(x, y, fill = xfm_imp_ct)) +
+  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  scale_fill_viridis_c(breaks = ct_breaks,
+                       labels = ct_labels,
+                       na.value = 'grey80') +
+  theme(text = element_text(family = 'benton'),
+        plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+        legend.background = element_blank(),
+        legend.key.width = unit(.25, 'cm'),
+        legend.title = element_blank()) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))
+
+# fig2a_impact_ct_map
+# zeros <- imp_ct_df %>%
+#   filter(imp_ct == 0)
+# 
+# ggplot() +
+#   ggtheme_map(base_size = 7) +
+#   geom_raster(data = zeros, aes(x, y), fill = 'orange') +
+#   geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10)
+# 
+
+```
+
+## Fig. 2B
+
+Load rasters of impacted spp and species count for 2013; generate impacted spp by pct; make a cool map.
+
+``` {r figure 2b}
+imp_count  <- raster(here('_output/rasters/impact_maps/impact_all_2013.tif'))
+nspp <- raster(here('_output/rasters/n_spp_map.tif')) 
+
+imp_pct <- imp_count / nspp
+
+imp_pct_df <- rasterToPoints(imp_pct) %>%
+  as.data.frame() %>%
+  rename(imp_pct = layer)
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(imp_pct))
+
+fig2b_impact_pct_map <- ggplot() +
+  ggtheme_map(base_size = 7) +
+  geom_raster(data = imp_pct_df, aes(x, y, fill = imp_pct)) +
+  geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+  scale_fill_viridis_c(breaks = seq(0, 1, .25), 
+                       labels = paste0(seq(0, 100, 25), '%'),
+                       na.value = 'grey80') +
+  theme(text = element_text(family = 'bentonbold', color = 'white'),
+        plot.background = element_rect(fill = 'black', color = NA),
+        panel.background = element_rect(fill = 'black', color = NA),
+        plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+        legend.background = element_blank(),
+        legend.key.width = unit(.5, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(color = 'white', size = 10)) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))
+
+# print(fig2b_impact_pct_map)
+
+```
+
+## Combine into one figure
+
+```{r assemble plot}
+out_file <- here('ms_figs/fig_for_shiny.png')
+
+  fig2b_panel  <- get_panel(fig2b_impact_pct_map)
+  fig2b_legend <- get_legend(fig2b_impact_pct_map)
+
+  fig <- ggdraw() +
+    draw_plot(fig2b_panel,  x = 0, y = 0, width = .88, height = 1) +
+    draw_plot(fig2b_legend, x = .895, y = .05, width = .1, height = 1) +
+    draw_label('Species affected\n(percent)', x = .94, y = .9, hjust = 1, vjust = 1, 
+               size = 12, color = 'white', fontfamily = 'bentonbold') +
+    theme(plot.background = element_rect(fill = 'black', color = NA))
+
+  ggsave(plot = fig, filename = out_file,
+         height = 3, width = 7, units = 'in', dpi = 100)
+
+knitr::include_graphics(out_file)
+# unlink(fig2_file)
+```
+

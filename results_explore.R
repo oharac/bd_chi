@@ -1,8 +1,8 @@
 ### interesting spp
+library(raster)
 source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
 
 source(here::here('common_fxns.R'))
-library(raster)
 # cellid_mol <- raster('_spatial/cell_id_mol.tif')
 # ocean_mol <- raster('_spatial/ocean_area_mol.tif')
 # values(cellid_mol)[is.na(values(ocean_mol))] <- NA
