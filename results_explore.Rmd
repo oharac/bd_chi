@@ -1,0 +1,190 @@
+---
+title: 'Calculate fishing stressor sensitivities from IUCN impact scores'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+  
+``` {r setup}
+### interesting spp
+library(raster)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here::here('common_fxns.R'))
+library(sf)
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+``` {r, eval = FALSE}
+# cellid_mol <- raster('_spatial/cell_id_mol.tif')
+# ocean_mol <- raster('_spatial/ocean_area_mol.tif')
+# values(cellid_mol)[is.na(values(ocean_mol))] <- NA
+# blank_latlong <- raster(ext = extent(c(-180, 180, -90, 90)), crs = '+init=epsg:4326', res = .1)
+# cellid_latlong <- projectRaster(cellid_mol, blank_latlong, method = 'ngb')
+# writeRaster(cellid_latlong, '_spatial/cellid_latlong.tif', overwrite = TRUE)
+cellid_latlong <- raster('_spatial/cellid_latlong.tif')
+
+ca_cellid_latlong <- crop(cellid_latlong, extent(c(-130, -115, 30, 42)))
+ca_cells <- values(ca_cellid_latlong) %>% .[!is.na(.)]
+
+spp_ids <- get_incl_spp()$iucn_sid %>% unique()
+spp_cells_list <- parallel::mclapply(spp_ids, mc.cores = 40, FUN = function(id) {
+  f <- sprintf(file.path(dir_bd_anx, 'spp_rasts_mol_2020/iucn_sid_%s.csv'), id)
+  x <- data.table::fread(f)
+}) 
+spp_cells_df <- spp_cells_list %>% 
+  setNames(spp_ids) %>%
+  bind_rows(.id = 'iucn_sid') %>%
+  mutate(iucn_sid = as.integer(iucn_sid))
+
+ca_spp_cells <- spp_cells_df %>%
+  filter(cell_id %in% ca_cells)
+ca_spp <- ca_spp_cells %>%
+  select(iucn_sid) %>%
+  distinct() %>%
+  left_join(get_incl_spp())
+
+n_ca_spp <- ca_spp %>%
+  select(iucn_sid, sciname, comname, cat_score, assess_gp) %>%
+  distinct() %>%
+  group_by(assess_gp) %>%
+  mutate(n_gp = n()) %>%
+  left_join(get_spp_range() %>% filter(eez == 0))
+```
+
+``` {r, eval = FALSE}
+
+### A few identified species
+spp_of_note <- c(46967817, 46967863, 8005, 39385, 19488,	
+                 17028,	4162,	8099,	22697742, 
+                 21858 , 21860, 170341, 193734, 10088)
+imps <- get_incl_spp() %>%
+  filter(iucn_sid %in% spp_of_note) %>%
+  select(iucn_sid, sciname, comname, cat_score) %>% #, assess_gp, desc, taxon) %>%
+  distinct() %>% 
+  left_join(read_csv('_output/imp_range_by_spp_2013.csv'), by = 'iucn_sid') %>%
+  filter(impact_km2 > 0) %>%
+  mutate(imp_pct = round(impact_km2 / range_km2 * 100, 3),
+         inc2_pct = round(incr2_km2 / range_km2 * 100, 3),
+         inc3_pct = round(incr3_km2 / range_km2 * 100, 3),
+         dec2_pct = round(decr2_km2 / range_km2 * 100, 3),
+         dec3_pct = round(decr3_km2 / range_km2 * 100, 3)) %>%
+  select(-ends_with('km2'), range_km2) %>%
+  distinct()
+```
+
+## Focus on turtles and whale sharks
+
+``` {r results table}
+spp_df <- get_incl_spp() %>%
+  filter(iucn_sid == 19488 | assess_gp == 'sea_turtles') %>%
+  select(-code) %>%
+  distinct()
+
+results_df <- read_csv('_output/imp_range_by_spp_2013.csv') %>%
+  filter(iucn_sid %in% spp_df$iucn_sid) %>%
+  mutate(imp_pct = round(impact_km2 / range_km2 * 100, 3),
+         imp_2plus_pct = round(impact_2plus_km2 / range_km2 * 100, 3),
+         incr2_pct = round(incr2_km2 / range_km2 * 100, 3),
+         incr3_pct = round(incr3_km2 / range_km2 * 100, 3),
+         decr2_pct = round(decr2_km2 / range_km2 * 100, 3),
+         decr2_pct = round(decr3_km2 / range_km2 * 100, 3)) %>%
+  filter(impact_km2 > 0) %>%
+  select(-ends_with('km2'), range_km2) %>%
+  distinct() %>%
+  left_join(spp_df %>%
+              select(-stressor, -category) %>% distinct())
+
+DT::datatable(results_df)
+```
+
+```{r plots}
+
+cell_id_rast <- raster('_spatial/cell_id_mol.tif')
+land_sf <- read_sf('_spatial/ne_10m_land/ne_10m_land.shp') %>%
+  st_transform(crs(cell_id_rast))
+for(spp in unique(spp_df$iucn_sid)) {
+  ### spp <- spp_df$iucn_sid[1]
+  ### spp <- 19488
+  tmp_df <- spp_df %>%
+    filter(iucn_sid == spp)
+  spp_name <- tmp_df$sciname[1]
+  spp_name <- str_remove(spp_name, 'Ocean|ulation')
+  spp_name2 <- tmp_df$comname[1]
+  message('Processing ', spp_name)
+
+  spp_range_f <- sprintf(file.path(dir_bd_anx, 'spp_rasts_mol_2020', 'iucn_sid_%s.csv'), spp)
+  cells <- read_csv(spp_range_f)
+  
+  range_rast <- raster(cell_id_rast)
+  range_rast[values(cell_id_rast) %in% cells$cell_id] <- 0
+
+  strs <- tmp_df$stressor %>% unique()
+  str_df <- lapply(strs, FUN = function(str) {
+    ### str <- strs[1]
+    str_f <- sprintf(file.path(dir_bd_anx, 'spp_str_rasts/%s/spp_intsx_%s_%s.csv'),
+                    str, str, spp)
+
+    df <- read_csv(str_f) %>%
+      filter(year == 2013) %>%
+      mutate(stressor = str,
+             impact = 1)
+  }) %>%
+    bind_rows()
+  
+  for(str in strs) {
+    ### str <- strs[1]
+    df <- str_df %>%
+      filter(stressor == str) %>%
+      as.data.frame()
+    r <- range_rast
+    r[values(cell_id_rast) %in% df$cell_id] <- 1
+    
+    r_df <- rasterToPoints(r) %>%
+      as.data.frame() %>%
+      setNames(c('x', 'y', 'val'))
+    p <- ggplot() +
+      ggtheme_plot() +
+      theme(axis.title = element_blank()) +
+      geom_sf(data = land_sf, fill = 'grey70', color = 'grey30', size = .1) +
+      geom_raster(data = r_df, aes(x, y, fill = val)) +
+      scale_fill_viridis_c() +
+      labs(title = sprintf('%s %s %s', spp_name2, spp_name, str))
+      
+    print(p)
+  }
+  sum_df <- str_df %>%
+    group_by(cell_id) %>%
+    summarize(n_strs = n())
+  sum_rast <- raster::subs(cell_id_rast, sum_df, by = 'cell_id', which = 'n_strs')
+  values(sum_rast)[is.na(values(sum_rast))] <- values(range_rast)[is.na(values(sum_rast))]
+  
+  sum_df <- rasterToPoints(sum_rast) %>%
+    as.data.frame() %>%
+    setNames(c('x', 'y', 'val'))
+      
+  p <- ggplot() +
+    ggtheme_plot() +
+    theme(axis.title = element_blank()) +
+    geom_sf(data = land_sf, fill = 'grey70', color = 'grey30', size = .1) +
+    geom_raster(data = sum_df, aes(x, y, fill = val)) +
+    scale_fill_viridis_c() +
+    labs(title = sprintf('%s %s cum', spp_name2, spp_name))
+  print(p)
+
+}
+```
+
+

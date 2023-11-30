@@ -103,7 +103,7 @@ threats_to_marine <- spp_marine %>%
   filter(!is.na(code)) %>% ### drop code mismatches
   filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
   select(iucn_sid, cat_score, sens, 
-         code, stressor) %>%
+         code, stressor, score_num) %>%
   distinct()
 
 ### sensitivity categories:
@@ -485,12 +485,13 @@ cc_sens_df <- cc_narr_tidy %>%
 ### within that stressor category.  Complete the list so all stressors
 ### show up for all species, leaving NAs for those added via complete().
 cc_sens_summary <- cc_sens_df %>%
-  group_by(iucn_sid, stressor, code) %>%
+  group_by(iucn_sid, stressor, code, score_num) %>%
   filter(!is.na(sens)) %>%
   summarize(sens = sum(count * sens) > 0) %>%
   group_by(iucn_sid) %>%
   complete(stressor = stressors) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(score_num = ifelse(score_num >= 3 & !sens, NA, score_num))
 
 write_csv(cc_sens_summary, 
           here('int', sprintf('spp_sens_climate_%s.csv', api_version)))

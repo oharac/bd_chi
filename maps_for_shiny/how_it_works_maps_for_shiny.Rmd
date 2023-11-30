@@ -1,0 +1,324 @@
+---
+title: 'How it works: maps showing the process step by step'
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+library(cowplot)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+source(here('common_fxns.R'))
+# library(showtext)
+# font_add(family = 'bentonbold', 
+#          regular = file.path('/Library/Fonts', 
+#                              'BentonSans Condensed Bold', 
+#                              'BentonSans Condensed Bold.otf'))
+# font_add(family = 'benton', 
+#          regular = file.path('/Library/Fonts', 
+#                              'BentonSans Condensed Book', 
+#                              'BentonSans Condensed Book.otf'))
+# showtext_auto()
+
+reload <- TRUE
+```
+
+
+# Summary
+
+Generate maps (as static image) for Shiny app - 
+
+* species range
+* distribution of relevant stressors
+* intersection showing impacted, non-impacted
+
+``` {r gather rasters}
+
+spp_ids <- c(8005, 19488, 39374, 2478, 7750, 21860, 132928, 22694870)
+
+ocean_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+ocean_map <- rasterToPoints(ocean_rast) %>%
+  as.data.frame() %>%
+  setNames(c('x', 'y', 'ocean'))
+cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(cell_id_rast))
+
+map_cols <- hcl.colors(n = 6)
+range_col <- map_cols[4]
+str_col <- map_cols[2]
+imp_col <- map_cols[6]
+```
+
+``` {r range maps}
+
+for(id in spp_ids) { ### id <- spp_ids[1]
+  out_file <- sprintf(here('maps_for_shiny/range_%s.png'), id)
+
+  if(!file.exists(out_file)) {
+    message('processing', out_file)
+    # read in map
+    range_f <- sprintf('~/git-annex/bd_chi/spp_rasts_mol_2020/iucn_sid_%s.csv', id)
+    range_df <- read_csv(range_f) %>%
+      filter(presence != 5) %>%
+      mutate(presence = 1)
+    
+    range_rast <- subs(cell_id_rast, range_df, by = 'cell_id', which = 'presence')
+    range_map <- rasterToPoints(range_rast) %>%
+      as.data.frame() %>%
+      setNames(c('x', 'y', 'range'))
+    
+    range_plot <- ggplot() +
+      ggtheme_map(base_size = 7) +
+      geom_raster(data = ocean_map, aes(x, y), fill = 'grey70') +
+      geom_raster(data = range_map, aes(x, y), fill = range_col) +
+      geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+      theme(plot.margin = unit(c(0, 0, 0, 0), units = 'cm'),
+            plot.background = element_rect(fill = 'black', color = NA),
+            panel.background = element_rect(fill = 'black', color = NA),
+            legend.background = element_blank(),
+            legend.key.width = unit(.25, 'cm'),
+            legend.title = element_blank()) +
+      coord_sf(datum = NA) + ### ditch graticules
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0))
+ 
+    range_panel <- get_panel(range_plot)
+    
+    fig <- ggdraw() +
+      draw_plot(range_panel, x = 0, y = .15, width = .9, height = .85) +
+      theme(plot.background = element_rect(fill = 'black', color = NA))
+  
+    ggsave(plot = fig, filename = out_file,
+           height = 3, width = 6, units = 'in', dpi = 100)
+  }
+}
+
+
+
+```
+
+``` {r stressor maps}
+spp_sens <- get_incl_spp()
+
+for(id in spp_ids) { ### id <- spp_ids[1]
+  out_file <- sprintf(here('maps_for_shiny/strs_%s.png'), id)
+  if(!file.exists(out_file)) {
+    message('processing', out_file)
+    # identify stressors
+    strs <- spp_sens %>%
+      filter(iucn_sid == id) %>%
+      .$stressor
+    
+    str_fs <- sprintf('~/git-annex/bd_chi/layers/stressors_10km_95vc/%s_2013_mol10km_95vc.tif', strs)
+    str_rast <- stack(str_fs) %>%
+      calc(sum, na.rm = TRUE)
+  
+    str_map <- rasterToPoints(str_rast) %>%
+      as.data.frame() %>%
+      setNames(c('x', 'y', 'n_strs')) %>%
+      filter(n_strs > 0)
+    
+    str_plot <- ggplot() +
+      ggtheme_map(base_size = 9) +
+      geom_raster(data = ocean_map, aes(x, y), fill = 'grey70') +
+      geom_raster(data = str_map, aes(x, y, fill = n_strs)) +
+      geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+      theme(text = element_text(color = 'white'),
+            plot.margin = unit(c(0, 0, 0, 0), units = 'cm'),
+            plot.background = element_rect(fill = 'black', color = NA),
+            panel.background = element_rect(fill = 'black', color = NA),
+            legend.background = element_blank(),
+            legend.title = element_text(size = 9, face = 'bold'),
+            legend.key.width = unit(.25, 'cm')) +
+      coord_sf(datum = NA) + ### ditch graticules
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      scale_fill_viridis_c() +
+      labs(fill = '# of\nstressors')
+    
+    str_panel  <- get_panel(str_plot)
+    
+    str_legend <- get_legend(str_plot)
+    
+    fig <- ggdraw() +
+      draw_plot(str_panel, x = 0, y = .15, width = .9, height = .85) +
+      draw_plot(str_legend, x = .9, y = .15, width = .1, height = .85) +
+      theme(plot.background = element_rect(fill = 'black', color = NA))
+  
+    ggsave(plot = fig, filename = out_file,
+           height = 3, width = 6, units = 'in', dpi = 100)
+  }
+}
+
+```
+
+``` {r flattened stressor maps}
+spp_sens <- get_incl_spp()
+
+for(id in spp_ids) { ### id <- spp_ids[1]
+  out_file <- sprintf(here('maps_for_shiny/strs_flat_%s.png'), id)
+  if(!file.exists(out_file)) {
+    message('processing', out_file)
+    # identify stressors
+    strs <- spp_sens %>%
+      filter(iucn_sid == id) %>%
+      .$stressor
+    
+    str_fs <- sprintf('~/git-annex/bd_chi/layers/stressors_10km_95vc/%s_2013_mol10km_95vc.tif', strs)
+    str_rast <- stack(str_fs) %>%
+      calc(sum, na.rm = TRUE)
+  
+    str_map <- rasterToPoints(str_rast) %>%
+      as.data.frame() %>%
+      setNames(c('x', 'y', 'n_strs')) %>%
+      filter(n_strs > 0)
+    
+    str_plot <- ggplot() +
+      ggtheme_map(base_size = 9) +
+      geom_raster(data = ocean_map, aes(x, y), fill = 'grey70') +
+      geom_raster(data = str_map, aes(x, y), fill = str_col) +
+      geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+      theme(text = element_text(color = 'white'),
+            plot.margin = unit(c(0, 0, 0, 0), units = 'cm'),
+            plot.background = element_rect(fill = 'black', color = NA),
+            panel.background = element_rect(fill = 'black', color = NA),
+            legend.background = element_blank(),
+            legend.title = element_text(size = 9, face = 'bold'),
+            legend.key.width = unit(.25, 'cm')) +
+      coord_sf(datum = NA) + ### ditch graticules
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) # +
+      # scale_fill_viridis_c() # +
+      # labs(fill = '# of\nstressors')
+    
+    # plot it
+    # use cowplot to arrange on page
+    # save it
+    str_panel  <- get_panel(str_plot)
+    
+    # str_legend <- get_legend(str_plot)
+    
+    fig <- ggdraw() +
+      draw_plot(str_panel, x = 0, y = .15, width = .9, height = .85) +
+      # draw_plot(str_legend, x = .9, y = .15, width = .1, height = .85) +
+      theme(plot.background = element_rect(fill = 'black', color = NA))
+  
+    out_file <- sprintf(here('maps_for_shiny/strs_flat_%s.png'), id)
+    ggsave(plot = fig, filename = out_file,
+           height = 3, width = 6, units = 'in', dpi = 100)
+  }
+}
+
+```
+
+```{r impacts}
+for(id in spp_ids) { ### id <- spp_ids[1]
+  out_file <- sprintf(here('maps_for_shiny/impacts_%s.png'), id)
+  if(!file.exists(out_file)) {
+    message('processing', out_file)
+    
+    # identify stressors
+    strs <- spp_sens %>%
+      filter(iucn_sid == id) %>%
+      .$stressor
+    
+    str_fs <- sprintf('~/git-annex/bd_chi/layers/stressors_10km_95vc/%s_2013_mol10km_95vc.tif', strs)
+    str_rast <- stack(str_fs) %>%
+      calc(sum, na.rm = TRUE)
+  
+    str_map <- rasterToPoints(str_rast) %>%
+      as.data.frame() %>%
+      setNames(c('x', 'y', 'n_strs')) %>%
+      filter(n_strs > 0)
+    
+    # identify range
+    range_f <- sprintf('~/git-annex/bd_chi/spp_rasts_mol_2020/iucn_sid_%s.csv', id)
+    range_df <- read_csv(range_f) %>%
+      filter(presence != 5) %>%
+      mutate(presence = 1)
+    
+    range_rast <- subs(cell_id_rast, range_df, by = 'cell_id', which = 'presence')
+    range_map <- rasterToPoints(range_rast) %>%
+      as.data.frame() %>%
+      setNames(c('x', 'y', 'range'))
+
+    # get impacts
+    imp_f <- sprintf('~/git-annex/bd_chi/spp_impact_rasts/spp_impact_map_%s_all.csv', id)
+    imp_df <- read_csv(imp_f) %>%
+      filter(year == 2013) %>%
+      mutate(imp = 1)
+    
+    imp_rast <- subs(cell_id_rast, imp_df, by = 'cell_id', which = 'imp')
+    imp_map <- rasterToPoints(imp_rast) %>%
+      as.data.frame() %>%
+      setNames(c('x', 'y', 'imp'))
+    
+    df <- range_map %>%
+      full_join(str_map, by = c('x', 'y')) %>%
+      full_join(imp_map, by = c('x', 'y')) %>%
+      mutate(val = case_when(!is.na(range) & !is.na(n_strs) & is.na(imp) ~ 'ERROR',
+                             (is.na(range) | is.na(n_strs)) & !is.na(imp) ~ 'ERROR2',
+                             !is.na(range) & is.na(n_strs) ~ 'refugia',
+                             is.na(range) & !is.na(n_strs) ~ 'no impact',
+                             !is.na(range) & !is.na(n_strs) ~ 'impact'))
+    if(any(str_detect(df$val, 'ERROR'))) stop('error in ', id)
+    
+    
+    imp_plot <- ggplot() +
+      ggtheme_map(base_size = 10) +
+      geom_raster(data = ocean_map, aes(x, y), fill = 'grey70') +
+      geom_raster(data = df, aes(x, y, fill = val)) +
+      geom_sf(data = land_sf, fill = 'grey96', color = 'grey40', size = .10) +
+      theme(text = element_text(color = 'white'),
+            plot.margin = unit(c(0, 0, 0, 0), units = 'cm'),
+            plot.background = element_rect(fill = 'black', color = NA),
+            panel.background = element_rect(fill = 'black', color = NA),
+            legend.background = element_blank(),
+            legend.position = 'bottom',
+            legend.text = element_text(size = 10, color = 'white', face = 'bold'),
+            legend.title = element_blank(),
+            legend.key.width = unit(.75, 'cm'),
+            legend.key.height = unit(.4, 'cm')) +
+      coord_sf(datum = NA) + ### ditch graticules
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      scale_fill_manual(values = c('refugia' = range_col,
+                                   'no impact' = str_col,
+                                   'impact' = imp_col)) # +
+      # labs(fill = '# of\nstressors')
+    
+    imp_panel  <- get_panel(imp_plot)
+    
+    imp_legend <- get_legend(imp_plot)
+    
+    fig <- ggdraw() +
+      draw_plot(imp_panel, x = 0, y = .15, width = .9, height = .85) +
+      draw_plot(imp_legend, x = 0, y = 0, width = .9, height = .15) +
+      theme(plot.background = element_rect(fill = 'black', color = NA))
+  
+    out_file <- sprintf(here('maps_for_shiny/impacts_%s.png'), id)
+    ggsave(plot = fig, filename = out_file,
+           height = 3, width = 6, units = 'in', dpi = 100)
+  }
+}
+```
+

@@ -1,0 +1,81 @@
+---
+title: "questions on shipping and climate around Australia"
+author: "*Compiled on `r date()` by `r Sys.info()['user']`*"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float: yes
+    number_sections: true
+    theme: cerulean
+    highlight: haddock
+    includes: 
+      in_header: '~/github/src/templates/ohara_hdr.html'
+  pdf_document:
+    toc: true
+---
+
+``` {r setup, echo = TRUE, message = FALSE, warning = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+oharac::setup()
+source(here('common_fxns.R'))
+
+reload <- FALSE
+```
+
+Questions from Beth Fulton:
+
+1. Ocean-based is primarily shipping (if I understood the text correctly) so I was wondering why northern Australia sees such a high intensity there. It could just be different data sources, but looking at Aussie sourced ship traffic info (used in Australia’s state of the environment work)  I would have expected more patchiness across the north and more along the major routes to the populous centres on the west and east coasts. Was there a step of your analysis I was missing? Or is it that you have more species of conservation concern listed in Australia’s north?
+2. Climate hotspots. Again I was intrigued to see that under the climate category the maps didn’t highlight many of the hotspots Pecl and Hobday (attached in case you don’t have it). Was that due to a different method used for the climate “impact” layer in both cases?
+
+## Shipping
+
+Let's compare impacts on spp ranges around Australia to species richness of at-risk species.  Since the impacts are defined by sensitivity X stressor presence, then the difference would indicate how many species present are or are not sensitive to shipping.
+
+```{r define australia bbox}
+ocean_a_rast <- raster(here('_spatial/ocean_area_mol.tif'))
+# plot(ocean_a_rast)
+aus_bbox <- extent(c(xmin = 9e6, xmax = 1.5e7, ymin = -5.5e6, ymax = 0))
+aus_a_rast <- ocean_a_rast %>%
+  crop(aus_bbox)
+
+plot(aus_a_rast, col = 'blue3',
+     main = 'ocean area, Australia', 
+     legend = FALSE)
+```
+
+```{r}
+ship_presence_2013_rast <- raster(here('_output/rasters/stressor_ftprints',
+                                       'footprint_ocean_2013.tif'))
+
+aus_ship_pres_rast <- ship_presence_2013_rast %>%
+  crop(aus_bbox)
+plot(aus_ship_pres_rast, col = 'red4',
+     main = 'Presence of significant shipping, Australia',
+     legend = FALSE)
+```
+
+```{r}
+ship_imp_2013_rast <- raster(here('_output/rasters/impact_maps',
+                                  'impact_ocean_2013.tif'))
+
+aus_ship_imp_rast <- ship_imp_2013_rast %>%
+  crop(aus_bbox)
+vir_pal <- hcl.colors(n = 25)
+plot(aus_ship_imp_rast, col = vir_pal,
+     main = '# spp affected by shipping, Australia')
+```
+```{r}
+nspp_rast <- raster(here('_output/rasters/n_spp_map.tif'))
+ship_pct_imp_2013_rast <- ship_imp_2013_rast / nspp_rast
+
+aus_ship_pct_imp_rast <- ship_pct_imp_2013_rast %>%
+  crop(aus_bbox)
+plot(aus_ship_pct_imp_rast, col = vir_pal,
+     main = '% spp affected by shipping, Australia')
+```
+Seems that there is significant presence of shipping stressors all around Australia, with little gaps here and there; but a higher proportion of species that are sensitive to shipping are located in the northern areas.  

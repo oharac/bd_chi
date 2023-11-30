@@ -104,7 +104,7 @@ threats_to_marine <- spp_marine %>%
   filter(!is.na(code)) %>% ### drop code mismatches
   filter(!is.na(stressor)) %>% ### drop codes that don't match stressors
   select(iucn_sid, cat_score, sens, 
-         code, stressor) %>%
+         code, stressor, score_num) %>%
   distinct()
 
 ### sensitivity categories:
@@ -321,7 +321,7 @@ entangle_text_df <- spp_narrs %>%
   # group_by(iucn_sid, dimension) %>%
   unnest_tokens(output = word, input = sentence, 
                 token = 'words', 
-                drop = FALSE, collapse = FALSE) %>%
+                drop = FALSE, collapse = NULL) %>%
   filter(str_detect(word, 'entangl')) %>%
   mutate(debris = str_detect(sentence, 'debris'),
          net = str_detect(sentence, '[^a-z]net[^a-z]|^net[^a-z]|[^a-z]net$'),
@@ -529,13 +529,14 @@ gear_sens_df <- gear_narr_tidy %>%
 ### within that stressor category.  Complete the list so all stressors
 ### show up for all species, leaving NAs for those added via complete().
 gear_sens_summary <- gear_sens_df %>%
-  group_by(iucn_sid, stressor, code) %>%
+  group_by(iucn_sid, stressor, code, score_num) %>%
   filter(!is.na(sens)) %>%
   summarize(sens = sum(count * sens) > 0) %>%
   bind_rows(art_fish_from_iucn) %>%
   group_by(iucn_sid) %>%
   complete(stressor = stressors, fill = list(sens = FALSE)) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(score_num = ifelse(score_num >= 3 & !sens, NA, score_num))
 
 write_csv(gear_sens_summary, 
           here('int', sprintf('spp_sens_fishing_%s.csv', api_version)))

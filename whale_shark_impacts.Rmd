@@ -1,0 +1,132 @@
+---
+title: "impacts one species"
+author: "Casey O'Hara"
+date: "11/13/2021"
+output: html_document
+---
+
+```{r setup, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = TRUE, message = FALSE, warning = FALSE)
+
+library(raster)
+library(sf)
+source('https://raw.githubusercontent.com/oharac/src/master/R/common.R')
+
+source(here('common_fxns.R'))
+
+```
+
+```{r}
+x <- get_incl_spp() %>%
+  drop_na() %>%
+  group_by(iucn_sid, sciname) %>%
+  summarize(n_strs = n_distinct(stressor),
+            strs = paste0(stressor, collapse = ';'))
+```
+
+Load range map and intersections: Rhincodon typus, 19488
+
+```{r}
+range <- read_csv('~/git-annex/bd_chi/spp_rasts_mol_2020/iucn_sid_19488.csv') %>%
+  mutate(str = 0)
+
+intsx_fs <- list.files('~/git-annex/bd_chi/spp_str_rasts', pattern = '_19488.csv',
+                       recursive = TRUE, full.names = TRUE)
+
+intsx <- lapply(intsx_fs, read_csv, show_col_types = FALSE) %>%
+  setNames(basename(intsx_fs)) %>%
+  bind_rows(.id = 'f') %>%
+  filter(year == 2013) %>%
+  drop_na() %>%
+  mutate(str = 1)
+
+cell_id_rast <- raster(here('_spatial/cell_id_mol.tif'))
+
+range_rast <- subs(cell_id_rast, range, by = 'cell_id', which = 'presence')
+
+shipping <- intsx %>%
+  filter(str_detect(f, 'ship')) %>%
+  mutate(n_strs = 1)
+
+shipping_rast <- subs(cell_id_rast, shipping, by = 'cell_id', which = 'n_strs')
+
+all_strs <- intsx %>%
+  group_by(cell_id) %>%
+  summarize(n_strs = sum(str))
+
+all_strs_rast <- subs(cell_id_rast, all_strs, by = 'cell_id', which = 'n_strs')
+
+```
+
+``` {r figure 2b}
+
+land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
+  st_transform(crs(cell_id_rast))
+ocean_sf <- read_sf(here('_spatial/ne_10m_ocean/ne_10m_ocean.shp')) %>%
+  st_transform(crs(cell_id_rast))
+
+range_df <- as.data.frame(range_rast, xy = TRUE) %>%
+  drop_na()
+shipping_df <- as.data.frame(shipping_rast, xy = TRUE) %>%
+  drop_na()
+all_strs_df <- as.data.frame(all_strs_rast, xy = TRUE) %>%
+  drop_na()
+
+```
+
+``` {r}
+col_scale <- viridisLite::viridis(5)
+
+range_map <- ggplot() +
+  ggtheme_map(base_size = 7) +
+  geom_sf(data = ocean_sf, fill = 'darkcyan', color = 'darkcyan', alpha = .1, size = .10) +
+  geom_raster(data = range_df, aes(x, y), fill = 'grey50') +
+  geom_sf(data = land_sf, fill = 'grey90', color = 'grey40', size = .10) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))
+
+range_map
+```
+
+
+``` {r}
+
+shipping_map <- ggplot() +
+  ggtheme_map(base_size = 7) +
+  geom_sf(data = ocean_sf, fill = 'darkcyan', color = 'darkcyan', alpha = .1, size = .10) +
+  geom_raster(data = range_df, aes(x, y), fill = 'grey50') +
+  geom_raster(data = shipping_df, aes(x, y), fill = col_scale[1]) +
+  geom_sf(data = land_sf, fill = 'grey90', color = 'grey40', size = .10) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))
+
+shipping_map
+```
+
+
+``` {r}
+
+all_strs_map <- ggplot() +
+  ggtheme_map(base_size = 7) +
+  geom_sf(data = ocean_sf, fill = 'darkcyan', color = 'darkcyan', alpha = .1, size = .10) +
+  geom_raster(data = range_df, aes(x, y), fill = 'grey50') +
+  geom_raster(data = all_strs_df, aes(x, y, fill = n_strs), show.legend = FALSE) +
+  geom_sf(data = land_sf, fill = 'grey90', color = 'grey40', size = .10) +
+  scale_fill_viridis_c() +
+  theme(text = element_text(family = 'benton'),
+        plot.margin = unit(c(.05, 0, .05, 0), units = 'cm'),
+        legend.background = element_blank(),
+        legend.key.width = unit(.25, 'cm'),
+        legend.title = element_blank()) +
+  coord_sf(datum = NA) + ### ditch graticules
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))
+
+all_strs_map
+```
+
+
+

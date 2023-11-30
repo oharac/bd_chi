@@ -11,7 +11,7 @@ library(parallel)
 library(jsonlite)
 
 ### api_key stored on git-annex so outside users can use their own key
-api_file <- file.path(dir_M, 'git-annex/globalprep/spp_ico', 
+api_file <- file.path('/home/shares/ohi', 'git-annex/globalprep/spp_ico', 
                       'api_key.csv')
 api_key <- scan(api_file, what = 'character')
 
